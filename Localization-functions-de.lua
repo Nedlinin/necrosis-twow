@@ -1,13 +1,13 @@
 ------------------------------------------------------------------------------------------------------
 -- Necrosis LdC
 --
--- CrÈateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
--- ImplÈmentation de base (FR) : Tilienna Thorondor
+-- Cr√©ateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
+-- Impl√©mentation de base (FR) : Tilienna Thorondor
 -- Reprise du projet : Lomig & Nyx des Larmes de Cenarius, Kael'Thas
 -- 
--- Skins et voix FranÁaises : Eliah, Ner'zhul
+-- Skins et voix Fran√ßaises : Eliah, Ner'zhul
 -- Version Allemande par Arne Meier et Halisstra, Lothar
--- Remerciements spÈciaux pour Sadyre (JoL)
+-- Remerciements sp√©ciaux pour Sadyre (JoL)
 -- Version 28.06.2006-1
 ------------------------------------------------------------------------------------------------------
 
@@ -22,7 +22,7 @@ if ( GetLocale() == "deDE" ) then
 NECROSIS_UNIT_WARLOCK = "Hexenmeister";
 
 NECROSIS_ANTI_FEAR_SPELL = {
-	-- Buffs die tempor‰re Immunit‰t gegen¸ber Furcht geben
+	-- Buffs die tempor√§re Immunit√§t gegen√ºber Furcht geben
 	["Buff"] = {
 		"Furchtzauberschutz",		-- Dwarf priest racial trait
 		"Wille der Verlassenen",	-- Forsaken racial trait
@@ -148,7 +148,7 @@ NECROSIS_SPELL_TABLE = {
 -- Type 1 = Timer permanent principal
 -- Type 2 = Timer permanent
 -- Type 3 = Timer de cooldown
--- Type 4 = Timer de malÈdiction
+-- Type 4 = Timer de mal√©diction
 -- Type 5 = Timer de combat
 
 NECROSIS_ITEM = {

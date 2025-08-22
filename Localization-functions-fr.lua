@@ -1,13 +1,13 @@
 ------------------------------------------------------------------------------------------------------
 -- Necrosis LdC
 --
--- Créateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
--- Implémentation de base (FR) : Tilienna Thorondor
+-- CrÃ©ateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
+-- ImplÃ©mentation de base (FR) : Tilienna Thorondor
 -- Reprise du projet : Lomig & Nyx des Larmes de Cenarius, Kael'Thas
 -- 
--- Skins et voix Françaises : Eliah, Ner'zhul
+-- Skins et voix FranÃ§aises : Eliah, Ner'zhul
 -- Version Allemande par Arne Meier et Halisstra, Lothar
--- Remerciements spéciaux pour Sadyre (JoL)
+-- Remerciements spÃ©ciaux pour Sadyre (JoL)
 -- Version 05.09.2006-1
 ------------------------------------------------------------------------------------------------------
 
@@ -147,7 +147,7 @@ NECROSIS_SPELL_TABLE = {
 -- Type 1 = Timer permanent principal
 -- Type 2 = Timer permanent
 -- Type 3 = Timer de cooldown
--- Type 4 = Timer de malédiction
+-- Type 4 = Timer de malÃ©diction
 -- Type 5 = Timer de combat
 
 NECROSIS_ITEM = {

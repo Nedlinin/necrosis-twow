@@ -1,13 +1,13 @@
 ------------------------------------------------------------------------------------------------------
 -- Necrosis LdC
 --
--- Créateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
--- Implémentation de base (FR) : Tilienna Thorondor
+-- CrÃ©ateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
+-- ImplÃ©mentation de base (FR) : Tilienna Thorondor
 -- Reprise du projet : Lomig & Nyx des Larmes de Cenarius, Kael'Thas
 -- 
--- Skins et voix Françaises : Eliah, Ner'zhul
+-- Skins et voix FranÃ§aises : Eliah, Ner'zhul
 -- Version Allemande par Arne Meier et Halisstra, Lothar
--- Remerciements spéciaux pour Sadyre (JoL)
+-- Remerciements spÃ©ciaux pour Sadyre (JoL)
 -- Version 30.04.2005-1
 ------------------------------------------------------------------------------------------------------
 
@@ -19,19 +19,19 @@
 
 function Necrosis_Msg(msg, type)
 	if (msg and type) then
-		-- Si le type du message est "USER", le message s'affiche sur l'écran...
+		-- Si le type du message est "USER", le message s'affiche sur l'Ã©cran...
 		if (type == "USER") then
 			-- On colorise astucieusement notre message :D
 			msg = Necrosis_MsgAddColor(msg);
 			local Intro = "|CFFFF00FFNe|CFFFF50FFcr|CFFFF99FFos|CFFFFC4FFis|CFFFFFFFF: ";
 			if NecrosisConfig.ChatType then
-				-- ...... sur la première fenêtre de chat
+				-- ...... sur la premiÃ¨re fenÃªtre de chat
 				ChatFrame1:AddMessage(Intro..msg, 1.0, 0.7, 1.0, 1.0, UIERRORS_HOLD_TIME);
 			else
-				-- ...... ou au milieu de l'écran
+				-- ...... ou au milieu de l'Ã©cran
 				UIErrorsFrame:AddMessage(Intro..msg, 1.0, 0.7, 1.0, 1.0, UIERRORS_HOLD_TIME);
 			end
-		-- Si le type du message est "WORLD", le message sera envoyé en raid, à défaut en groupe, et à défaut en chat local
+		-- Si le type du message est "WORLD", le message sera envoyÃ© en raid, Ã  dÃ©faut en groupe, et Ã  dÃ©faut en chat local
 		elseif (type == "WORLD") then
 			if (GetNumRaidMembers() > 0) then
 				SendChatMessage(msg, "RAID");
@@ -40,14 +40,14 @@ function Necrosis_Msg(msg, type)
 			else
 				SendChatMessage(msg, "SAY");
 			end
-		-- Si le type du message est "PARTY", le message sera envoyé en groupe
+		-- Si le type du message est "PARTY", le message sera envoyÃ© en groupe
 		elseif (type == "PARTY") then
 			SendChatMessage(msg, "PARTY");
-		-- Si le type du message est "RAID", le message sera envoyé en raid
+		-- Si le type du message est "RAID", le message sera envoyÃ© en raid
 		elseif (type == "RAID") then
 			SendChatMessage(msg, "RAID");
 		elseif (type == "SAY") then
-		-- Si le type du message est "SAY", le message sera envoyé en chat local
+		-- Si le type du message est "SAY", le message sera envoyÃ© en chat local
 			SendChatMessage(msg, "SAY");
 		end
 	end
@@ -58,7 +58,7 @@ end
 -- ... ET LE COLORAMA FUT !
 ------------------------------------------------------------------------------------------------------
 
--- Remplace dans les chaines les codes de coloration par les définitions de couleur associées
+-- Remplace dans les chaines les codes de coloration par les dÃ©finitions de couleur associÃ©es
 function Necrosis_MsgAddColor(msg)
 	msg = string.gsub(msg, "<white>", "|CFFFFFFFF");
 	msg = string.gsub(msg, "<lightBlue>", "|CFF99CCFF");
@@ -84,7 +84,7 @@ function Necrosis_MsgAddColor(msg)
 end
 
 
--- Insère dans les timers des codes de coloration en fonction du pourcentage de temps restant
+-- InsÃ¨re dans les timers des codes de coloration en fonction du pourcentage de temps restant
 function NecrosisTimerColor(percent)
 	local color = "<brightGreen>";
 	if (percent < 10) then

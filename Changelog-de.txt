@@ -3,12 +3,12 @@ NECROSIS LdC
 
 Idee : Infernal (http://www.revolvus.com/games/interface/necrosis/)
 
-- Erste Übersetzung (in Französisch, was vom Original-Addon noch 
-  nicht unterstützt war) und Verbesserungen : Tilienna Thorondor
+- Erste Ãœbersetzung (in FranzÃ¶sisch, was vom Original-Addon noch 
+  nicht unterstÃ¼tzt war) und Verbesserungen : Tilienna Thorondor
 
 - Necrosis LdC Verfechter : Lomig & Nyx von Kael'Thas
 
-- Skins und Französische Stimmen : Eliah von Ner'zhul
+- Skins und FranzÃ¶sische Stimmen : Eliah von Ner'zhul
 
 - Deutsche Version von Arne Meier (bis Version 1.3), 
   ab Version 1.3.1 von Hexenmeisterin Halisstra auf Lothar
@@ -48,78 +48,78 @@ Idee : Infernal (http://www.revolvus.com/games/interface/necrosis/)
 
      Sounds should be working fine since 1.11.1, since it was a bug coming from Blizzard.
 
-1.5.1 Korrigiert: Weiße Textur bei Teufelsbeherrschung 
-      Fluch der Erschöpfung wurde hinzugefügt
-      Fluch verstärken wurde hinzugefügt
+1.5.1 Korrigiert: WeiÃŸe Textur bei Teufelsbeherrschung 
+      Fluch der ErschÃ¶pfung wurde hinzugefÃ¼gt
+      Fluch verstÃ¤rken wurde hinzugefÃ¼gt
 
       Teufel-Seelensplitter werden nicht mehr als Seelensplitter angesehen
       Graphische Timer werden nun mit der UI skaliert, wie es von Anfang an beabsichtigt war
 
-      Interne Änderungen im Format der Datenbank
+      Interne Ã„nderungen im Format der Datenbank
       Neues Format der speech.lua
-          - Beschwörung: Jeder Satz darf nun auf mehreren Chat Zeilen erscheinen
+          - BeschwÃ¶rung: Jeder Satz darf nun auf mehreren Chat Zeilen erscheinen
           - "Verbesserte Chance" : Es wird nicht mehr denselben Spruch zweimal hintereinander geben
-          - Neue Platzhalter hinzugefügt. 
-	     Innerhalb der Sprüche gelten nun folgende Abkürzungen:
+          - Neue Platzhalter hinzugefÃ¼gt. 
+	     Innerhalb der SprÃ¼che gelten nun folgende AbkÃ¼rzungen:
 	      Der Name des Warlocks wird durch <player> ersetzt,
               der Name des Pets durch <pet> und das Ziel eines Spruches durch <target>
 
-      Aderlass wurde hinzugefügt. Da es einer der meist genutzten Sprüche ist, muss man einfach die Necrosis
-       Spähre linksklicken um diesen zu aktivieren.
+      Aderlass wurde hinzugefÃ¼gt. Da es einer der meist genutzten SprÃ¼che ist, muss man einfach die Necrosis
+       SpÃ¤hre linksklicken um diesen zu aktivieren.
 
-      Schattenschutz wurde hinzugefügt
+      Schattenschutz wurde hinzugefÃ¼gt
 
-      Die Option, Sprüche für Dämonen ein- / auszuschalten wurde korrigiert
-      Der Knopf für den Spruch verbannen wurde ans Ende der Zeile gesetzt, un er kann nun von 100% bis 200% skaliert werden
+      Die Option, SprÃ¼che fÃ¼r DÃ¤monen ein- / auszuschalten wurde korrigiert
+      Der Knopf fÃ¼r den Spruch verbannen wurde ans Ende der Zeile gesetzt, un er kann nun von 100% bis 200% skaliert werden
 
-      Die normalen Ränge von "Unsichtbarkeit entdecken" und "Seelenstein erstellen" sind jetzt korrigiert !
+      Die normalen RÃ¤nge von "Unsichtbarkeit entdecken" und "Seelenstein erstellen" sind jetzt korrigiert !
 
 
-1.5   Timer wurden überarbeitet um weniger Lag zu erzeugen
-      Es wurden im Datenbankformat einige interne Veränderungen vorgenommen
+1.5   Timer wurden Ã¼berarbeitet um weniger Lag zu erzeugen
+      Es wurden im Datenbankformat einige interne VerÃ¤nderungen vorgenommen
       Die englische und deutsche Lokalisierungen wurden verbessert
-      Das Aktivieren der Beschwörungssprüche wird den Character einen Text sagen lassen,
-       wenn man einen Dämon beschwört
-        WICHTIG: Aufgrund der Rückmeldungen die WOW gibt kann es dauern, bis Necrosis
-                 den Namen des beschworenen Dämons bekommt. Dies kann bis zu
-                 10 Beschwörungen oder mehr dauern.
-      Der Befehl "/necro sm" wurde hinzugefügt: Aktiviert bzw deaktiviert kurze Nachrichten für 
-       Seelensteine und beim Beschwören von anderen Spielern anstelle der Zufallstexte
-      Klickt man mit der rechten Maustaste um einen Dämon zu beschwören wird 
-       Teufelsbeherrschung ausgeführt
-      Klickt man mit der mittleres Taste auf den Spruchmenü Button oder auf den
-       Dämonenmenü Button, wird der letzte gesprochene Spruch oder beschwörte Dämon
+      Das Aktivieren der BeschwÃ¶rungssprÃ¼che wird den Character einen Text sagen lassen,
+       wenn man einen DÃ¤mon beschwÃ¶rt
+        WICHTIG: Aufgrund der RÃ¼ckmeldungen die WOW gibt kann es dauern, bis Necrosis
+                 den Namen des beschworenen DÃ¤mons bekommt. Dies kann bis zu
+                 10 BeschwÃ¶rungen oder mehr dauern.
+      Der Befehl "/necro sm" wurde hinzugefÃ¼gt: Aktiviert bzw deaktiviert kurze Nachrichten fÃ¼r 
+       Seelensteine und beim BeschwÃ¶ren von anderen Spielern anstelle der Zufallstexte
+      Klickt man mit der rechten Maustaste um einen DÃ¤mon zu beschwÃ¶ren wird 
+       Teufelsbeherrschung ausgefÃ¼hrt
+      Klickt man mit der mittleres Taste auf den SpruchmenÃ¼ Button oder auf den
+       DÃ¤monenmenÃ¼ Button, wird der letzte gesprochene Spruch oder beschwÃ¶rte DÃ¤mon
        gesprochen bzw beschworen
-      Der Befehl "/necro cast coa" wurde hinzugefügt um den Fluch der Pein in 
+      Der Befehl "/necro cast coa" wurde hinzugefÃ¼gt um den Fluch der Pein in 
        einem Macro mit einem Timer zu sprechen
-      Es wurde eine Script Funktion hinzugefügt, die das Erstellen von eigenen Timern
-       ermöglicht:
+      Es wurde eine Script Funktion hinzugefÃ¼gt, die das Erstellen von eigenen Timern
+       ermÃ¶glicht:
         /script NecrosisTimer("Name des Timers", Dauer):
          Der Timer wird mit dem derzeitigen Ziel verbunden
-         Ist kein Ziel ausgewählt, wird es ein genereller Timer
+         Ist kein Ziel ausgewÃ¤hlt, wird es ein genereller Timer
          Ist man nich im Kampfmodus, kann der Name der Kreatur, die man mit dem Timer
           verbindet, in der Timerliste verbleiben und nicht verschwinden.
-          Allerdings sollte er beim nächsten Kampf dann verschwinden.
-	 Groß- / Kleinschreibung ist bei dem Befehl wichtig, Dauer wird in Sekunden
+          Allerdings sollte er beim nÃ¤chsten Kampf dann verschwinden.
+	 GroÃŸ- / Kleinschreibung ist bei dem Befehl wichtig, Dauer wird in Sekunden
           angegeben
 
 1.4.2 Ein Fehler bei den Timern wurde korrigiert
 
 1.4.1 Necrosis LdC ist nun kompatibel mit WoW 1.10 
 
-1.4   Kein Lag mehr, wenn man die Menüs öffnet
+1.4   Kein Lag mehr, wenn man die MenÃ¼s Ã¶ffnet
       Graphische Timer
       Verbannen Timer wurden korrigiert
-      Im Spruch Menü wurde "Dämonen spüren" hinzugefügt
+      Im Spruch MenÃ¼ wurde "DÃ¤monen spÃ¼ren" hinzugefÃ¼gt
 
 1.3.2 Verbannen Timer sollte nun funktionieren -- Aber man kann es nicht erkennen, 
-       falls das Ziel zu früh entkommt.
-      Höllensteine und Dämonen-Statuetten werden nun korrekt gezählt
+       falls das Ziel zu frÃ¼h entkommt.
+      HÃ¶llensteine und DÃ¤monen-Statuetten werden nun korrekt gezÃ¤hlt
 
 1.3.1 Verschiedene Fehler verbessert (Wie fehlerhafte Timer, wenn man keinen Seelenstein verwendet)
-      Neues Einstellungs-Menü
-      Der Hexenmeister kann die Sphäre als Seelenstein-Timer nutzen
-1.3 : Buff management      Beschwörungs-, Verbannen- und Versklaven-Verwaltung      Mana Verwaltung (inaktive Icons wenn nicht vorhanden)      Veränderungen im Timer System : Timer sind nun über die Monster organisiert      Fehler beim Tastenfestlegen behoben      Fehler im englischen Teil von Necrosis behoben      Geringe Fehler behoben1.2 : Es ist nun möglich die Buttons von Necrosis in der Größe zu ändern      Es ist nun möglich das Skin von Necrosis zu ändern      Die Anzeige der Seelensplitter in der Necrosis Sphäre kann nun deaktiviert werden      Es gibt nun einen Timer für jeden Cooldown der Hexenmeistersprüche      
-      Testweise wurde ein Timer für Instant Zaubern eingeführt1.1 : Ein Fehler wurde korrigiert der auftrat, wenn auf einem französischen Client
-      eine Höllenbestie beschworen wurde
+      Neues Einstellungs-MenÃ¼
+      Der Hexenmeister kann die SphÃ¤re als Seelenstein-Timer nutzen
+1.3 : Buff management      BeschwÃ¶rungs-, Verbannen- und Versklaven-Verwaltung      Mana Verwaltung (inaktive Icons wenn nicht vorhanden)      VerÃ¤nderungen im Timer System : Timer sind nun Ã¼ber die Monster organisiert      Fehler beim Tastenfestlegen behoben      Fehler im englischen Teil von Necrosis behoben      Geringe Fehler behoben1.2 : Es ist nun mÃ¶glich die Buttons von Necrosis in der GrÃ¶ÃŸe zu Ã¤ndern      Es ist nun mÃ¶glich das Skin von Necrosis zu Ã¤ndern      Die Anzeige der Seelensplitter in der Necrosis SphÃ¤re kann nun deaktiviert werden      Es gibt nun einen Timer fÃ¼r jeden Cooldown der HexenmeistersprÃ¼che      
+      Testweise wurde ein Timer fÃ¼r Instant Zaubern eingefÃ¼hrt1.1 : Ein Fehler wurde korrigiert der auftrat, wenn auf einem franzÃ¶sischen Client
+      eine HÃ¶llenbestie beschworen wurde
 1.0 : Erste stabile Version

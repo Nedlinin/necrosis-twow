@@ -1,13 +1,13 @@
 ------------------------------------------------------------------------------------------------------
 -- Necrosis LdC
 --
--- CrÈateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
--- ImplÈmentation de base (FR) : Tilienna Thorondor
+-- Cr√©ateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
+-- Impl√©mentation de base (FR) : Tilienna Thorondor
 -- Reprise du projet : Lomig & Nyx des Larmes de Cenarius, Kael'Thas
 -- 
--- Skins et voix FranÁaises : Eliah, Ner'zhul
+-- Skins et voix Fran√ßaises : Eliah, Ner'zhul
 -- Version Allemande par Arne Meier et Halisstra, Lothar
--- Remerciements spÈciaux pour Sadyre (JoL)
+-- Remerciements sp√©ciaux pour Sadyre (JoL)
 -- Version 11.05.2006-1
 ------------------------------------------------------------------------------------------------------
 
@@ -166,7 +166,7 @@ function Necrosis_Localization_Dialog_De()
 		["Radar"] = {
 			Label = "|c00FFFFFFD\195\164monen sp\195\188ren|r"
 		},
-		["AmplifyCooldown"] = "Mit der rechten Taste klicken f\195\188r verst‰rken",
+		["AmplifyCooldown"] = "Mit der rechten Taste klicken f\195\188r verst√§rken",
 		["DominationCooldown"] = "Mit der rechten Taste klicken f\195\188r eine schnelle Beschw\195\182rung",
 		["LastSpell"] = "Mittlere Taste klicken f\195\188r ",
 	};

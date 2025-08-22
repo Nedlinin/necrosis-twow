@@ -1,13 +1,13 @@
  Necrosis LdC
 -------------------------------
 
-- Créateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
-- Implémentation de base (FR) : Tilienna Thorondor
+- CrÃ©ateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
+- ImplÃ©mentation de base (FR) : Tilienna Thorondor
 - Reprise du projet : Lomig & Nyx des Larmes de Cenarius, Kael'Thas
 
-- Skins et voix Françaises : Eliah, Ner'zhul
+- Skins et voix FranÃ§aises : Eliah, Ner'zhul
 - Version Allemande par Arne Meier
-- Remerciements spéciaux pour Sadyre (JoL)
+- Remerciements spÃ©ciaux pour Sadyre (JoL)
 
 - Contact : lomig@larmes-cenarius.net - nyx@larmes-cenarius.net
 
@@ -17,98 +17,98 @@
 Changelog : 
 -------------------------------
 
-1.5.2a Mise à jour de la TOC pour la 1.12
-       Correction du bug de la monture épique pour les clients FR.
-       Correction des bugs en duel. Désormais, vous pouvez utilisez une pierre de soin et lancer
-         vos malédictions correctement sans que votre adversaire soit considéré comme un allié.
+1.5.2a Mise Ã  jour de la TOC pour la 1.12
+       Correction du bug de la monture Ã©pique pour les clients FR.
+       Correction des bugs en duel. DÃ©sormais, vous pouvez utilisez une pierre de soin et lancer
+         vos malÃ©dictions correctement sans que votre adversaire soit considÃ©rÃ© comme un alliÃ©.
 
-       Changement du comportement du clique-milieu sur le menu des malédictions. Désormais, la
-         la malédiction précedente est relancée mais surtout dans les mêmes conditions de clic.
-         (c'est à dire que si vous aviez lancé agonie en améliorer, cela retentera de le faire.)
+       Changement du comportement du clique-milieu sur le menu des malÃ©dictions. DÃ©sormais, la
+         la malÃ©diction prÃ©cedente est relancÃ©e mais surtout dans les mÃªmes conditions de clic.
+         (c'est Ã  dire que si vous aviez lancÃ© agonie en amÃ©liorer, cela retentera de le faire.)
 
-       Ajout de trois raccourçis clavier: Bannissement, Connexion et recast de la dernière
-         lancée, exactement comme un clique-milieu sur le menu des malédictions. Cela permet de
-         démarrer un combat en lançant la malédiction voulue avec nécrosis, et de poursuivre le
+       Ajout de trois raccourÃ§is clavier: Bannissement, Connexion et recast de la derniÃ¨re
+         lancÃ©e, exactement comme un clique-milieu sur le menu des malÃ©dictions. Cela permet de
+         dÃ©marrer un combat en lanÃ§ant la malÃ©diction voulue avec nÃ©crosis, et de poursuivre le
          combat en appuyant sur une touche pour les cast suivants.
 
-1.5.2 Mise à jour de la TOC pour la 1.11
-      Correction de petites erreurs de localisation en FR et DE qui empêchait d'acceder à certains
-	sorts, comme le gardien de l'ombre en FR ou la malédiction d'ombre en DE.
-      Re-correction fr d'un bug qui empêchait le timer des démons asservis de se déclencher.
-	Peut-être que ce coup-ci ce foutu débuff va arrêter de changer de nom.
+1.5.2 Mise Ã  jour de la TOC pour la 1.11
+      Correction de petites erreurs de localisation en FR et DE qui empÃªchait d'acceder Ã  certains
+	sorts, comme le gardien de l'ombre en FR ou la malÃ©diction d'ombre en DE.
+      Re-correction fr d'un bug qui empÃªchait le timer des dÃ©mons asservis de se dÃ©clencher.
+	Peut-Ãªtre que ce coup-ci ce foutu dÃ©buff va arrÃªter de changer de nom.
 
-      Ajout du Sacrifice démoniaque dans le menu des démons. (Vous le vouliez, vous l'avez.)
-      Ajout d'un raccourçi clavier configurable via le menu ad-hoc pour le gardien de l'ombre.
+      Ajout du Sacrifice dÃ©moniaque dans le menu des dÃ©mons. (Vous le vouliez, vous l'avez.)
+      Ajout d'un raccourÃ§i clavier configurable via le menu ad-hoc pour le gardien de l'ombre.
 
-      Ajout d'un menu de malédiction! Le comportement des boutons de malédictions est le suivant:
-	- Les malédictions amplifiables peuvent l'être en cliquant droit.
-	- Si la cible est allié, un assist est lancé avant de le cast.
-	- S'il n'y a pas de cible, les boutons ne répondent pas.
-	- En cas de clic avec le bouton du milieu, si un pet est présent il attaque en même temps
+      Ajout d'un menu de malÃ©diction! Le comportement des boutons de malÃ©dictions est le suivant:
+	- Les malÃ©dictions amplifiables peuvent l'Ãªtre en cliquant droit.
+	- Si la cible est alliÃ©, un assist est lancÃ© avant de le cast.
+	- S'il n'y a pas de cible, les boutons ne rÃ©pondent pas.
+	- En cas de clic avec le bouton du milieu, si un pet est prÃ©sent il attaque en mÃªme temps
 	  que le cast.
 
-      Désactivation dans la configuration par défaut du tri de fragment d'âme. Certaines personnes
+      DÃ©sactivation dans la configuration par dÃ©faut du tri de fragment d'Ã¢me. Certaines personnes
 	ont eu des soucis lors des changements de version.
 
-      Les sons doivent remarcher correctement depuis la mise à jour 1.11.1. En effet, le bug était
-	du côté de Blizzard.
+      Les sons doivent remarcher correctement depuis la mise Ã  jour 1.11.1. En effet, le bug Ã©tait
+	du cÃ´tÃ© de Blizzard.
 
-1.5.1 Correction fr d'un bug de rangement des fragments avec les sacs à fragments bleus et violets
-      Correction fr d'un bug qui empêchait le timer des démons asservis de se déclencher
+1.5.1 Correction fr d'un bug de rangement des fragments avec les sacs Ã  fragments bleus et violets
+      Correction fr d'un bug qui empÃªchait le timer des dÃ©mons asservis de se dÃ©clencher
       Correction de la skin du bouton de domination corrompue
-      Ajout de la malédiction de fatigue (je l'avais oubliée ! :D)
-      Ajout de la malédiction amplifiée (Oubliée aussi :D)
+      Ajout de la malÃ©diction de fatigue (je l'avais oubliÃ©e ! :D)
+      Ajout de la malÃ©diction amplifiÃ©e (OubliÃ©e aussi :D)
 
-      Correction du bug entre Necrosis et les fragments d'âme corrompus de Felwood.
-      Correction du bug des timers graphiques qui ne respectaient pas l'échelle de l'interface
+      Correction du bug entre Necrosis et les fragments d'Ã¢me corrompus de Felwood.
+      Correction du bug des timers graphiques qui ne respectaient pas l'Ã©chelle de l'interface
 
-      Changement interne dans la base de données
-      Correction fr de la tooltip d'Asservir Démon
+      Changement interne dans la base de donnÃ©es
+      Correction fr de la tooltip d'Asservir DÃ©mon
       Correction d'orthographe dans le speech.lua (fr)
       Changement du format du fichier speech.lua
           - Les phrases d'invocations sont maintenant toutes multilignes
-          - "Hasard amélioré" : Il n'est plus possible d'avoir deux fois à suivre la même phrase
+          - "Hasard amÃ©liorÃ©" : Il n'est plus possible d'avoir deux fois Ã  suivre la mÃªme phrase
           d'invocation ou de pierre de rez :)
-          - Ajout de tags simples à comprendre pour créer ses propres messages : Le nom du joueur
-          est remplacé par <player>, du pet invoqué par <pet> et de la cible du sort par <target>
+          - Ajout de tags simples Ã  comprendre pour crÃ©er ses propres messages : Le nom du joueur
+          est remplacÃ© par <player>, du pet invoquÃ© par <pet> et de la cible du sort par <target>
 
-      Ajout de connexion dans les sorts utilisés : Etant le sort le plus employé par les démos
-          qui se respectent, c'est un clic gauche sur la sphere qui le déclenche !
+      Ajout de connexion dans les sorts utilisÃ©s : Etant le sort le plus employÃ© par les dÃ©mos
+          qui se respectent, c'est un clic gauche sur la sphere qui le dÃ©clenche !
       Ajout du sort de protection contre les ombres
 
-      Case à cocher des messages d'invocation des démons réparée
+      Case Ã  cocher des messages d'invocation des dÃ©mons rÃ©parÃ©e
       Le bouton Banish est maintenant en fin de ligne pour l'utiliser plus rapidement, et on peut
-          modifier sa taille du simple au double pour plus de visibilité
+          modifier sa taille du simple au double pour plus de visibilitÃ©
 
-      ENFIN (logiquement) j'ai réparé la détection des sorts de création de pierre et de détection
-          de l'invisibilité
+      ENFIN (logiquement) j'ai rÃ©parÃ© la dÃ©tection des sorts de crÃ©ation de pierre et de dÃ©tection
+          de l'invisibilitÃ©
 
 1.5 : Retravail total des timers pour moins de lag
-      Changements internes dans la manière de gérer les données
-      Amélioration des localisations anglaises et allemandes
+      Changements internes dans la maniÃ¨re de gÃ©rer les donnÃ©es
+      AmÃ©lioration des localisations anglaises et allemandes
 
-      L'activation des messages d'invocation vous fait parler aussi pour l'invocation des démons
-      Ajout de la commande /sm pour avoir des message de pierre d'âme et de tp non envahissants
-      Un clic droit sur un démon lance la domination corrompue si disponible
-      Un clic du milieu sur le menu des sorts ou celui des démons lance le dernier sort/démon castés
-      Ajout de la commande /necro cast coa qui permet de caster une malé d'agonie dans une macro avec un timer
-      Ajout d'une fonction de script permettant la création de timers personnalisés
-            /script NecrosisTimer("Nom donné au timer", durée); permet d'associer un timer à la cible en court
-            Si il n'y a pas de cible, le timer est un timer général
-            Hors Combat, quand on donne un timer à une cible, le nom de la cible du timer ne disparait pas :
+      L'activation des messages d'invocation vous fait parler aussi pour l'invocation des dÃ©mons
+      Ajout de la commande /sm pour avoir des message de pierre d'Ã¢me et de tp non envahissants
+      Un clic droit sur un dÃ©mon lance la domination corrompue si disponible
+      Un clic du milieu sur le menu des sorts ou celui des dÃ©mons lance le dernier sort/dÃ©mon castÃ©s
+      Ajout de la commande /necro cast coa qui permet de caster une malÃ© d'agonie dans une macro avec un timer
+      Ajout d'une fonction de script permettant la crÃ©ation de timers personnalisÃ©s
+            /script NecrosisTimer("Nom donnÃ© au timer", durÃ©e); permet d'associer un timer Ã  la cible en court
+            Si il n'y a pas de cible, le timer est un timer gÃ©nÃ©ral
+            Hors Combat, quand on donne un timer Ã  une cible, le nom de la cible du timer ne disparait pas :
             Il disparaitra au prochain combat :)
       
 1.4.2 Correction d'un bug envahissant sur les timers
 
-1.4.1 Compatibilité 1.10
+1.4.1 CompatibilitÃ© 1.10
 
-1.4 : Correction du lag à l'ouverture des menus
-      Timers représentés sous forme graphique
-      Les banissements sont maintenant bien timés
-      Ajout du radar à démons dans le menu
+1.4 : Correction du lag Ã  l'ouverture des menus
+      Timers reprÃ©sentÃ©s sous forme graphique
+      Les banissements sont maintenant bien timÃ©s
+      Ajout du radar Ã  dÃ©mons dans le menu
 
-1.3.2 Correction du timer de banissement -- Pas encore de gestion des libération de ban
-      Correction du comptage incorrect des pierres infernales et démoniaques
+1.3.2 Correction du timer de banissement -- Pas encore de gestion des libÃ©ration de ban
+      Correction du comptage incorrect des pierres infernales et dÃ©moniaques
 
 1.3.1 Correction de bugs divers (timers fonctionnent meme si on ne pose pas de soulstone...)
       Nouveau menu de configuration
@@ -116,18 +116,18 @@ Changelog :
 
 1.3 : Gestion des buffs
       Gestion des invocations, des asservissements et des banissements
-      Gestion de la mana (icones grisées / inactives en cas d'impossibilité)
-      Modification du système de timers : Les timers sont maintenant classés par
+      Gestion de la mana (icones grisÃ©es / inactives en cas d'impossibilitÃ©)
+      Modification du systÃ¨me de timers : Les timers sont maintenant classÃ©s par
           mobs !
       Correction des bugs de touches de raccourci
       Correction des bugs de passage des textes en VO
       Correction de bugs mineurs
 
-1.2 : Réglage possible de la taille des boutons de necrosis
+1.2 : RÃ©glage possible de la taille des boutons de necrosis
       Changement possible de skin pour Necrosis
-      Possibilité de cacher le nombre de fragment dans la sphère
-      Timing de tous les cooldown de sorts démonistes
+      PossibilitÃ© de cacher le nombre de fragment dans la sphÃ¨re
+      Timing de tous les cooldown de sorts dÃ©monistes
       Timing de sorts instants
 
-1.1 : Correction d'un bug pour l'invocation de l'infernal en Français
-1.0 : Première version stable
+1.1 : Correction d'un bug pour l'invocation de l'infernal en FranÃ§ais
+1.0 : PremiÃ¨re version stable
