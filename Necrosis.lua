@@ -1553,7 +1553,7 @@ function Necrosis_UpdateIcons()
 		end
 		if NECROSIS_SPELL_TABLE[33].ID then
 			if NECROSIS_SPELL_TABLE[33].Mana > mana then
-				NecrosisBuffMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\\UI\\Invisible-03");
+				NecrosisBuffMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Invisible-03");
 			else
 				NecrosisBuffMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Invisible-01");
 			end
@@ -1631,14 +1631,14 @@ function Necrosis_UpdateIcons()
 		end
 		if NECROSIS_SPELL_TABLE[25].ID then
 			if NECROSIS_SPELL_TABLE[25].Mana > mana then
-				NecrosisCurseMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\\UI\\Tongues-03");
+				NecrosisCurseMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Tongues-03");
 			else
 				NecrosisCurseMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Tongues-01");
 			end
 		end
 		if NECROSIS_SPELL_TABLE[40].ID then
 			if NECROSIS_SPELL_TABLE[40].Mana > mana then
-				NecrosisCurseMenu6:SetNormalTexture("Interface\\AddOns\\Necrosis\\\UI\\Exhaust-03");
+				NecrosisCurseMenu6:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Exhaust-03");
 			else
 				NecrosisCurseMenu6:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Exhaust-01");
 			end
