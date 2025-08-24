@@ -63,7 +63,7 @@ function Necrosis_Localization_Dialog_Fr()
 		},
 		["Firestone"] = {
 			Label = "|c00FF4444Pierre de feu|r",
-			Text = {"Cr\195\169ation","En inventaire","Tenue en main"}
+			Text = {"Cr\195\169ation","Utilisation"}
 		},
 		["SpellTimer"] = {
 			Label = "|c00FFFFFFDur\195\169e des sorts|r",

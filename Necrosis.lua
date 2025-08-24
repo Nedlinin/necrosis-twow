@@ -1010,14 +1010,12 @@ function Necrosis_BuildTooltip(button, type, anchor)
 		GameTooltip:AddLine(NecrosisTooltipData.Main.DemoniacStone..DemoniacStone);
 		GameTooltip:AddLine(NecrosisTooltipData.Main.Soulstone..NecrosisTooltipData[type].Stone[SoulstoneOnHand]);
 		GameTooltip:AddLine(NecrosisTooltipData.Main.Healthstone..NecrosisTooltipData[type].Stone[HealthstoneOnHand]);
+		GameTooltip:AddLine(NecrosisTooltipData.Main.Firestone..NecrosisTooltipData[type].Stone[FirestoneOnHand]);
 		-- On vérifie si une pierre de sort n'est pas équipée
 		NecrosisTooltip:SetInventoryItem("player", 17);
 		local rightHand = tostring(NecrosisTooltipTextLeft1:GetText());
 		if string.find(rightHand, NECROSIS_ITEM.Spellstone) then SpellstoneOnHand = true; end
 		GameTooltip:AddLine(NecrosisTooltipData.Main.Spellstone..NecrosisTooltipData[type].Stone[SpellstoneOnHand]);
-		-- De même pour la pierre de feu
-		if string.find(rightHand, NECROSIS_ITEM.Firestone) then FirestoneOnHand = true; end
-		GameTooltip:AddLine(NecrosisTooltipData.Main.Firestone..NecrosisTooltipData[type].Stone[FirestoneOnHand]);
 		-- Affichage du nom du démon, ou s'il est asservi, ou "Aucun" si aucun démon n'est présent
 		if (DemonType) then
 			GameTooltip:AddLine(NecrosisTooltipData.Main.CurrentDemon..DemonType);
@@ -1072,10 +1070,11 @@ function Necrosis_BuildTooltip(button, type, anchor)
 			end
 		-- Pierre de feu
 		elseif (type == "Firestone") then
-			-- Idem, mais sans le cooldown
 			if FirestoneMode == 1 then
 				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]].Mana.." Mana");
 			end
+			Necrosis_MoneyToggle();
+			NecrosisTooltip:SetBagItem(FirestoneLocation[1], FirestoneLocation[2]);
 			GameTooltip:AddLine(NecrosisTooltipData[type].Text[FirestoneMode]);
 		end
 	-- ..... pour le bouton des Timers
@@ -1360,13 +1359,9 @@ function Necrosis_UpdateIcons()
 	-- Pierre de feu
 	-----------------------------------------------
 
-	-- Pierre équipée = mode 3
-	if (rightHand == "Interface\\Icons\\INV_Misc_Gem_Bloodstone_02" and not FirestoneOnHand) then
-		FirestoneMode = 3;
-	-- Pierre dans l'inventaire = mode 2
-	elseif (FirestoneOnHand) then
+	-- Mode "j'en ai une" (2) / "j'en ai pas" (1)
+	if (FirestoneOnHand) then
 		FirestoneMode = 2;
-	-- Pierre inexistante = mode 1
 	else
 		FirestoneMode = 1;
 	end
@@ -2289,16 +2284,16 @@ function Necrosis_UseItem(type,button)
 		end
 	-- Meme chose pour la pierre de feu
 	elseif (type == "Firestone") then
-		-- Si la pierre n'existe pas, elle est créée
-		if (FirestoneMode == 1) then
+		-- soit il y en a une dans l'inventaire
+		if FirestoneOnHand then
+			SpellStopCasting();
+			UseContainerItem(FirestoneLocation[1], FirestoneLocation[2]);
+		else
 			if StoneIDInSpellTable[4] ~= 0 then
 				CastSpell(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]].ID, "spell");
 			else
 				Necrosis_Msg(NECROSIS_MESSAGE.Error.NoFireStoneSpell, "USER");
 			end
-		-- Si la pierre existe, un clic droit l'équipe / la déséquiper
-		elseif button ~= "LeftButton" then
-			Necrosis_SwitchOffHand(type);
 		end
 	-- Si on clic sur le bouton de monture
 	elseif (type == "Mount") then
@@ -2335,19 +2330,6 @@ function Necrosis_SwitchOffHand(type)
 				SpellTimer, TimerTable = Necrosis_RetraitTimerParNom(NECROSIS_COOLDOWN.Spellstone, SpellTimer, TimerTable);
 			end
 			SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerStone(type, nil, nil, SpellGroup, SpellTimer, TimerTable);
-			return;
-		end
-	elseif (type == "Firestone") then
-		if FirestoneMode == 3 then
-			if ItemOnHand then
-				PickupInventoryItem(17);
-				PickupContainerItem(ItemswitchLocation[1],ItemswitchLocation[2]);
-				Necrosis_Msg(NECROSIS_MESSAGE.EquipMessage..GetContainerItemLink(ItemswitchLocation[1],ItemswitchLocation[2])..NECROSIS_MESSAGE.SwitchMessage..GetInventoryItemLink("player",17), "USER");
-			end
-			return;
-		else
-			PickupContainerItem(FirestoneLocation[1], FirestoneLocation[2]);
-			PickupInventoryItem(17);
 			return;
 		end
 	end
