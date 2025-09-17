@@ -4,6 +4,10 @@ This is fork of version 1.5.2a of the Necrosis LdC addon for Turtle WoW server.
 
 ## Changes
 
+### Sep 17, 2025
+
+- Fixed the error being displayed every second as soon as the player learn the Demonic Sacrifice.
+
 ### Aug 24, 2025
 
 - Updated the name of the addon in the TOC file to mention it is specific to TurtleWoW.
