@@ -9,7 +9,8 @@ This is fork of version 1.5.2a of the Necrosis LdC addon for Turtle WoW server.
 - Updated the Spellstone button:
 	- When there is a Spellstone in the player's bags, the button will use it.
 	- When there is no Spellstone in the player's bags, the button will create one.
-- Using a Healthstone or a Spellstone will now add a cooldown timer for both Healthstone and Spellstone since they share their cooldown since 
+- Using a Healthstone or a Spellstone will now add a cooldown timer for both Healthstone and Spellstone since they share their cooldown since Turtle WoW 1.18.
+- Changed the Healthstone and Spellstone timer duration to 2 minutes (down from 3 minutes).
 
 ### Sep 17, 2025
 
