@@ -59,7 +59,7 @@ function Necrosis_Localization_Dialog_En()
 		},
 		["Spellstone"] = {
 			Label = "|c0099CCFFSpellstone|r",
-			Text = {"Create","In Inventory","Held in hand"}
+			Text = {"Create","Use"}
 		},
 		["Firestone"] = {
 			Label = "|c00FF4444Firestone|r",
@@ -200,7 +200,8 @@ function Necrosis_Localization_Dialog_En()
 			["BagAlreadySelect"] = "Error : This bag is already selected.",
 			["WrongBag"] = "Error : The number must be between 0 and 4.",
 			["BagIsNumber"] = "Error : Please type a number.",
-			["NoHearthStone"] = "Error : You do not have a Hearthstone in your inventory"
+			["NoHearthStone"] = "Error : You do not have a Hearthstone in your inventory",
+			["SpellStoneIsOnCooldown"] = "Error : Your Spellstone is on cooldown"
 		},
 		["Bag"] = {
 			["FullPrefix"] = "Your ",

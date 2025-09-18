@@ -59,7 +59,7 @@ function Necrosis_Localization_Dialog_De()
 		},
 		["Spellstone"] = {
 			Label = "|c0099CCFFZauberstein|r",
-			Text = {"Erstelle","Im Inventar","In der Hand gehalten"}
+			Text = {"Erstelle","Verwende"}
 		},
 		["Firestone"] = {
 			Label = "|c00FF4444Feuerstein|r",
@@ -200,7 +200,8 @@ function Necrosis_Localization_Dialog_De()
 			["BagAlreadySelect"] = "Fehler : Diese Tasche ist bereits ausgew\195\164hlt.",
 			["WrongBag"] = "Fehler : Die Zahl muss zwischen 0 und 4 sein.",
 			["BagIsNumber"] = "Fehler : Bitte gib eine Zahl an.",
-			["NoHearthStone"] = "Fehler : Du hast keinen Ruhestein im Inventar"
+			["NoHearthStone"] = "Fehler : Du hast keinen Ruhestein im Inventar",
+			["SpellStoneIsOnCooldown"] = "Error : Your Spellstone is on cooldown"
 		},
 		["Bag"] = {
 			["FullPrefix"] = "Dein ",

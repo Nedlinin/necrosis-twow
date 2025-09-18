@@ -1011,10 +1011,6 @@ function Necrosis_BuildTooltip(button, type, anchor)
 		GameTooltip:AddLine(NecrosisTooltipData.Main.Soulstone..NecrosisTooltipData[type].Stone[SoulstoneOnHand]);
 		GameTooltip:AddLine(NecrosisTooltipData.Main.Healthstone..NecrosisTooltipData[type].Stone[HealthstoneOnHand]);
 		GameTooltip:AddLine(NecrosisTooltipData.Main.Firestone..NecrosisTooltipData[type].Stone[FirestoneOnHand]);
-		-- On vérifie si une pierre de sort n'est pas équipée
-		NecrosisTooltip:SetInventoryItem("player", 17);
-		local rightHand = tostring(NecrosisTooltipTextLeft1:GetText());
-		if string.find(rightHand, NECROSIS_ITEM.Spellstone) then SpellstoneOnHand = true; end
 		GameTooltip:AddLine(NecrosisTooltipData.Main.Spellstone..NecrosisTooltipData[type].Stone[SpellstoneOnHand]);
 		-- Affichage du nom du démon, ou s'il est asservi, ou "Aucun" si aucun démon n'est présent
 		if (DemonType) then
@@ -1055,17 +1051,15 @@ function Necrosis_BuildTooltip(button, type, anchor)
 			end
 		-- Pierre de sort
 		elseif (type == "Spellstone") then
-			-- Eadem
+			-- Idem
 			if SpellstoneMode == 1 then
 				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]].Mana.." Mana");
 			end
 			Necrosis_MoneyToggle();
-			NecrosisTooltip:SetInventoryItem("player", 17);
-			local itemName = tostring(NecrosisTooltipTextLeft9:GetText());
-			local itemStone = tostring(NecrosisTooltipTextLeft1:GetText());
+			NecrosisTooltip:SetBagItem(SpellstoneLocation[1], SpellstoneLocation[2]);
 			GameTooltip:AddLine(NecrosisTooltipData[type].Text[SpellstoneMode]);
-			if (string.find(itemStone, NECROSIS_ITEM.Spellstone)
-				and string.find(itemName, NECROSIS_TRANSLATION.Cooldown)) then
+			local itemName = tostring(NecrosisTooltipTextLeft7:GetText());
+			if string.find(itemName, NECROSIS_TRANSLATION.Cooldown) then
 			GameTooltip:AddLine(itemName);
 			end
 		-- Pierre de feu
@@ -1339,18 +1333,11 @@ function Necrosis_UpdateIcons()
 	-- Pierre de sort
 	-----------------------------------------------
 
-	-- Si la pierre est équipée, mode 3
-	local rightHand = GetInventoryItemTexture("player", 17);
-	if (rightHand == "Interface\\Icons\\INV_Misc_Gem_Sapphire_01" and not SpellstoneOnHand) then
-		SpellstoneMode = 3;
-	else
-		-- Pierre dans l'inventaire, mode 2
+	-- Mode "j'en ai une" (2) / "j'en ai pas" (1)
 		if (SpellstoneOnHand) then
 			SpellstoneMode = 2;
-		-- Pierre inexistante, mode 1
 		else
 			SpellstoneMode = 1;
-		end
 	end
 
 	-- Affichage de l'icone liée au mode
@@ -2246,12 +2233,23 @@ function Necrosis_UseItem(type,button)
 			else
 				SpellStopCasting();
 				UseContainerItem(HealthstoneLocation[1], HealthstoneLocation[2]);
+
+				-- Inserts a timer for the Healthstone if not already present
 				local HealthstoneInUse = false
 				if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Healthstone, SpellTimer) then
 					HealthstoneInUse = true;
 				end
 				if not HealthstoneInUse then
 					SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerStone(type, nil, nil, SpellGroup, SpellTimer, TimerTable);
+				end
+
+				-- Healthstone shares its cooldown with Spellstone, so we add both timers at the same time, but only if Spellstone is known
+				local SpellstoneInUse = false
+				if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Spellstone, SpellTimer) then
+					SpellstoneInUse = true;
+				end
+				if not SpellstoneInUse and StoneIDInSpellTable[3] ~= 0 then
+					SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerStone("Spellstone", nil, nil, SpellGroup, SpellTimer, TimerTable);
 				end
 			end
 		-- soit il n'y en a pas dans l'inventaire, et la pierre de plus haut rang est créée
@@ -2264,18 +2262,34 @@ function Necrosis_UseItem(type,button)
 		end
 	-- Au tour de la pierre de sort
 	elseif (type == "Spellstone") then
-		-- Si la pierre est équipée ou dans l'inventaire, un clic droit l'équipe / la déséquipe
-		if (SpellstoneMode ~= 1 and button == "RightButton")
-			-- Si la pierre n'est pas équipée, le raccourci clavier équipe la pierre
-			or (SpellstoneMode == 2 and button == "Binding") then
-			Necrosis_SwitchOffHand(type);
-		-- Si la pierre est équipée, un clic gauche utilise la pierre	
-		elseif SpellstoneMode == 3 then
-				local start, duration, enable = GetInventoryItemCooldown("player", 17) ;
-				UseInventoryItem(17);
-				if duration == 0 or start == 0 then Necrosis_SwitchOffHand("Off-hand"); end
-		-- sinon on crée la pierre :)
-		elseif (SpellstoneMode == 1) then
+		-- soit il y en a une dans l'inventaire
+		if SpellstoneOnHand then
+			local start, duration, enabled = GetContainerItemCooldown(SpellstoneLocation[1], SpellstoneLocation[2]);
+			if start > 0 then
+				Necrosis_Msg(NECROSIS_MESSAGE.Error.SpellStoneIsOnCooldown, "USER");
+			else
+				SpellStopCasting();
+				UseContainerItem(SpellstoneLocation[1], SpellstoneLocation[2]);
+			
+				-- Inserts a timer for the Spellstone if not already present
+				local SpellstoneInUse = false
+				if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Spellstone, SpellTimer) then
+					SpellstoneInUse = true;
+				end
+				if not SpellstoneInUse then
+					SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerStone(type, nil, nil, SpellGroup, SpellTimer, TimerTable);
+				end
+
+				-- Spellstone shares its cooldown with Healthstone, so we add both timers at the same time
+				local HealthstoneInUse = false
+				if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Healthstone, SpellTimer) then
+					HealthstoneInUse = true;
+				end
+				if not HealthstoneInUse and StoneIDInSpellTable[2] ~= 0 then
+					SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerStone("Healthstone", nil, nil, SpellGroup, SpellTimer, TimerTable);
+				end
+			end
+		else
 			if StoneIDInSpellTable[3] ~= 0 then
 					CastSpell(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]].ID, "spell");
 			else

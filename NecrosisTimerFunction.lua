@@ -68,8 +68,8 @@ function Necrosis_InsertTimerStone(Stone, start, duration, SpellGroup, SpellTime
 		table.insert(SpellTimer,
 			{
 				Name = NECROSIS_COOLDOWN.Spellstone,
-				Time = 30,
-				TimeMax = floor(GetTime() + 30),
+				Time = 180,
+				TimeMax = floor(GetTime() + 180),
 				Type = 2,
 				Target = "",
 				TargetLevel = "",

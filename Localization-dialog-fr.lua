@@ -59,7 +59,7 @@ function Necrosis_Localization_Dialog_Fr()
 		},
 		["Spellstone"] = {
 			Label = "|c0099CCFFPierre de sort|r",
-			Text = {"Cr\195\169ation","En inventaire","Tenue en main"}
+			Text = {"Cr\195\169ation","Utilisation"}
 		},
 		["Firestone"] = {
 			Label = "|c00FF4444Pierre de feu|r",
@@ -198,7 +198,8 @@ function Necrosis_Localization_Dialog_Fr()
 			["BagAlreadySelect"] = "Erreur : Vous avez d\195\169j\195\160 ce sac selectionn\195\169.",
 			["WrongBag"] = "Erreur : Le No doit \195\170tre compris entre 0 et 4",
 			["BagIsNumber"] = "Erreur : Veuillez taper un chiffre.",
-			["NoHearthStone"] = "Erreur : Vous n'avez pas de pierre de foyer dans votre inventaire"
+			["NoHearthStone"] = "Erreur : Vous n'avez pas de pierre de foyer dans votre inventaire",
+			["SpellStoneIsOnCooldown"] = "Erreur : Votre Pierre de sort est en cours de recharge"
 		},
 		["Bag"] = {
 			["FullPrefix"] = "Votre ",
