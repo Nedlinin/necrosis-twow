@@ -1334,10 +1334,10 @@ function Necrosis_UpdateIcons()
 	-----------------------------------------------
 
 	-- Mode "j'en ai une" (2) / "j'en ai pas" (1)
-		if (SpellstoneOnHand) then
-			SpellstoneMode = 2;
-		else
-			SpellstoneMode = 1;
+	if (SpellstoneOnHand) then
+		SpellstoneMode = 2;
+	else
+		SpellstoneMode = 1;
 	end
 
 	-- Affichage de l'icone liée au mode
