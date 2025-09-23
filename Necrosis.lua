@@ -264,6 +264,8 @@ end
 -- FONCTIONS NECROSIS
 ------------------------------------------------------------------------------------------------------
 
+local textTimersDisplay = "";
+
 -- Fonction lancée à la mise à jour de l'interface (main) -- toutes les 0,1 secondes environ
 function Necrosis_OnUpdate()
 
@@ -289,8 +291,8 @@ function Necrosis_OnUpdate()
 	
 	-- Gestion du menu d'invocation des démons
 	if PetShow then
-		if GetTime() >= AlphaPetVar and AlphaPetMenu > 0 and (not PetVisible) then
-			AlphaPetVar = GetTime() + 0.1;
+		if curTime >= AlphaPetVar and AlphaPetMenu > 0 and (not PetVisible) then
+			AlphaPetVar = curTime + 0.1;
 			NecrosisPetMenu1:SetAlpha(AlphaPetMenu);
 			NecrosisPetMenu2:SetAlpha(AlphaPetMenu);
 			NecrosisPetMenu3:SetAlpha(AlphaPetMenu);
@@ -309,8 +311,8 @@ function Necrosis_OnUpdate()
 
 	-- Gestion du menu des Buffs
 	if BuffShow then
-		if GetTime() >= AlphaBuffVar and AlphaBuffMenu > 0 and (not BuffVisible) then
-			AlphaBuffVar = GetTime() + 0.1;
+		if curTime >= AlphaBuffVar and AlphaBuffMenu > 0 and (not BuffVisible) then
+			AlphaBuffVar = curTime + 0.1;
 			NecrosisBuffMenu1:SetAlpha(AlphaBuffMenu);
 			NecrosisBuffMenu2:SetAlpha(AlphaBuffMenu);
 			NecrosisBuffMenu3:SetAlpha(AlphaBuffMenu);
@@ -329,8 +331,8 @@ function Necrosis_OnUpdate()
 
 	-- Gestion du menu des Curses
 	if CurseShow then
-		if GetTime() >= AlphaCurseVar and AlphaCurseMenu > 0 and (not CurseVisible) then
-			AlphaCurseVar = GetTime() + 0.1;
+		if curTime >= AlphaCurseVar and AlphaCurseMenu > 0 and (not CurseVisible) then
+			AlphaCurseVar = curTime + 0.1;
 			NecrosisCurseMenu1:SetAlpha(AlphaCurseMenu);
 			NecrosisCurseMenu2:SetAlpha(AlphaCurseMenu);
 			NecrosisCurseMenu3:SetAlpha(AlphaCurseMenu);
@@ -421,17 +423,17 @@ function Necrosis_OnUpdate()
 				NecrosisAntiFearButton:SetNormalTexture("Interface\\Addons\\Necrosis\\UI\\AntiFear"..AFImageType[Actif].."-02");
 				if NecrosisConfig.Sound then PlaySoundFile(NECROSIS_SOUND.Fear); end
 				ShowUIPanel(NecrosisAntiFearButton);
-				AFBlink1 = GetTime() + 0.6;
+				AFBlink1 = curTime + 0.6;
 				AFBlink2 = 2;
 			
 			-- Timer to make the button blink
-			elseif GetTime() >= AFBlink1 then
+			elseif curTime >= AFBlink1 then
 				if AFBlink2 == 1 then
 					AFBlink2 = 2;
 				else
 					AFBlink2 = 1;
 				end
-				AFBlink1 = GetTime() + 0.4;
+				AFBlink1 = curTime + 0.4;
 				NecrosisAntiFearButton:SetNormalTexture("Interface\\Addons\\Necrosis\\UI\\AntiFear"..AFImageType[Actif].."-0"..AFBlink2);
 			end
 			
@@ -445,7 +447,6 @@ function Necrosis_OnUpdate()
 	if (not NecrosisSpellTimerButton:IsVisible()) then
 		ShowUIPanel(NecrosisSpellTimerButton);
 	end
-	local display = "";
 	
 	if NecrosisConfig.CountType == 3 then
 		NecrosisShardCount:SetText("");
@@ -470,54 +471,56 @@ function Necrosis_OnUpdate()
 	end
 	
 	-- Parcours du tableau des Timers
-	local GraphicalTimer = {texte = {}, TimeMax = {}, Time = {}, titre = {}, temps = {}, Gtimer = {}};
 	if SpellTimer then
-		for index = 1, table.getn(SpellTimer), 1 do
-			if SpellTimer[index] then
-				if (GetTime() <= SpellTimer[index].TimeMax) then
-					-- Création de l'affichage des timers
-					display, SpellGroup, GraphicalTimer, TimerTable = Necrosis_DisplayTimer(display, index, SpellGroup, SpellTimer, GraphicalTimer, TimerTable);
-				end
-				-- Action toutes les secondes
-				if (update) then
-					-- On enlève les timers terminés
-					local TimeLocal = GetTime();
-					if TimeLocal >= (SpellTimer[index].TimeMax - 0.5) and SpellTimer[index].TimeMax ~= -1 then
-						-- Si le timer était celui de la Pierre d'âme, on prévient le Démoniste
-						if SpellTimer[index].Name == NECROSIS_SPELL_TABLE[11].Name then
-							Necrosis_Msg(NECROSIS_MESSAGE.Information.SoulstoneEnd, "USER");
-							SpellTimer[index].Target = "";
-							SpellTimer[index].TimeMax = -1;
-							if NecrosisConfig.Sound then PlaySoundFile(NECROSIS_SOUND.SoulstoneEnd); end
-							Necrosis_RemoveFrame(SpellTimer[index].Gtimer, TimerTable);
-								-- On met à jour l'apparence du bouton de la pierre d'âme
-							Necrosis_UpdateIcons();
-						-- Sinon on enlève le timer silencieusement (mais pas en cas d'enslave)
-						elseif SpellTimer[index].Name ~= NECROSIS_SPELL_TABLE[10].Name then
-							SpellTimer, TimerTable = Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable);
-							index = 0;
-							break;
-						end
+		if (NecrosisConfig.ShowSpellTimers or NecrosisConfig.Graphical) and update then
+			textTimersDisplay = "";
+			local GraphicalTimer = {texte = {}, TimeMax = {}, Time = {}, titre = {}, temps = {}, Gtimer = {}};
+			for index = 1, table.getn(SpellTimer), 1 do
+				if SpellTimer[index] then
+					if (GetTime() <= SpellTimer[index].TimeMax) then
+						-- Création de l'affichage des timers
+						textTimersDisplay, SpellGroup, GraphicalTimer, TimerTable = Necrosis_DisplayTimer(textTimersDisplay, index, SpellGroup, SpellTimer, GraphicalTimer, TimerTable);
 					end
-					-- Si le Démoniste n'est plus sous l'emprise du Sacrifice
-					if SpellTimer and SpellTimer[index].Name == NECROSIS_SPELL_TABLE[17].Name then -- Sacrifice
-						if not Necrosis_UnitHasEffect("player", SpellTimer[index].Name) and SpellTimer[index].TimeMax ~= nil then
-							SpellTimer, TimerTable = Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable);
-							index = 0;
-							break;
-						end
-					end
-					-- Si la cible visée n'est plus atteinte par un sort lancé [résists]
-					if SpellTimer and (SpellTimer[index].Type == 4 or SpellTimer[index].Type == 5)
-						and SpellTimer[index].Target == UnitName("target")
-						then
-						-- On triche pour laisser le temps au mob de bien sentir qu'il est débuffé ^^
-						if TimeLocal >= ((SpellTimer[index].TimeMax - SpellTimer[index].Time) + 1.5)
-							and SpellTimer[index] ~= 6 then
-							if not Necrosis_UnitHasEffect("target", SpellTimer[index].Name) then
+					-- Action toutes les secondes
+					if (update) then
+						-- On enlève les timers terminés
+						if curTime >= (SpellTimer[index].TimeMax - 0.5) and SpellTimer[index].TimeMax ~= -1 then
+							-- Si le timer était celui de la Pierre d'âme, on prévient le Démoniste
+							if SpellTimer[index].Name == NECROSIS_SPELL_TABLE[11].Name then
+								Necrosis_Msg(NECROSIS_MESSAGE.Information.SoulstoneEnd, "USER");
+								SpellTimer[index].Target = "";
+								SpellTimer[index].TimeMax = -1;
+								if NecrosisConfig.Sound then PlaySoundFile(NECROSIS_SOUND.SoulstoneEnd); end
+								Necrosis_RemoveFrame(SpellTimer[index].Gtimer, TimerTable);
+									-- On met à jour l'apparence du bouton de la pierre d'âme
+								Necrosis_UpdateIcons();
+							-- Sinon on enlève le timer silencieusement (mais pas en cas d'enslave)
+							elseif SpellTimer[index].Name ~= NECROSIS_SPELL_TABLE[10].Name then
 								SpellTimer, TimerTable = Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable);
 								index = 0;
 								break;
+							end
+						end
+						-- Si le Démoniste n'est plus sous l'emprise du Sacrifice
+						if SpellTimer and SpellTimer[index].Name == NECROSIS_SPELL_TABLE[17].Name then -- Sacrifice
+							if not Necrosis_UnitHasEffect("player", SpellTimer[index].Name) and SpellTimer[index].TimeMax ~= nil then
+								SpellTimer, TimerTable = Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable);
+								index = 0;
+								break;
+							end
+						end
+						-- Si la cible visée n'est plus atteinte par un sort lancé [résists]
+						if SpellTimer and (SpellTimer[index].Type == 4 or SpellTimer[index].Type == 5)
+							and SpellTimer[index].Target == UnitName("target")
+							then
+							-- On triche pour laisser le temps au mob de bien sentir qu'il est débuffé ^^
+							if curTime >= ((SpellTimer[index].TimeMax - SpellTimer[index].Time) + 1.5)
+								and SpellTimer[index] ~= 6 then
+								if not Necrosis_UnitHasEffect("target", SpellTimer[index].Name) then
+									SpellTimer, TimerTable = Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable);
+									index = 0;
+									break;
+								end
 							end
 						end
 					end
@@ -538,9 +541,9 @@ function Necrosis_OnUpdate()
 		-- Si affichage de timer texte
 		if not NecrosisConfig.Graphical then
 			-- Coloration de l'affichage des timers
-			display = Necrosis_MsgAddColor(display);
+			textTimersDisplay = Necrosis_MsgAddColor(textTimersDisplay);
 			-- Affichage des timers
-			NecrosisListSpells:SetText(display);
+			NecrosisListSpells:SetText(textTimersDisplay);
 		else
 			NecrosisListSpells:SetText("");			
 		end
@@ -1060,7 +1063,7 @@ function Necrosis_BuildTooltip(button, type, anchor)
 			GameTooltip:AddLine(NecrosisTooltipData[type].Text[SpellstoneMode]);
 			local itemName = tostring(NecrosisTooltipTextLeft7:GetText());
 			if string.find(itemName, NECROSIS_TRANSLATION.Cooldown) then
-			GameTooltip:AddLine(itemName);
+				GameTooltip:AddLine(itemName);
 			end
 		-- Pierre de feu
 		elseif (type == "Firestone") then
@@ -2291,7 +2294,7 @@ function Necrosis_UseItem(type,button)
 			end
 		else
 			if StoneIDInSpellTable[3] ~= 0 then
-					CastSpell(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]].ID, "spell");
+				CastSpell(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]].ID, "spell");
 			else
 				Necrosis_Msg(NECROSIS_MESSAGE.Error.NoSpellStoneSpell, "USER");
 			end

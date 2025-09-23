@@ -4,6 +4,10 @@ This is fork of version 1.5.2a of the Necrosis LdC addon for Turtle WoW server.
 
 ## Changes
 
+### Sep 23, 2025
+
+- Drastically reduced memory allocation in the Necrosis_OnUpdate function.
+
 ### Sep 18, 2025
 
 - Updated the Spellstone button:
