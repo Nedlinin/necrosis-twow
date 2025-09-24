@@ -472,7 +472,7 @@ function Necrosis_OnUpdate()
 	
 	-- Parcours du tableau des Timers
 	if SpellTimer then
-		if (NecrosisConfig.ShowSpellTimers or NecrosisConfig.Graphical) and update then
+		if update then
 			textTimersDisplay = "";
 			local GraphicalTimer = {texte = {}, TimeMax = {}, Time = {}, titre = {}, temps = {}, Gtimer = {}};
 			for index = 1, table.getn(SpellTimer), 1 do
