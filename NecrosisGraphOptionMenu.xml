@@ -11,7 +11,7 @@
 			<AbsInset left="0" right="35" top="0" bottom="75"/>
 		</HitRectInsets>
 		<Layers>
-			<Layer level="ARTWORK">	
+			<Layer level="ARTWORK">
 				<FontString name="NecrosisShowTrance_Option" inherits="GameFontNormalSmall">
 					<Color r="1.0" g="1.0" b="1.0" a="1"/>
 					<Anchors>
@@ -47,7 +47,7 @@
 					<Anchors>
 						<Anchor point="TOPLEFT" relativeTo="NecrosisGraphOptionMenu" relativeFrom="TOPLEFT">
 							<Offset>
-								<AbsDimension x="60" y="-140"/>
+								<AbsDimension x="60" y="-130"/>
 							</Offset>
 						</Anchor>
 					</Anchors>
@@ -57,7 +57,7 @@
 					<Anchors>
 						<Anchor point="TOPLEFT" relativeTo="NecrosisGraphOptionMenu" relativeFrom="TOPLEFT">
 							<Offset>
-								<AbsDimension x="60" y="-160"/>
+								<AbsDimension x="60" y="-150"/>
 							</Offset>
 						</Anchor>
 					</Anchors>
@@ -67,7 +67,17 @@
 					<Anchors>
 						<Anchor point="TOPLEFT" relativeTo="NecrosisGraphOptionMenu" relativeFrom="TOPLEFT">
 							<Offset>
-								<AbsDimension x="60" y="-180"/>
+								<AbsDimension x="60" y="-170"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="NecrosisStoneMenu_Option" inherits="GameFontNormalSmall">
+					<Color r="1.0" g="1.0" b="1.0" a="1"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="NecrosisGraphOptionMenu" relativeFrom="TOPLEFT">
+							<Offset>
+								<AbsDimension x="60" y="-190"/>
 							</Offset>
 						</Anchor>
 					</Anchors>
@@ -113,7 +123,7 @@
 						</Offset>
 					</Anchor>
 				</Anchors>
-				<Scripts>	
+				<Scripts>
 					<OnEnter>
 						NBx, NBy = NecrosisButton:GetCenter();
 						NBx = NBx * (NecrosisConfig.NecrosisButtonScale / 100);
@@ -233,14 +243,13 @@
 						else
 							NecrosisConfig.NecrosisLockServ = false;
 							Necrosis_ClearAllPoints();
-							NecrosisFirestoneButton:SetPoint("CENTER", "UIParent", "CENTER", -121,-100);
-							NecrosisSpellstoneButton:SetPoint("CENTER", "UIParent", "CENTER", -87,-100);
 							NecrosisHealthstoneButton:SetPoint("CENTER", "UIParent", "CENTER", -53,-100);
 							NecrosisSoulstoneButton:SetPoint("CENTER", "UIParent", "CENTER", -17,-100);
 							NecrosisBuffMenuButton:SetPoint("CENTER", "UIParent", "CENTER", 17,-100);
 							NecrosisMountButton:SetPoint("CENTER", "UIParent", "CENTER", 53,-100);
 							NecrosisPetMenuButton:SetPoint("CENTER", "UIParent", "CENTER", 87,-100);
 							NecrosisCurseMenuButton:SetPoint("CENTER", "UIParent", "CENTER", 121,-100);
+							NecrosisStoneMenuButton:SetPoint("CENTER", "UIParent", "CENTER", 155,-100);
 							Necrosis_Drag();
 							NecrosisConfig.NoDragAll = false;
 							NecrosisLock_Button:SetChecked(false);
@@ -286,7 +295,7 @@
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="NecrosisGraphOptionMenu" relativeFrom="TOPLEFT">
 						<Offset>
-							<AbsDimension x="30" y="-135"/>
+							<AbsDimension x="30" y="-125"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
@@ -297,7 +306,7 @@
 						else
 							NecrosisConfig.BuffMenuPos = 34;
 						end
-						Necrosis_CreateMenu();							
+						Necrosis_CreateMenu();
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -308,7 +317,7 @@
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="NecrosisGraphOptionMenu" relativeFrom="TOPLEFT">
 						<Offset>
-							<AbsDimension x="30" y="-155"/>
+							<AbsDimension x="30" y="-145"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
@@ -319,18 +328,18 @@
 						else
 							NecrosisConfig.PetMenuPos = 34;
 						end
-						Necrosis_CreateMenu();						
+						Necrosis_CreateMenu();
 					</OnClick>
 				</Scripts>
 			</CheckButton>
-						<CheckButton name="NecrosisCurseMenu_Button" enableMouse="true" inherits="UICheckButtonTemplate" checked="false">
+			<CheckButton name="NecrosisCurseMenu_Button" enableMouse="true" inherits="UICheckButtonTemplate" checked="false">
 				<Size>
 					<AbsDimension x="24" y="24"/>
 				</Size>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="NecrosisGraphOptionMenu" relativeFrom="TOPLEFT">
 						<Offset>
-							<AbsDimension x="30" y="-175"/>
+							<AbsDimension x="30" y="-165"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
@@ -341,13 +350,35 @@
 						else
 							NecrosisConfig.CurseMenuPos = 34;
 						end
-						Necrosis_CreateMenu();						
+						Necrosis_CreateMenu();
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+			<CheckButton name="NecrosisStoneMenu_Button" enableMouse="true" inherits="UICheckButtonTemplate" checked="false">
+				<Size>
+					<AbsDimension x="24" y="24"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="NecrosisGraphOptionMenu" relativeFrom="TOPLEFT">
+						<Offset>
+							<AbsDimension x="30" y="-185"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						if (this:GetChecked()) then
+							NecrosisConfig.StoneMenuPos = -34;
+						else
+							NecrosisConfig.StoneMenuPos = 34;
+						end
+						Necrosis_CreateMenu();
 					</OnClick>
 				</Scripts>
 			</CheckButton>
 		</Frames>
-     		<Scripts>
-        		<OnLoad>
+		<Scripts>
+			<OnLoad>
 				HideUIPanel(NecrosisGraphOptionMenu);
 			</OnLoad>
 		</Scripts>

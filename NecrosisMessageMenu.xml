@@ -112,6 +112,16 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
+				<FontString name="NecrosisShowRitualSummon_Option" inherits="GameFontNormalSmall">
+					<Color r="1.0" g="1.0" b="1.0" a="1"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="NecrosisMessageMenu" relativeFrom="TOPLEFT">
+							<Offset>
+								<AbsDimension x="100" y="-320"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
 			</Layer>
 		</Layers>
 		<Frames>
@@ -329,6 +339,27 @@
 							NecrosisConfig.SteedSummon = true;
 						else
 							NecrosisConfig.SteedSummon = false;
+						end
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+			<CheckButton name="NecrosisShowRitualSummon_Button" enableMouse="true" inherits="UICheckButtonTemplate" checked="false">
+				<Size>
+					<AbsDimension x="24" y="24"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="NecrosisMessageMenu" relativeFrom="TOPLEFT">
+						<Offset>
+							<AbsDimension x="70" y="-315"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						if (this:GetChecked()) then
+							NecrosisConfig.RitualMessage = true;
+						else
+							NecrosisConfig.RitualMessage = false;
 						end
 					</OnClick>
 				</Scripts>

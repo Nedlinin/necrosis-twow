@@ -277,6 +277,7 @@ function Necrosis_Localization_Dialog_Fr()
 		["ShowMessage"] = "Active les messages al\195\169atoires d'invocation",
 		["ShowDemonSummon"] = "Active les messages pour les D\195\169mons",
 		["ShowSteedSummon"] = "Active les messages pour la Monture",
+		["ShowRitualSummon"] = "Active les messages pour le Rituel",
 		["ChatType"] = "Les messages = des messages syst\195\168mes",
 		["Sound"] = "Activer les sons",
 		["NecrosisSize"] = "Taille de la pierre Necrosis",

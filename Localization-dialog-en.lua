@@ -65,6 +65,18 @@ function Necrosis_Localization_Dialog_En()
 			Label = "|c00FF4444Firestone|r",
 			Text = {"Create","Use"}
 		},
+		["Felstone"] = {
+			Label = "|c0044FF44Felstone|r",
+			Text = {"Create","Use"}
+		},
+		["Wrathstone"] = {
+			Label = "|c00FF4444Wrathstone|r",
+			Text = {"Create","Use"}
+		},
+		["Voidstone"] = {
+			Label = "|c00800080Voidstone|r",
+			Text = {"Create","Use"}
+		},
 		["SpellTimer"] = {
 			Label = "|c00FFFFFFSpell Durations|r",
 			Text = "Active Spells on the target",
@@ -162,6 +174,9 @@ function Necrosis_Localization_Dialog_En()
 		},
 		["Curse"] = {
 			Label = "|c00FFFFFFCurse Menu|r\nRight click to keep the menu open"
+		},
+		["Stone"] = {
+			Label = "|c00FFFFFFStone Menu|r\nRight click to keep the menu open"
 		},
 		["Radar"] = {
 			Label = "|c00FFFFFFSense Demons|r"
@@ -272,6 +287,7 @@ function Necrosis_Localization_Dialog_En()
 		["BuffMenu"] = "Put buff menu on the left",
 		["PetMenu"] = "Put pet menu on the left",
 		["CurseMenu"] = "Put curse menu on the left",
+		["StoneMenu"] = "Put stones menu on the left",
 		["STimerLeft"] = "Show timers on the left side of the button",
 		["ShowCount"] = "Show the Shard count in Necrosis",
 		["CountType"] = "Stone type counted",
@@ -280,6 +296,7 @@ function Necrosis_Localization_Dialog_En()
 		["ShowMessage"] = "Activate random speeches",
 		["ShowDemonSummon"] = "Activate random speeches (demon)",
 		["ShowSteedSummon"] = "Activate random speeches (steed)",
+		["ShowRitualSummon"] = "Activate random speeches (ritual)",
 		["ChatType"] = "Declare Necrosis messages as system messages",
 		["NecrosisSize"] = "Size of the Necrosis button",
 		["BanishSize"] = "Size of the Banish button",
@@ -293,6 +310,7 @@ function Necrosis_Localization_Dialog_En()
 			["Steed"] = "Show Steed button",
 			["Buff"] = "Show Spell menu button",
 			["Curse"] = "Show Curse menu button",
+			["Stone"] = "Show Stones menu button",
 			["Demon"] = "Show Demon menu button",
 			["Tooltips"] = "Show tooltips"
 		},

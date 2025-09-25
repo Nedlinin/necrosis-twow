@@ -142,6 +142,12 @@ NECROSIS_SPELL_TABLE = {
 		Name = "Shadow Ward",			Length = 30,	Type = 3},
 	[44] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
 		Name = "Demonic Sacrifice",		Length = 0,	Type = 0},
+	[45] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
+		Name = "Create Felstone",		Length = 0,	Type = 0},
+	[46] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
+		Name = "Create Wrathstone",		Length = 0,	Type = 0},
+	[47] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
+		Name = "Create Voidstone",		Length = 0,	Type = 0},
 
 };
 -- Type 0 = Pas de Timer
@@ -157,6 +163,9 @@ NECROSIS_ITEM = {
 	["Healthstone"] = "Healthstone",
 	["Spellstone"] = "Spellstone",
 	["Firestone"] = "Firestone",
+	["Felstone"] = "Felstone",
+	["Wrathstone"] = "Wrathstone",
+	["Voidstone"] = "Voidstone",
 	["Offhand"] = "Held In Off-hand",
 	["Twohand"] = "Two-Hand",
 	["InfernalStone"] = "Infernal Stone",
@@ -183,7 +192,10 @@ NECROSIS_CREATE = {
 	[1] = "Create Soulstone",
 	[2] = "Create Healthstone",
 	[3] = "Create Spellstone",
-	[4] = "Create Firestone"
+	[4] = "Create Firestone",
+	[5] = "Create Felstone",
+	[6] = "Create Wrathstone",
+	[7] = "Create Voidstone"
 };
 
 NECROSIS_PET_LOCAL_NAME = {

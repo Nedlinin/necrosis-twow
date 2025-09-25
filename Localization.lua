@@ -14,7 +14,7 @@
 
 
 NecrosisData = {};
-NecrosisData.Version = "1.5.2a";
+NecrosisData.Version = "1.6.0";
 NecrosisData.Author = "Lomig & Nyx";
 NecrosisData.AppName = "Necrosis";
 NecrosisData.Label = NecrosisData.AppName.." "..NecrosisData.Version.." by "..NecrosisData.Author;

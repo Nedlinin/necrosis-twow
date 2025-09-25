@@ -280,6 +280,7 @@ function Necrosis_Localization_Dialog_De()
 		["ShowMessage"] = "Zuf\195\164llige Spr\195\188che",
 		["ShowDemonSummon"] = "Zuf\195\164llige Spr\195\188che (D\195\164mon)",
 		["ShowSteedSummon"] = "Zuf\195\164llige Spr\195\188che (Mount)",
+		["ShowRitualSummon"] = "Zuf\195\164llige Spr\195\188che (Ritual)",
 		["ChatType"] = "Necrosis Nachrichten als System-Nachrichten anzeigen",
 		["NecrosisSize"] = "Gr\195\182\195\159e des Necrosis Button",
 		["BanishSize"] = "Gr\195\182\195\159e des Verbannen Button",		
