@@ -33,7 +33,7 @@
 -- Texts for a summoning by a warlock
 --------------------------------------
 -- Here are some summoning speeches for your warlock. You can change them for them to
--- fit your warlock-way-of-thinking a little more !
+-- fit your warlock-way-of-thinking a little more!
 -- Need some help ? :)
 -- Correct syntax is "Blah blah blah" SelectedPlayer "Blah blah blah"
 -- If you want to write "In few seconds 'Player's name' will be able to help us"
@@ -79,17 +79,17 @@ function Necrosis_Localization_Speech_En()
 
 	NECROSIS_INVOCATION_MESSAGES = {
 		[1] = {
-			"Arcanum Taxi Cab ! I am summoning <target>, please click on the portal.",
+			"Arcanum Taxi Cab! I am summoning <target>, please click on the portal.",
 		},
 		[2] = {
 			"Welcome aboard, <target>, you are flying on the ~Succubus Air Lines~ to <player>...",
-			"Air Hostesses and their lashes are at your service during your trip !",
+			"Air Hostesses and their lashes are at your service during your trip!",
 		},
 		[3] = {
-			"If you click on the portal, someone named <target> will appear and do your job for you !",
+			"If you click on the portal, someone named <target> will appear and do your job for you!",
 		},
 		[4] = {
-			"If you do not want a sprawling, phlegm-looking and asthmatic creature to come from this portal, click on it to help <target> find a path in Hell as quick as possible !",
+			"If you do not want a sprawling, phlegm-looking and asthmatic creature to come from this portal, click on it to help <target> find a path in Hell as quick as possible!",
 		},
 	};
 
@@ -107,11 +107,11 @@ function Necrosis_Localization_Speech_En()
 		[1] = {
 			-- Summon speech 1
 			[1] = {
-				"Well, crapy nasty little Imp, now you stop sulking and you come to help ! AND THAT'S AN ORDER !",
+				"Well, crappy nasty little Imp, now you stop sulking and you come to help! AND THAT'S AN ORDER!",
 			},
 			-- Summon speech 2
 			[2] = {
-				"<pet>! HEEL ! NOW !",
+				"<pet>! HEEL! NOW!",
 			},
 		};
 		-- Voidwalker
@@ -121,21 +121,21 @@ function Necrosis_Localization_Speech_En()
 				-- First sentence in the chat window
 				"Oops, I will probably need an idiot to be knocked for me...",
 				-- Second setence in the chat window
-				"<pet>, please help !",
+				"<pet>, please help!",
 			},
 		};
 		-- Succubus
 		[3] = {
 			-- Summon speech 1
 			[1] = {
-				"<pet> baby, please help me sweet heart !",
+				"<pet> baby, please help me sweet heart!",
 			},
 		};
 		-- Felhunter
 		[4] = {
 			-- Summon speech 1			
 			[1] = {
-				"<pet> ! <pet> ! Come on boy, come here ! <pet> !",
+				"<pet>! <pet>! Come on boy, come here! <pet>!",
 			},
 		};
 		-- Sentences for the first summon : When Necrosis do not know the name of your demons yet
@@ -143,16 +143,16 @@ function Necrosis_Localization_Speech_En()
 			-- Summon speech 1
 			[1] = {
 				-- First sentence in the chat window
-				"Fishing ? Yes I love fishing... Look !",
+				"Fishing? Yes I love fishing... Look!",
 				-- Second sentence in the chat window				
-				"I close my eyes, I move my fingers like that... And voila ! Yes, yes, it is a fish, I can swear you !",
+				"I close my eyes, I move my fingers like that... And voila! Yes, yes, it is a fish, I swear!",
 			},
 			-- Summon speech 2			
 			[2] = {
 				-- First sentence in the chat window				
-				"Anyway I hate you all ! I don't need you, I have friends.... Powerful friends !",
+				"Anyway I hate you all! I don't need you, I have friends.... Powerful friends!",
 				-- Second sentence in the chat window				
-				"COME TO ME, CREATURE OF HELL AND NIGHTMARE !",
+				"COME TO ME, CREATURE OF HELL AND NIGHTMARE!",
 			},
 		};
 		-- Sentences for the stead summon
@@ -160,14 +160,14 @@ function Necrosis_Localization_Speech_En()
 			-- Summon speech 1	
 			[1] = {
 				-- First sentence in the chat window
-				"Hey, I'm late ! Let's find a horse that roxes !",
+				"Hey, I'm late! Let's find a horse that roxes!",
 			},
 			-- Summon speech 2	
 			[2] = {
 				-- First sentence in the chat window
-				"I am summoning a stead from nightmare !",
+				"I am summoning a stead from a nightmare!",
 				-- Second sentence in the chat window
-				"AH AHA HA HA AH AH !",
+				"AH AHA HA HA AH AH!",
 			},
 		};
 	};
@@ -372,14 +372,14 @@ function Necrosis_Localization_Speech_De()
 
 	NECROSIS_INVOCATION_MESSAGES = {
 		[1] = {
-			"Arcanum Taxi Cab ! Ich beschw\195\182re <target>, bitte klicke auf das Portal.",
+			"Arcanum Taxi Cab! Ich beschw\195\182re <target>, bitte klicke auf das Portal.",
 		},
 		[2] = {
 			"Willkommen an Bord, <target>, du fliegst mit ~Sukkubus Air Lines~ zu <player>...",
 			"Die Stewardessen und ihre Peitschen werden Dir w\195\164hrend der Reise zur Verf\195\188gung stehen!",
 		},
 		[3] = {
-			"Wenn Du das Portal klicken w\195\188rdest, wird jemand mit dem Namen <target> erscheinen, und Deinen Job f\195\188r Dich tun !",
+			"Wenn Du das Portal klicken w\195\188rdest, wird jemand mit dem Namen <target> erscheinen, und Deinen Job f\195\188r Dich tun!",
 		},
 		[4] = {
 			"Wenn Du nicht m\195\182chtest, dass eine auf dem Boden kriechende, schleimige und einfach gr\195\164ssliche Kreatur aus diesem Portal kommt,",
@@ -389,7 +389,7 @@ function Necrosis_Localization_Speech_De()
 
 	NECROSIS_SOULSTONE_ALERT_MESSAGE = {
 		[1] = {
-			"Solltet Ihr einen Massenselbstmord erw\195\164gen, denkt daran dass <target> sich nun selbst wiederbeleben kann. Alles wird gut werden, auf in den Kampf !",
+			"Solltet Ihr einen Massenselbstmord erw\195\164gen, denkt daran dass <target> sich nun selbst wiederbeleben kann. Alles wird gut werden, auf in den Kampf!",
 		},
 		[2] = {
 			"<target> kann afk gehen um eine Tasse Kaffee oder so zu trinken, denn er wird Dank dieses Seelensteins in der Lage sein, unseren Tod zu \195\188berleben",
@@ -407,11 +407,11 @@ function Necrosis_Localization_Speech_De()
 		[1] = {
 			-- Beschwörungsspruch 1
 			[1] = {
-				"Na mein kleiner, b\195\182ser Wichtel, nun h\195\182r auf rumzuzicken und hilf endlich! UND DAS IST EIN BEFEHL !",
+				"Na mein kleiner, b\195\182ser Wichtel, nun h\195\182r auf rumzuzicken und hilf endlich! UND DAS IST EIN BEFEHL!",
 			},
 			-- Beschwörungsspruch 2
 			[2] = {
-				"<pet> ! SCHWING DIE BEINE ! JETZT SOFORT !",
+				"<pet>! SCHWING DIE BEINE! JETZT SOFORT!",
 			},
 		};
 		-- Leerwandler
@@ -421,7 +421,7 @@ function Necrosis_Localization_Speech_De()
 				-- Erster Satz im Chatfenster
 				"Huuuch, anscheinend brauch ich einen Idioten, der f\195\188r mich die R\195\188be hinh\195\164lt...",
 				-- zweiter Satz im Chatfenster
-				"<pet>, hilf mir !",
+				"<pet>, hilf mir!",
 			},
 		};
 		-- Sukkubus
@@ -435,7 +435,7 @@ function Necrosis_Localization_Speech_De()
 		[4] = {
 			-- Beschwörungsspruch 1			
 			[1] = {
-				"<pet> ! <pet> ! Bei Fu\195\159, mein Guter, bei Fu\195\159 ! <pet> !",
+				"<pet>! <pet>! Bei Fu\195\159, mein Guter, bei Fu\195\159! <pet>!",
 			},
 		};
 		-- Sätze für die erste Beschwörung : Wenn Necrosis den Namen Deines Dämons noch nicht kennt
@@ -443,16 +443,16 @@ function Necrosis_Localization_Speech_De()
 			-- Beschwörungsspruch 1
 			[1] = {
 				-- Erster Satz im Chatfenster
-				"Angeln ? Oh jaaa, ich liebe Angeln, schau !",
+				"Angeln ? Oh jaaa, ich liebe Angeln, schau!",
 				-- Zweiter Satz im Chatfenster
-				"Ich schlie\195\159e meine Augen, dann bewege ich meine Finger in etwa so... Und voila ! Ja, aber sicher, es ist ein Fisch, ich schw\195\182re es Dir !",
+				"Ich schlie\195\159e meine Augen, dann bewege ich meine Finger in etwa so... Und voila! Ja, aber sicher, es ist ein Fisch, ich schw\195\182re es Dir!",
 			},
 			-- Beschwörungsspruch 2			
 			[2] = {
 				-- Erster Satz im Chatfenster				
-				"Nichtsdestotrotz hasse ich Euch alle ! Ich brauche Euch nicht, ich habe Freunde.... M\195\164chtige Freunde !",
+				"Nichtsdestotrotz hasse ich Euch alle! Ich brauche Euch nicht, ich habe Freunde.... M\195\164chtige Freunde!",
 				-- Zweiter Satz im Chatfenster				
-				"KOMM ZU MIR, KREATUR, DIE DU KOMMST AUS DER H\195\150LLE UND ENDLOSEN ALPTR\195\132UMEN !",
+				"KOMM ZU MIR, KREATUR, DIE DU KOMMST AUS DER H\195\150LLE UND ENDLOSEN ALPTR\195\132UMEN!",
 			},
 		};
 		-- Sprüche zur Beschwörung des Mounts
@@ -460,14 +460,14 @@ function Necrosis_Localization_Speech_De()
 			-- Beschwörungsspruch 1	
 			[1] = {
 				-- Erster Satz im Chatfenster
-				"Hey, ich bin sp\195\164t dran ! Ich hoffe ich finde ein Pferd das rennt wie ein ge\195\182lter Blitz !",
+				"Hey, ich bin sp\195\164t dran! Ich hoffe ich finde ein Pferd das rennt wie ein ge\195\182lter Blitz!",
 			},
 			-- Beschwörungsspruch 2	
 			[2] = {
 				-- Erster Satz im Chatfenster
 				"Ich beschw\195\182re ein Reittier, das einem Alptraum entspringt!",
 				-- Zweiter Satz im Chatfenster
-				"AH AHA HA HA AH AH !",
+				"AH AHA HA HA AH AH!",
 			},
 		};
 	};
