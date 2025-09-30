@@ -65,6 +65,18 @@ function Necrosis_Localization_Dialog_De()
 			Label = "|c00FF4444Feuerstein|r",
 			Text = {"Erstelle","Verwende"}
 		},
+		["Felstone"] = {
+			Label = "|c0044FF44Teufelsstein|r",
+			Text = {"Erstelle","Verwende"}
+		},
+		["Wrathstone"] = {
+			Label = "|c00FF4444Zornstein|r",
+			Text = {"Erstelle","Verwende"}
+		},
+		["Voidstone"] = {
+			Label = "|c00800080Leerenstein|r",
+			Text = {"Erstelle","Verwende"}
+		},
 		["SpellTimer"] = {
 			Label = "|c00FFFFFFSpruchdauer|r",
 			Text = "Aktive Spr\195\188che auf dem Ziel\n",
@@ -163,6 +175,9 @@ function Necrosis_Localization_Dialog_De()
 		["Curse"] = {
 			Label = "|c00FFFFFFFluch Men\195\188|r\nRechtsklick um das Men\195\188 zu \195\182ffnen"
 		},
+		["Stone"] = {
+			Label = "|c00FFFFFFSteine Men\195\188|r\nRechtsklick um das Men\195\188 zu \195\182ffnen"
+		},
 		["Radar"] = {
 			Label = "|c00FFFFFFD\195\164monen sp\195\188ren|r"
 		},
@@ -201,7 +216,7 @@ function Necrosis_Localization_Dialog_De()
 			["WrongBag"] = "Fehler : Die Zahl muss zwischen 0 und 4 sein.",
 			["BagIsNumber"] = "Fehler : Bitte gib eine Zahl an.",
 			["NoHearthStone"] = "Fehler : Du hast keinen Ruhestein im Inventar",
-			["SpellStoneIsOnCooldown"] = "Error : Your Spellstone is on cooldown"
+			["SpellStoneIsOnCooldown"] = "Fehler : Dein Zauberstein befindet sich auf Abklingzeit"
 		},
 		["Bag"] = {
 			["FullPrefix"] = "Dein ",
@@ -271,6 +286,7 @@ function Necrosis_Localization_Dialog_De()
 		["BagSelect"] = "W\195\164hle die Seelensplitter-Tasche",
 		["BuffMenu"] = "Setze das Spruch Men\195\188 nach links",
 		["CurseMenu"] = "Setze das Fluch Men\195\188 nach links",
+		["StoneMenu"] = "Setze das Steine Men\195\188 nach links",
 		["PetMenu"] = "Setze das Diener Men\195\188 nach links",
 		["STimerLeft"] = "Zeige die Timer auf der linken Seite des Knopfes",		
 		["ShowCount"] = "Zeige die Anzahl der Seelensplitter in Necrosis",
@@ -289,6 +305,7 @@ function Necrosis_Localization_Dialog_De()
 		["Show"] = {
 			["Firestone"] = "Zeige den Feuerstein Button",
 			["Spellstone"] = "Zeige den Zauberstein Button",
+			["Stone"] = "Zeige den Steine-Menü Button",
 			["Healthstone"] = "Zeige den Gesundheitsstein Button",
 			["Soulstone"] = "Zeige den Seelenstein Button",
 			["Steed"] = "Zeige den Mount Button",

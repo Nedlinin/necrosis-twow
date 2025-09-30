@@ -55,15 +55,27 @@ function Necrosis_Localization_Dialog_Fr()
 		},
 		["Healthstone"] = {
 			Label = "|c0066FF33Pierre de soins|r",
-			Text = {"Cr\195\169ation","Utilisation"}
+			Text = {"Création","Utilisation"}
 		},
 		["Spellstone"] = {
 			Label = "|c0099CCFFPierre de sort|r",
-			Text = {"Cr\195\169ation","Utilisation"}
+			Text = {"Création","Utilisation"}
 		},
 		["Firestone"] = {
 			Label = "|c00FF4444Pierre de feu|r",
-			Text = {"Cr\195\169ation","Utilisation"}
+			Text = {"Création","Utilisation"}
+		},
+		["Felstone"] = {
+			Label = "|c0044FF44Pierre gangrenée|r",
+			Text = {"Création","Utilisation"}
+		},
+		["Wrathstone"] = {
+			Label = "|c00FF4444Pierre de colère|r",
+			Text = {"Création","Utilisation"}
+		},
+		["Voidstone"] = {
+			Label = "|c00800080Pierre du Vide|r",
+			Text = {"Création","Utilisation"}
 		},
 		["SpellTimer"] = {
 			Label = "|c00FFFFFFDur\195\169e des sorts|r",
@@ -162,6 +174,9 @@ function Necrosis_Localization_Dialog_Fr()
 		},
 		["Curse"] = {
 			Label = "|c00FFFFFFMenu des mal\195\169dictions|r\nClic droit pour laisser ouvert"
+		},
+		["Stone"] = {
+			Label = "|c00FFFFFFMenu des pierres|r\nClic droit pour laisser ouvert"
 		},
 		["Radar"] = {
 			Label = "|c00FFFFFFD\195\169tection des d\195\169mons|r"
@@ -270,6 +285,7 @@ function Necrosis_Localization_Dialog_Fr()
 		["BuffMenu"] = "Afficher le menu des buffs vers la gauche",
 		["PetMenu"] = "Afficher le menu des d\195\169mons vers la gauche",
 		["CurseMenu"] = "Afficher le menu des mal\195\169dictions vers la gauche",
+		["StoneMenu"] = "Afficher le menu des pierres vers la gauche",
 		["STimerLeft"] = "Afficher les timers sur la gauche du bouton",
 		["ShowCount"] = "Afficher le compteur de fragments",
 		["CountType"] = "Type de compteur",
@@ -287,6 +303,7 @@ function Necrosis_Localization_Dialog_Fr()
 		["Show"] = {
 			["Firestone"] = "Afficher le bouton des Pierres de feu",
 			["Spellstone"] = "Afficher le bouton des Pierres de sort",
+			["Stone"] = "Afficher le bouton du menu des Pierres",
 			["Healthstone"] = "Afficher le bouton des Pierres de soin",
 			["Soulstone"] = "Afficher le bouton des Pierres d'\195\162me",
 			["Steed"] = "Afficher le bouton de la Monture",

@@ -23,7 +23,7 @@ Default_NecrosisConfig = {
 	AntiFearAlert = true;
 	NecrosisLockServ = true;
 	NecrosisAngle = 180;
-	StonePosition = {true, true, true, true, true, true, true};
+	StonePosition = {true, true, true, true, true, true, true, true};
 	NecrosisToolTip = true;
 	NoDragAll = false;
 	PetMenuPos = 34;
@@ -185,6 +185,15 @@ local DemoniacStone = 0;
 
 -- Variables utilisées pour la gestion des boutons d'invocation et d'utilisation des pierres
 local StoneIDInSpellTable = {0, 0, 0, 0, 0, 0, 0}
+-- Indices used for NecrosisConfig.StonePosition
+StonePosHealthstone = 1;
+StonePosSpellstone = 2;
+StonePosSoulstone = 3;
+StonePosBuffMenu = 4;
+StonePosMount = 5;
+StonePosPetMenu = 6;
+StonePosCurseMenu = 7;
+StonePosStoneMenu = 8;
 local SoulstoneUsedOnTarget = false;
 local SoulstoneOnHand = false;
 local SoulstoneLocation = {nil,nil};
@@ -885,9 +894,6 @@ function Necrosis_SpellManagement()
 		elseif StoneIDInSpellTable[4] ~= 0 and SpellCastName == NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]].Name then -- Create Firestone
 			LastStone = 4
 			LastStoneClick = "LeftButton"
-		elseif StoneIDInSpellTable[3] ~= 0 and SpellCastName == NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]].Name then -- Create Spellstone
-			LastStone = 5
-			LastStoneClick = "LeftButton"
 		-- Pour les autres sorts castés, tentative de timer si valable
 		else
 			for spell=1, table.getn(NECROSIS_SPELL_TABLE), 1 do
@@ -1093,9 +1099,21 @@ function Necrosis_BuildTooltip(button, type, anchor)
 			local itemName = tostring(NecrosisTooltipTextLeft6:GetText());
 			GameTooltip:AddLine(NecrosisTooltipData[type].Text[SoulstoneMode]);
 			if string.find(itemName, NECROSIS_TRANSLATION.Cooldown) then
-			GameTooltip:AddLine(itemName);
+				GameTooltip:AddLine(itemName);
 			end
 		-- Pierre de vie
+		elseif (type == "Spellstone") then
+			-- Idem
+			if SpellstoneMode == 1 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]] then
+				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]].Mana.." Mana");
+			end
+			Necrosis_MoneyToggle();
+			NecrosisTooltip:SetBagItem(SpellstoneLocation[1], SpellstoneLocation[2]);
+			GameTooltip:AddLine(NecrosisTooltipData[type].Text[SpellstoneMode]);
+			local itemName = tostring(NecrosisTooltipTextLeft7:GetText());
+			if string.find(itemName, NECROSIS_TRANSLATION.Cooldown) then
+				GameTooltip:AddLine(itemName);
+			end
 		elseif (type == "Healthstone") then
 			-- Idem
 			if HealthstoneMode == 1 then
@@ -1105,18 +1123,6 @@ function Necrosis_BuildTooltip(button, type, anchor)
 			NecrosisTooltip:SetBagItem(HealthstoneLocation[1], HealthstoneLocation[2]);
 			local itemName = tostring(NecrosisTooltipTextLeft6:GetText());
 			GameTooltip:AddLine(NecrosisTooltipData[type].Text[HealthstoneMode]);
-			if string.find(itemName, NECROSIS_TRANSLATION.Cooldown) then
-				GameTooltip:AddLine(itemName);
-			end
-		-- Pierre de sort
-		elseif (type == "Spellstone") then
-			if SpellstoneMode == 1 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]] then
-				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]].Mana.." Mana");
-			end
-			Necrosis_MoneyToggle();
-			NecrosisTooltip:SetBagItem(SpellstoneLocation[1], SpellstoneLocation[2]);
-			GameTooltip:AddLine(NecrosisTooltipData[type].Text[SpellstoneMode]);
-			local itemName = tostring(NecrosisTooltipTextLeft7:GetText());
 			if string.find(itemName, NECROSIS_TRANSLATION.Cooldown) then
 				GameTooltip:AddLine(itemName);
 			end
@@ -1330,9 +1336,6 @@ function Necrosis_BuildTooltip(button, type, anchor)
 		elseif LastStone == 4 and FirestoneOnHand then
 			stoneName = NECROSIS_ITEM.Firestone;
 			stoneOnHand = true
-		elseif LastStone == 5 and SpellstoneOnHand then
-			stoneName = NECROSIS_ITEM.Spellstone;
-			stoneOnHand = true
 		end
 		if stoneOnHand then
 			GameTooltip:AddLine(NecrosisTooltipData.LastSpell..stoneName);
@@ -1354,8 +1357,6 @@ function Necrosis_UpdateIcons()
 		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Voidstone-02");
 	elseif LastStone == 4 and FirestoneOnHand then
 		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\FirestoneButton-02");
-	elseif LastStone == 5 and SpellstoneOnHand then
-		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\SpellstoneButton-02");
 	else
 		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\StoneMenuButton-01");
 	end
@@ -1433,6 +1434,17 @@ function Necrosis_UpdateIcons()
 
 	-- Affichage de l'icone liée au mode
 	NecrosisSoulstoneButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\SoulstoneButton-0"..SoulstoneMode);
+
+	-- Pierre de sort
+	-----------------------------------------------
+	
+	if (SpellstoneOnHand) then
+		SpellstoneMode = 2;
+	else
+		SpellstoneMode = 1;
+	end
+	
+	NecrosisSpellstoneButton:SetNormalTexture("Interface\AddOns\Necrosis\UI\SpellstoneButton-0"..SpellstoneMode);
 
 	-- Pierre de vie
 	-----------------------------------------------
@@ -1980,27 +1992,31 @@ function Necrosis_ButtonSetup()
 		HideUIPanel(NecrosisCurseMenuButton);
 		HideUIPanel(NecrosisStoneMenuButton);
 		HideUIPanel(NecrosisMountButton);
+		HideUIPanel(NecrosisSpellstoneButton);
 		HideUIPanel(NecrosisHealthstoneButton);
 		HideUIPanel(NecrosisSoulstoneButton);
-		if (NecrosisConfig.StonePosition[1]) and StoneIDInSpellTable[2] ~= 0 then
+		if (NecrosisConfig.StonePosition[StonePosHealthstone]) and StoneIDInSpellTable[2] ~= 0 then
 			ShowUIPanel(NecrosisHealthstoneButton);
 		end
-		if (NecrosisConfig.StonePosition[2]) and StoneIDInSpellTable[1] ~= 0 then
+		if (NecrosisConfig.StonePosition[StonePosSpellstone]) and StoneIDInSpellTable[3] ~= 0 then
+			ShowUIPanel(NecrosisSpellstoneButton);
+		end
+		if (NecrosisConfig.StonePosition[StonePosSoulstone]) and StoneIDInSpellTable[1] ~= 0 then
 			ShowUIPanel(NecrosisSoulstoneButton);
 		end
-		if (NecrosisConfig.StonePosition[3]) and BuffMenuCreate ~= {} then
+		if (NecrosisConfig.StonePosition[StonePosBuffMenu]) and BuffMenuCreate ~= {} then
 			ShowUIPanel(NecrosisBuffMenuButton);
 		end
-		if (NecrosisConfig.StonePosition[4]) and MountAvailable then
+		if (NecrosisConfig.StonePosition[StonePosMount]) and MountAvailable then
 			ShowUIPanel(NecrosisMountButton);
 		end
-		if (NecrosisConfig.StonePosition[5]) and PetMenuCreate ~= {} then
+		if (NecrosisConfig.StonePosition[StonePosPetMenu]) and PetMenuCreate ~= {} then
 			ShowUIPanel(NecrosisPetMenuButton);
 		end
-		if (NecrosisConfig.StonePosition[6]) and CurseMenuCreate ~= {} then
+		if (NecrosisConfig.StonePosition[StonePosCurseMenu]) and CurseMenuCreate ~= {} then
 			ShowUIPanel(NecrosisCurseMenuButton);
 		end
-		if (NecrosisConfig.StonePosition[7]) and StoneMenuCreate ~= {} then
+		if (NecrosisConfig.StonePosition[StonePosStoneMenu]) and StoneMenuCreate ~= {} then
 			ShowUIPanel(NecrosisStoneMenuButton);
 		end
 	end
@@ -2362,6 +2378,40 @@ function Necrosis_UseItem(type,button)
 				Necrosis_Msg(NECROSIS_MESSAGE.Error.NoHealthStoneSpell, "USER");
 			end
 		end
+	-- Si on clique sur le bouton de la pierre de sort
+	elseif (type == "Spellstone") then
+		if SpellstoneOnHand then
+			local start, duration, enabled = GetContainerItemCooldown(SpellstoneLocation[1], SpellstoneLocation[2]);
+			if start > 0 then
+				Necrosis_Msg(NECROSIS_MESSAGE.Error.SpellStoneIsOnCooldown, "USER");
+			else
+				SpellStopCasting();
+				UseContainerItem(SpellstoneLocation[1], SpellstoneLocation[2]);
+
+				local SpellstoneInUse = false;
+				if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Spellstone, SpellTimer) then
+					SpellstoneInUse = true;
+				end
+				if not SpellstoneInUse then
+					SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerStone(type, nil, nil, SpellGroup, SpellTimer, TimerTable);
+				end
+
+				local HealthstoneInUse = false;
+				if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Healthstone, SpellTimer) then
+					HealthstoneInUse = true;
+				end
+				if not HealthstoneInUse and StoneIDInSpellTable[2] ~= 0 then
+					SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerStone("Healthstone", nil, nil, SpellGroup, SpellTimer, TimerTable);
+				end
+			end
+		else
+			if StoneIDInSpellTable[3] ~= 0 then
+				CastSpell(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]].ID, "spell");
+			else
+				Necrosis_Msg(NECROSIS_MESSAGE.Error.NoSpellStoneSpell, "USER");
+			end
+		end
+
 	-- Si on clic sur le bouton de monture
 	elseif (type == "Mount") then
 		-- Soit c'est la monture épique
@@ -2381,6 +2431,24 @@ end
 
 -- Fonction permettant de permutter un objet main-gauche équipé avec un objet main-gauche de l'inventaire
 function Necrosis_SwitchOffHand(type)
+	if (type == "Spellstone") then
+		if SpellstoneMode == 3 then
+			if ItemOnHand then
+				Necrosis_Msg("Equipe "..GetContainerItemLink(ItemswitchLocation[1],ItemswitchLocation[2])..NECROSIS_MESSAGE.SwitchMessage..GetInventoryItemLink("player",17), "USER");
+				PickupInventoryItem(17);
+				PickupContainerItem(ItemswitchLocation[1],ItemswitchLocation[2]);
+			end
+			return;
+		else
+			PickupContainerItem(SpellstoneLocation[1], SpellstoneLocation[2]);
+			PickupInventoryItem(17);
+			if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Spellstone, SpellTimer) then
+				SpellTimer, TimerTable = Necrosis_RetraitTimerParNom(NECROSIS_COOLDOWN.Spellstone, SpellTimer, TimerTable);
+			end
+			SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerStone(type, nil, nil, SpellGroup, SpellTimer, TimerTable);
+			return;
+		end
+	end
 	if (type == "OffHand") and UnitClass("player") == NECROSIS_UNIT_WARLOCK then
 		if ItemswitchLocation[1] ~= nil and ItemswitchLocation[2] ~= nil then
 			PickupContainerItem(ItemswitchLocation[1],ItemswitchLocation[2]);
@@ -2418,42 +2486,48 @@ function Necrosis_UpdateButtonsScale()
 		HideUIPanel(NecrosisCurseMenuButton);
 		HideUIPanel(NecrosisStoneMenuButton);
 		HideUIPanel(NecrosisMountButton);
+		HideUIPanel(NecrosisSpellstoneButton);
 		HideUIPanel(NecrosisHealthstoneButton);
 		HideUIPanel(NecrosisSoulstoneButton);
 		local indexScale = -36;
-		for index=1, 7, 1 do
+		for index=1, 8, 1 do
 			if NecrosisConfig.StonePosition[index] then
-				if index == 1 and StoneIDInSpellTable[2] ~= 0 then
+				if index == StonePosHealthstone and StoneIDInSpellTable[2] ~= 0 then
 					NecrosisHealthstoneButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisHealthstoneButton);
 					indexScale = indexScale + 36;
 				end
-				if index == 2 and StoneIDInSpellTable[1] ~= 0 then
+				if index == StonePosSpellstone and StoneIDInSpellTable[3] ~= 0 then
+					NecrosisSpellstoneButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
+					ShowUIPanel(NecrosisSpellstoneButton);
+					indexScale = indexScale + 36;
+				end
+				if index == StonePosSoulstone and StoneIDInSpellTable[1] ~= 0 then
 					NecrosisSoulstoneButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisSoulstoneButton);
 					indexScale = indexScale + 36;
-				end	
-				if index == 3 and BuffMenuCreate ~= {} then
+				end
+				if index == StonePosBuffMenu and BuffMenuCreate ~= {} then
 					NecrosisBuffMenuButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisBuffMenuButton);
 					indexScale = indexScale + 36;
 				end
-				if index == 4 and MountAvailable then
+				if index == StonePosMount and MountAvailable then
 					NecrosisMountButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisMountButton);
 					indexScale = indexScale + 36;
 				end
-				if index == 5 and PetMenuCreate ~= {} then
+				if index == StonePosPetMenu and PetMenuCreate ~= {} then
 					NecrosisPetMenuButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisPetMenuButton);
 					indexScale = indexScale + 36;
 				end
-				if index == 6 and CurseMenuCreate ~= {} then
+				if index == StonePosCurseMenu and CurseMenuCreate ~= {} then
 					NecrosisCurseMenuButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisCurseMenuButton);
 					indexScale = indexScale + 36;
 				end
-				if index == 7 and StoneMenuCreate ~= {} then
+				if index == StonePosStoneMenu and StoneMenuCreate ~= {} then
 					NecrosisStoneMenuButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisStoneMenuButton);
 					indexScale = indexScale + 36;
@@ -2467,6 +2541,7 @@ end
 
 -- Fonction (XML) pour rétablir les points d'attache par défaut des boutons
 function Necrosis_ClearAllPoints()
+	NecrosisSpellstoneButton:ClearAllPoints();
 	NecrosisHealthstoneButton:ClearAllPoints();
 	NecrosisSoulstoneButton:ClearAllPoints();
 	NecrosisMountButton:ClearAllPoints();
@@ -2478,6 +2553,7 @@ end
 
 -- Fonction (XML) pour étendre la propriété NoDrag() du bouton principal de Necrosis sur tout ses boutons
 function Necrosis_NoDrag()
+	NecrosisSpellstoneButton:RegisterForDrag("");
 	NecrosisHealthstoneButton:RegisterForDrag("");
 	NecrosisSoulstoneButton:RegisterForDrag("");
 	NecrosisMountButton:RegisterForDrag("");
@@ -2489,6 +2565,7 @@ end
 
 -- Fonction (XML) inverse de celle du dessus
 function Necrosis_Drag()
+	NecrosisSpellstoneButton:RegisterForDrag("LeftButton");
 	NecrosisHealthstoneButton:RegisterForDrag("LeftButton");
 	NecrosisSoulstoneButton:RegisterForDrag("LeftButton");
 	NecrosisMountButton:RegisterForDrag("LeftButton");
@@ -3004,18 +3081,6 @@ function Necrosis_CreateMenu()
 		StoneButtonPosition = 4;
 		table.insert(StoneMenuCreate, menuVariable);
 	end
-	-- Si la Spellstone existe, on affiche le bouton dans le menu des stones
-	if StoneIDInSpellTable[3] ~= 0 then
-		menuVariable = getglobal("NecrosisStoneMenu5");
-		menuVariable:ClearAllPoints();
-		if StoneButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", 3000, 3000);
-		else
-			menuVariable:SetPoint("CENTER", "NecrosisStoneMenu"..StoneButtonPosition, "CENTER", ((36 / NecrosisConfig.StoneMenuPos) * 31), 0);
-		end
-		StoneButtonPosition = 5;
-		table.insert(StoneMenuCreate, menuVariable);
-	end
 
 	-- Maintenant que tous les boutons de stone sont placés les uns à côté des autres (hors de l'écran), on affiche les disponibles
 	for i = 1, table.getn(StoneMenuCreate), 1 do
@@ -3124,45 +3189,7 @@ function Necrosis_StoneCast(type, click)
 				Necrosis_Msg(NECROSIS_MESSAGE.Error.NoFireStoneSpell, "USER");
 			end
 		end
-	elseif type == 5 then -- Spellstone
-		if SpellstoneOnHand then
-			local start, duration, enabled = GetContainerItemCooldown(SpellstoneLocation[1], SpellstoneLocation[2]);
-			if start > 0 then
-				Necrosis_Msg(NECROSIS_MESSAGE.Error.SpellStoneIsOnCooldown, "USER");
-				return;
-			else
-				SpellStopCasting();
-				UseContainerItem(SpellstoneLocation[1], SpellstoneLocation[2]);
-
-				-- Inserts a timer for the Spellstone if not already present
-				local SpellstoneInUse = false
-				if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Spellstone, SpellTimer) then
-					SpellstoneInUse = true;
-				end
-				if not SpellstoneInUse then
-					SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerStone("Spellstone", nil, nil, SpellGroup, SpellTimer, TimerTable);
-				end
-
-				-- Spellstone shares its cooldown with Healthstone, so we add both timers at the same time
-				local HealthstoneInUse = false
-				if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Healthstone, SpellTimer) then
-					HealthstoneInUse = true;
-				end
-				if not HealthstoneInUse and StoneIDInSpellTable[2] ~= 0 then
-					SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerStone("Healthstone", nil, nil, SpellGroup, SpellTimer, TimerTable);
-				end
-				return;
-			end
-		else
-			if StoneIDInSpellTable[3] ~= 0 then
-				CastSpell(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]].ID, "spell");
-				LastStone = type; LastStoneClick = click;
-			else
-				Necrosis_Msg(NECROSIS_MESSAGE.Error.NoSpellStoneSpell, "USER");
-			end
-		end
 	end
-
 	AlphaStoneMenu = 1;
 	AlphaStoneVar = GetTime() + 3;
 end
