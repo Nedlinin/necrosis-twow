@@ -113,6 +113,89 @@ for i = 1, 50, 1 do
 	TimerTable[i] = false;
 end
 
+local ICON_BASE_PATH = "Interface\\AddOns\\Necrosis\\UI\\"
+local ACCENT_RING_TEXTURE = ICON_BASE_PATH .. "AccentRing"
+
+local ICON_ACCENT_COLORS = {
+	Agony = {0.4656, 0.4655, 0.4655},
+	Amplify = {0.2623, 0.2623, 0.2623},
+	Aqua = {0.4678, 0.4678, 0.4678},
+	ArmureDemo = {0.2955, 0.2952, 0.2953},
+	Banish = {0.4772, 0.4775, 0.4783},
+	Domination = {0.3429, 0.3429, 0.3429},
+	Doom = {0.2978, 0.2977, 0.2977},
+	Doomguard = {0.3490, 0.3490, 0.3490},
+	Elements = {0.3217, 0.3216, 0.3216},
+	Enslave = {0.3878, 0.3878, 0.3881},
+	Exhaust = {0.3205, 0.3205, 0.3205},
+	Felhunter = {0.2852, 0.2825, 0.2816},
+	Felstone = {0.3590, 0.5627, 0.2030},
+	FirestoneButton = {0.8148, 0.3459, 0.5506},
+	HealthstoneButton = {0.2921, 0.7151, 0.2921},
+	Imp = {0.3634, 0.3649, 0.3521},
+	Infernal = {0.4980, 0.4980, 0.4980},
+	Invisible = {0.5955, 0.5955, 0.5955},
+	Kilrogg = {0.3402, 0.3402, 0.3402},
+	Lien = {0.4047, 0.4047, 0.4047},
+	MountButton = {0.3368, 0.3336, 0.3327},
+	Radar = {0.3104, 0.3104, 0.3104},
+	Reckless = {0.3942, 0.3941, 0.3941},
+	Sacrifice = {0.3967, 0.3967, 0.3967},
+	Shadow = {0.4189, 0.4188, 0.4188},
+	["ShadowTrance-Icon"] = {0.4173, 0.2913, 0.4487},
+	ShadowWard = {0.2620, 0.2620, 0.2620},
+	SoulstoneButton = {0.5463, 0.2720, 0.5324},
+	SpellstoneButton = {0.2844, 0.4891, 0.8284},
+	Succubus = {0.3056, 0.3053, 0.3055},
+	Tongues = {0.3034, 0.3034, 0.3034},
+	Voidstone = {0.2820, 0.1570, 0.5112},
+	Voidwalker = {0.1769, 0.1775, 0.1825},
+	Weakness = {0.3441, 0.3440, 0.3440},
+	Wrathstone = {0.5331, 0.1212, 0.1892},
+}
+
+local HANDLED_ICON_BASES = {}
+for name in pairs(ICON_ACCENT_COLORS) do
+	HANDLED_ICON_BASES[name] = true
+end
+
+local function Necrosis_AttachRing(button)
+	if button.NecrosisAccentRing then
+		return button.NecrosisAccentRing
+	end
+	local ring = button:CreateTexture(nil, "OVERLAY")
+	ring:SetTexture(ACCENT_RING_TEXTURE)
+	ring:SetAllPoints(button)
+	ring:SetVertexColor(0.66, 0.66, 0.66)
+	button.NecrosisAccentRing = ring
+	return ring
+end
+
+local function Necrosis_SetButtonTexture(button, base, variant)
+	if not button or not base then
+		return
+	end
+	local numberVariant = tonumber(variant) or variant or 2
+	if not HANDLED_ICON_BASES[base] then
+		button:SetNormalTexture(ICON_BASE_PATH .. base .. "-0" .. numberVariant)
+		return
+	end
+	local texturePath = ICON_BASE_PATH .. base .. ".tga"
+	button:SetNormalTexture(texturePath)
+	local icon = button:GetNormalTexture()
+	button.NecrosisIconBase = base
+	icon:SetVertexColor(1, 1, 1)
+	local ring = Necrosis_AttachRing(button)
+	if numberVariant == 1 then
+		icon:SetVertexColor(0.35, 0.35, 0.35)
+		ring:SetVertexColor(0.35, 0.35, 0.35)
+	elseif numberVariant == 3 then
+		ring:SetVertexColor(unpack(ICON_ACCENT_COLORS[base] or {0.66, 0.66, 0.66}))
+	else
+		ring:SetVertexColor(0.66, 0.66, 0.66)
+	end
+end
+
 -- Menus : Permet l'affichage des menus de buff et de pet
 local PetShow = false;
 local PetMenuShow = false;
@@ -818,35 +901,35 @@ function Necrosis_SelfEffect(action)
 					end
 					NecrosisTellMounted = false;
 			end
-			NecrosisMountButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\MountButton-02");
+			Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 2);
 			
 		end
 		-- Changement du bouton de la domination corrompue si celle-ci est activée + Timer de cooldown
 		if  string.find(arg1, NECROSIS_SPELL_TABLE[15].Name) and NECROSIS_SPELL_TABLE[15].ID ~= nil then
 			DominationUp = true;
-			NecrosisPetMenu1:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Domination-02");
+			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 2);
 		end
 		-- Changement du bouton de la malédiction amplifiée si celle-ci est activée + Timer de cooldown
 		if  string.find(arg1, NECROSIS_SPELL_TABLE[42].Name) and NECROSIS_SPELL_TABLE[42].ID ~= nil then
 			AmplifyUp = true;
-			NecrosisCurseMenu1:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Amplify-02");
+			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 2);
 		end
 	else
 		-- Changement du bouton de monture quand le Démoniste est démonté
 		if string.find(arg1, NECROSIS_SPELL_TABLE[1].Name) or  string.find(arg1, NECROSIS_SPELL_TABLE[2].Name) then
 			NecrosisMounted = false;
 			NecrosisTellMounted = true;
-			NecrosisMountButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\MountButton-01");
+			Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 1);
 		end
 		-- Changement du bouton de Domination quand le Démoniste n'est plus sous son emprise
 		if  string.find(arg1, NECROSIS_SPELL_TABLE[15].Name) and NECROSIS_SPELL_TABLE[15].ID ~= nil then
 			DominationUp = false;
-			NecrosisPetMenu1:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Domination-01");
+			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 1);
 		end
 		-- Changement du bouton de la malédiction amplifiée quand le Démoniste n'est plus sous son emprise
 		if  string.find(arg1, NECROSIS_SPELL_TABLE[42].Name) and NECROSIS_SPELL_TABLE[42].ID ~= nil then
 			AmplifyUp = false;
-			NecrosisCurseMenu1:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Amplify-01");
+			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 1);
 		end
 	end
 	return;
@@ -1350,13 +1433,13 @@ function Necrosis_UpdateIcons()
 	local mana = UnitMana("player");
 
 	if LastStone == 1 and FelstoneOnHand then
-		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Felstone-02");
+		Necrosis_SetButtonTexture(NecrosisStoneMenuButton, "Felstone", 2);
 	elseif LastStone == 2 and WrathstoneOnHand then
-		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Wrathstone-02");
+		Necrosis_SetButtonTexture(NecrosisStoneMenuButton, "Wrathstone", 2);
 	elseif LastStone == 3 and VoidstoneOnHand then
-		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Voidstone-02");
+		Necrosis_SetButtonTexture(NecrosisStoneMenuButton, "Voidstone", 2);
 	elseif LastStone == 4 and FirestoneOnHand then
-		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\FirestoneButton-02");
+		Necrosis_SetButtonTexture(NecrosisStoneMenuButton, "FirestoneButton", 2);
 	else
 		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\StoneMenuButton-01");
 	end
@@ -1433,7 +1516,7 @@ function Necrosis_UpdateIcons()
 	end
 
 	-- Affichage de l'icone liée au mode
-	NecrosisSoulstoneButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\SoulstoneButton-0"..SoulstoneMode);
+	Necrosis_SetButtonTexture(NecrosisSoulstoneButton, "SoulstoneButton", SoulstoneMode);
 
 	-- Pierre de sort
 	-----------------------------------------------
@@ -1444,7 +1527,7 @@ function Necrosis_UpdateIcons()
 		SpellstoneMode = 1;
 	end
 	
-	NecrosisSpellstoneButton:SetNormalTexture("Interface\AddOns\Necrosis\UI\SpellstoneButton-0"..SpellstoneMode);
+	Necrosis_SetButtonTexture(NecrosisSpellstoneButton, "SpellstoneButton", SpellstoneMode);
 
 	-- Pierre de vie
 	-----------------------------------------------
@@ -1457,7 +1540,7 @@ function Necrosis_UpdateIcons()
 	end
 
 	-- Affichage de l'icone liée au mode
-	NecrosisHealthstoneButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\HealthstoneButton-0"..HealthstoneMode);
+	Necrosis_SetButtonTexture(NecrosisHealthstoneButton, "HealthstoneButton", HealthstoneMode);
 
 	-- Bouton des démons
 	-----------------------------------------------
@@ -1467,9 +1550,9 @@ function Necrosis_UpdateIcons()
 	if NECROSIS_SPELL_TABLE[15].ID and not DominationUp then
 		local start, duration = GetSpellCooldown(NECROSIS_SPELL_TABLE[15].ID, "spell");
 		if start > 0 and duration > 0 then
-			NecrosisPetMenu1:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Domination-03");
+			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 3);
 		else
-			NecrosisPetMenu1:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Domination-01");
+			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 1);
 		end
 	end
 
@@ -1477,9 +1560,9 @@ function Necrosis_UpdateIcons()
 	if NECROSIS_SPELL_TABLE[43].ID then
 		local start2, duration2 = GetSpellCooldown(NECROSIS_SPELL_TABLE[43].ID, "spell");
 		if start2 > 0 and duration2 > 0 then
-			NecrosisBuffMenu8:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\ShadowWard-03");
+			Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 3);
 		else
-			NecrosisBuffMenu8:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\ShadowWard-01");
+			Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 1);
 		end
 	end
 
@@ -1487,9 +1570,9 @@ function Necrosis_UpdateIcons()
 	if NECROSIS_SPELL_TABLE[42].ID and not AmplifyUp then
 		local start3, duration3 = GetSpellCooldown(NECROSIS_SPELL_TABLE[42].ID, "spell");
 		if start3 > 0 and duration3 > 0 then
-			NecrosisCurseMenu1:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Amplify-03");
+			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 3);
 		else
-			NecrosisCurseMenu1:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Amplify-01");
+			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 1);
 		end
 	end
 
@@ -1535,54 +1618,54 @@ function Necrosis_UpdateIcons()
 	
 	-- Texturage des boutons de pet
 	if DemonType == NECROSIS_PET_LOCAL_NAME[1] then
-		NecrosisPetMenu2:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Imp-02");
-		NecrosisPetMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Voidwalker-0"..ManaPet[2]);
-		NecrosisPetMenu4:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Succubus-0"..ManaPet[3]);
-		NecrosisPetMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Felhunter-0"..ManaPet[4]);
-		NecrosisPetMenu6:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Infernal-0"..ManaPet[5]);
-		NecrosisPetMenu7:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Doomguard-0"..ManaPet[6]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", 2);
+		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6]);
 	elseif DemonType == NECROSIS_PET_LOCAL_NAME[2] then
-		NecrosisPetMenu2:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Imp-0"..ManaPet[1]);
-		NecrosisPetMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Voidwalker-02");
-		NecrosisPetMenu4:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Succubus-0"..ManaPet[3]);
-		NecrosisPetMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Felhunter-0"..ManaPet[4]);
-		NecrosisPetMenu6:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Infernal-0"..ManaPet[5]);
-		NecrosisPetMenu7:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Doomguard-0"..ManaPet[6]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", 2);
+		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6]);
 	elseif DemonType == NECROSIS_PET_LOCAL_NAME[3] then
-		NecrosisPetMenu2:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Imp-0"..ManaPet[1]);
-		NecrosisPetMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Voidwalker-0"..ManaPet[2]);
-		NecrosisPetMenu4:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Succubus-02");
-		NecrosisPetMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Felhunter-0"..ManaPet[4]);
-		NecrosisPetMenu6:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Infernal-0"..ManaPet[5]);
-		NecrosisPetMenu7:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Doomguard-0"..ManaPet[6]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", 2);
+		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6]);
 	elseif DemonType == NECROSIS_PET_LOCAL_NAME[4] then
-		NecrosisPetMenu2:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Imp-0"..ManaPet[1]);
-		NecrosisPetMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Voidwalker-0"..ManaPet[2]);
-		NecrosisPetMenu4:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Succubus-0"..ManaPet[3]);
-		NecrosisPetMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Felhunter-02");
-		NecrosisPetMenu6:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Infernal-0"..ManaPet[5]);
-		NecrosisPetMenu7:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Doomguard-0"..ManaPet[6]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", 2);
+		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6]);
 	elseif DemonType == NECROSIS_PET_LOCAL_NAME[5] then
-		NecrosisPetMenu2:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Imp-0"..ManaPet[1]);
-		NecrosisPetMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Voidwalker-0"..ManaPet[2]);
-		NecrosisPetMenu4:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Succubus-0"..ManaPet[3]);
-		NecrosisPetMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Felhunter-0"..ManaPet[4])
-		NecrosisPetMenu6:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Infernal-02");
-		NecrosisPetMenu7:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Doomguard-0"..ManaPet[6]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", 2);
+		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6]);
 	elseif DemonType == NECROSIS_PET_LOCAL_NAME[6] then
-		NecrosisPetMenu2:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Imp-0"..ManaPet[1]);
-		NecrosisPetMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Voidwalker-0"..ManaPet[2]);
-		NecrosisPetMenu4:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Succubus-0"..ManaPet[3]);
-		NecrosisPetMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Felhunter-0"..ManaPet[4])
-		NecrosisPetMenu6:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Infernal-0"..ManaPet[5]);
-		NecrosisPetMenu7:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Doomguard-02");
+		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", 2);
 	else
-		NecrosisPetMenu2:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Imp-0"..ManaPet[1]);
-		NecrosisPetMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Voidwalker-0"..ManaPet[2]);
-		NecrosisPetMenu4:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Succubus-0"..ManaPet[3]);
-		NecrosisPetMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Felhunter-0"..ManaPet[4])
-		NecrosisPetMenu6:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Infernal-0"..ManaPet[5]);
-		NecrosisPetMenu7:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Doomguard-0"..ManaPet[6]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5]);
+		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6]);
 	end 
 		
 
@@ -1594,57 +1677,57 @@ function Necrosis_UpdateIcons()
 		if MountAvailable and not NecrosisMounted then
 			if NECROSIS_SPELL_TABLE[2].ID then
 				if NECROSIS_SPELL_TABLE[2].Mana > mana or PlayerCombat then
-					NecrosisMountButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\MountButton-03");
+					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 3);
 				else
-					NecrosisMountButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\MountButton-01");
+					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 1);
 				end
 			else
 				if NECROSIS_SPELL_TABLE[1].Mana > mana or PlayerCombat then
-					NecrosisMountButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\MountButton-03");
+					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 3);
 				else
-					NecrosisMountButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\MountButton-01");
+					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 1);
 				end
 			end
 		end
 		if NECROSIS_SPELL_TABLE[35].ID then
 			if NECROSIS_SPELL_TABLE[35].Mana > mana or Soulshards == 0 then
-				NecrosisPetMenu8:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Enslave-03");
+				Necrosis_SetButtonTexture(NecrosisPetMenu8, "Enslave", 3);
 			else
-				NecrosisPetMenu8:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Enslave-01");
+				Necrosis_SetButtonTexture(NecrosisPetMenu8, "Enslave", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[31].ID then
 			if NECROSIS_SPELL_TABLE[31].Mana > mana then
-				NecrosisBuffMenu1:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\ArmureDemo-03");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 3);
 			else
-				NecrosisBuffMenu1:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\ArmureDemo-01");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 1);
 			end
 		elseif NECROSIS_SPELL_TABLE[36].ID then
 			if NECROSIS_SPELL_TABLE[36].Mana > mana then
-				NecrosisBuffMenu1:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\ArmureDemo-03");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 3);
 			else
-				NecrosisBuffMenu1:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\ArmureDemo-01");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[32].ID then
 			if NECROSIS_SPELL_TABLE[32].Mana > mana then
-				NecrosisBuffMenu2:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Aqua-03");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu2, "Aqua", 3);
 			else
-				NecrosisBuffMenu2:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Aqua-01");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu2, "Aqua", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[33].ID then
 			if NECROSIS_SPELL_TABLE[33].Mana > mana then
-				NecrosisBuffMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Invisible-03");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu3, "Invisible", 3);
 			else
-				NecrosisBuffMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Invisible-01");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu3, "Invisible", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[34].ID then
 			if NECROSIS_SPELL_TABLE[34].Mana > mana then
-				NecrosisBuffMenu4:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Kilrogg-03");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu4, "Kilrogg", 3);
 			else
-				NecrosisBuffMenu4:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Kilrogg-01");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu4, "Kilrogg", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[37].ID then
@@ -1656,30 +1739,30 @@ function Necrosis_UpdateIcons()
 		end
 		if NECROSIS_SPELL_TABLE[38].ID then
 			if NECROSIS_SPELL_TABLE[38].Mana > mana then
-				NecrosisBuffMenu7:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Lien-03");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu7, "Lien", 3);
 			else
-				NecrosisBuffMenu7:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Lien-01");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu7, "Lien", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[43].ID then
 			if NECROSIS_SPELL_TABLE[43].Mana > mana then
-				NecrosisBuffMenu8:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\ShadowWard-03");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 3);
 			else
-				NecrosisBuffMenu8:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\ShadowWard-01");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[9].ID then
 			if NECROSIS_SPELL_TABLE[9].Mana > mana then
-				NecrosisBuffMenu9:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Banish-03");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu9, "Banish", 3);
 			else
-				NecrosisBuffMenu9:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Banish-01");
+				Necrosis_SetButtonTexture(NecrosisBuffMenu9, "Banish", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[44].ID then
 			if (not UnitExists("Pet")) then
-				NecrosisPetMenu9:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Sacrifice-03");
+				Necrosis_SetButtonTexture(NecrosisPetMenu9, "Sacrifice", 3);
 			else
-				NecrosisPetMenu9:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Sacrifice-01");
+				Necrosis_SetButtonTexture(NecrosisPetMenu9, "Sacrifice", 1);
 			end
 		end
 
@@ -1692,58 +1775,58 @@ function Necrosis_UpdateIcons()
 	-- Coloration du bouton en grisé si pas assez de mana
 		if NECROSIS_SPELL_TABLE[23].ID then
 			if NECROSIS_SPELL_TABLE[23].Mana > mana then
-				NecrosisCurseMenu2:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Weakness-03");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu2, "Weakness", 3);
 			else
-				NecrosisCurseMenu2:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Weakness-01");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu2, "Weakness", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[22].ID then
 			if NECROSIS_SPELL_TABLE[22].Mana > mana then
-				NecrosisCurseMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Agony-03");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu3, "Agony", 3);
 			else
-				NecrosisCurseMenu3:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Agony-01");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu3, "Agony", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[24].ID then
 			if NECROSIS_SPELL_TABLE[24].Mana > mana then
-				NecrosisCurseMenu4:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Reckless-03");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu4, "Reckless", 3);
 			else
-				NecrosisCurseMenu4:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Reckless-01");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu4, "Reckless", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[25].ID then
 			if NECROSIS_SPELL_TABLE[25].Mana > mana then
-				NecrosisCurseMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Tongues-03");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu5, "Tongues", 3);
 			else
-				NecrosisCurseMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Tongues-01");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu5, "Tongues", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[40].ID then
 			if NECROSIS_SPELL_TABLE[40].Mana > mana then
-				NecrosisCurseMenu6:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Exhaust-03");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu6, "Exhaust", 3);
 			else
-				NecrosisCurseMenu6:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Exhaust-01");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu6, "Exhaust", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[26].ID then
 			if NECROSIS_SPELL_TABLE[26].Mana > mana then
-				NecrosisCurseMenu7:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Elements-03");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu7, "Elements", 3);
 			else
-				NecrosisCurseMenu7:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Elements-01");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu7, "Elements", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[27].ID then
 			if NECROSIS_SPELL_TABLE[27].Mana > mana then
-				NecrosisCurseMenu8:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Shadow-03");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu8, "Shadow", 3);
 			else
-				NecrosisCurseMenu8:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Shadow-01");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu8, "Shadow", 1);
 			end
 		end
 		if NECROSIS_SPELL_TABLE[16].ID then
 			if NECROSIS_SPELL_TABLE[16].Mana > mana then
-				NecrosisCurseMenu9:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Doom-03");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu9, "Doom", 3);
 			else
-				NecrosisCurseMenu9:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Doom-01");
+				Necrosis_SetButtonTexture(NecrosisCurseMenu9, "Doom", 1);
 			end
 		end
 	end
