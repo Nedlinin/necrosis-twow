@@ -36,7 +36,7 @@
 			</OnMouseUp>
 		</Scripts>
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\StoneMenuButton-01"/>
-		<HighlightTexture file="Interface\AddOns\Necrosis\UI\StoneMenuButton-02"/>
+		<HighlightTexture alphaMode="ADD" file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
 
 	<Button name="NecrosisStoneMenu1" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">

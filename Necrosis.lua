@@ -1432,6 +1432,18 @@ end
 function Necrosis_UpdateIcons()
 	local mana = UnitMana("player");
 
+	if LastStone == 0 then
+		if FelstoneOnHand then
+			LastStone = 1;
+		elseif WrathstoneOnHand then
+			LastStone = 2;
+		elseif VoidstoneOnHand then
+			LastStone = 3;
+		elseif FirestoneOnHand then
+			LastStone = 4;
+		end
+	end
+
 	if LastStone == 1 and FelstoneOnHand then
 		Necrosis_SetButtonTexture(NecrosisStoneMenuButton, "Felstone", 2);
 	elseif LastStone == 2 and WrathstoneOnHand then
@@ -2799,13 +2811,13 @@ function Necrosis_StoneMenu(button)
 	if not StoneMenuShow then
 		StoneShow = false;
 		StoneVisible = false;
-		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\StoneMenuButton-01");
+		Necrosis_UpdateIcons();
 		StoneMenuCreate[1]:ClearAllPoints();
 		StoneMenuCreate[1]:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", 3000, 3000);
 		AlphaStoneMenu = 1;
 	else
 		StoneShow = true;
-		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\StoneMenuButton-02");
+		Necrosis_UpdateIcons();
 		-- Si clic droit, le menu de stone reste ouvert
 		if button == "RightButton" then
 			StoneVisible = true;
@@ -3125,6 +3137,7 @@ function Necrosis_CreateMenu()
 		menuVariable = getglobal("NecrosisStoneMenu1");
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", 3000, 3000);
+		Necrosis_SetButtonTexture(menuVariable, "Felstone", 2);
 		StoneButtonPosition = 1;
 		table.insert(StoneMenuCreate, menuVariable);
 	end
@@ -3137,6 +3150,7 @@ function Necrosis_CreateMenu()
 		else
 			menuVariable:SetPoint("CENTER", "NecrosisStoneMenu"..StoneButtonPosition, "CENTER", ((36 / NecrosisConfig.StoneMenuPos) * 31), 0);
 		end
+		Necrosis_SetButtonTexture(menuVariable, "Wrathstone", 2);
 		StoneButtonPosition = 2;
 		table.insert(StoneMenuCreate, menuVariable);
 	end
@@ -3149,6 +3163,7 @@ function Necrosis_CreateMenu()
 		else
 			menuVariable:SetPoint("CENTER", "NecrosisStoneMenu"..StoneButtonPosition, "CENTER", ((36 / NecrosisConfig.StoneMenuPos) * 31), 0);
 		end
+		Necrosis_SetButtonTexture(menuVariable, "Voidstone", 2);
 		StoneButtonPosition = 3;
 		table.insert(StoneMenuCreate, menuVariable);
 	end
@@ -3161,6 +3176,7 @@ function Necrosis_CreateMenu()
 		else
 			menuVariable:SetPoint("CENTER", "NecrosisStoneMenu"..StoneButtonPosition, "CENTER", ((36 / NecrosisConfig.StoneMenuPos) * 31), 0);
 		end
+		Necrosis_SetButtonTexture(menuVariable, "FirestoneButton", 2);
 		StoneButtonPosition = 4;
 		table.insert(StoneMenuCreate, menuVariable);
 	end
