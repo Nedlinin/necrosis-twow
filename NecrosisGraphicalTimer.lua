@@ -1,30 +1,30 @@
 ------------------------------------------------------------------------------------------------------
 -- Necrosis LdC
 --
--- Créateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
--- Implémentation de base (FR) : Tilienna Thorondor
--- Reprise du projet : Lomig & Nyx des Larmes de Cenarius, Kael'Thas
+-- Original creator (US): Infernal (http://www.revolvus.com/games/interface/necrosis/)
+-- Base implementation (FR): Tilienna Thorondor
+-- Project continuation: Lomig & Nyx of Larmes de Cenarius, Kael'Thas
 -- 
--- Skins et voix Françaises : Eliah, Ner'zhul
--- Version Allemande par Arne Meier et Halisstra, Lothar
--- Remerciements spéciaux pour Sadyre (JoL)
+-- French skins and voices: Eliah, Ner'zhul
+-- German version: Arne Meier and Halisstra, Lothar
+-- Special thanks to Sadyre (JoL)
 -- Version 07.04.2006-1
 ------------------------------------------------------------------------------------------------------
 
 
--- La fonction d'affichage des timers
--- tableau est de la forme suivante :
--- tableau {
-	-- texte = "Nom du mob ou du sort",
-	-- TimeMax = "TimeMax du sort",
-	-- Time = "Time du sort",
-	-- titre = "vrai si titre, faux sinon",
-	-- temps = "timer numérique",
-	-- Gtimer = "Numéro du timer associé (entre 1 et 65)"
+-- Timer display function
+-- Table layout:
+-- table {
+	-- texte = "Mob or spell name",
+	-- TimeMax = "Total duration of the spell",
+	-- Time = "Remaining time for the spell",
+	-- titre = "true if it is a title, false otherwise",
+	-- temps = "numeric timer",
+	-- Gtimer = "Index of the associated timer (between 1 and 65)"
 -- }
 function NecrosisAfficheTimer(tableau, pointeur)
-	-- On définit l'endroit ou apparaitra la première frame
-	-- On déclare que la première frame est toujours le premier mob (logique :P)
+	-- Define the position where the first frame appears
+	-- Force the first frame to always be the first mob (makes sense :P)
 	
 	if tableau ~= nil then
 		local TimerTarget = 0;
@@ -40,26 +40,26 @@ function NecrosisAfficheTimer(tableau, pointeur)
 			
 	
 		for index =  1, table.getn(tableau.texte), 1 do
-			-- Si l'entrée est un titre de mob
+			-- If the entry is a mob title
 			if tableau.titre[index] then
-				-- On change de groupe de mob
+				-- Switch to the next mob group
 				TimerTarget = TimerTarget + 1;
 				if TimerTarget ~= 1 then yPosition = yPosition - PositionTitre[1]; end
 				if TimerTarget == 11 then TimerTarget = 1; end
-				-- On affiche le titre
+				-- Show the title
 				local frameName = "NecrosisTarget"..TimerTarget.."Text";
 				local frameItem = getglobal(frameName);
-				-- On place le coin gauche de la frame par rapport au centre du bouton des SpellTimers
+				-- Position the frame's left corner relative to the SpellTimers button center
 				frameItem:ClearAllPoints();
 				frameItem:SetPoint(NecrosisConfig.SpellTimerJust, "NecrosisSpellTimerButton", "CENTER", NecrosisConfig.SpellTimerPos * 23, yPosition);
 				yPosition = yPosition - PositionTitre[2];
-				-- On nomme la frame, puis on l'affiche ! :)
+				-- Name the frame and display it! :)
 				frameItem:SetText(tableau.texte[index]);
 				if not frameItem:IsShown() then
 					frameItem:Show();
 				end
 			else
-				-- Pareil pour les DoT
+				-- Same for DoTs
 				local JustifInverse = "LEFT";
 				if NecrosisConfig.SpellTimerJust == "LEFT" then JustifInverse = "RIGHT"; end	
 			
@@ -131,7 +131,7 @@ function Necrosis_AddFrame(SpellTimer, TimerTable)
 		if not TimerTable[i] then
 			TimerTable[i] = true;
 			SpellTimer[table.getn(SpellTimer)].Gtimer = i;
-			-- Affichage du timer graphique associé
+			-- Display the associated graphical timer
 			if NecrosisConfig.Graphical then
 				local elements = {"Text", "Bar", "Texture", "OutText"}
 				for j = 1, 4, 1 do
@@ -147,7 +147,7 @@ function Necrosis_AddFrame(SpellTimer, TimerTable)
 end
 
 function Necrosis_RemoveFrame(Gtime, TimerTable)
-	-- On cache le timer graphique
+	-- Hide the graphical timer
 	local elements = {"Text", "Bar", "Texture", "OutText"}
 	for j = 1, 4, 1 do
 		frameName = "NecrosisTimer"..Gtime..elements[j];
@@ -155,7 +155,7 @@ function Necrosis_RemoveFrame(Gtime, TimerTable)
 		frameItem:Hide();
 	end
 
-	-- On déclare le timer graphique comme réutilisable
+	-- Mark the graphical timer as reusable
 	TimerTable[Gtime] = false;
 	
 	return TimerTable;

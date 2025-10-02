@@ -1,25 +1,25 @@
 ------------------------------------------------------------------------------------------------------
 -- Necrosis LdC
 --
--- Créateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
--- Implémentation de base (FR) : Tilienna Thorondor
--- Reprise du projet : Lomig & Nyx des Larmes de Cenarius, Kael'Thas
+-- Original creator (US): Infernal (http://www.revolvus.com/games/interface/necrosis/)
+-- Base implementation (FR): Tilienna Thorondor
+-- Project continuation: Lomig & Nyx of Larmes de Cenarius, Kael'Thas
 -- 
--- Skins et voix Françaises : Eliah, Ner'zhul
--- Version Allemande par Arne Meier et Halisstra, Lothar
--- Remerciements spéciaux pour Sadyre (JoL)
+-- French skins and voices: Eliah, Ner'zhul
+-- German version: Arne Meier and Halisstra, Lothar
+-- Special thanks to Sadyre (JoL)
 -- Version 23.04.2006-1
 ------------------------------------------------------------------------------------------------------
 
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS D'INSERTION
+-- INSERTION FUNCTIONS
 ------------------------------------------------------------------------------------------------------
 
--- La table des timers est là pour ça !
+-- That's what the timer table is for!
 function Necrosis_InsertTimerParTable(IndexTable, Target, LevelTarget, SpellGroup, SpellTimer, TimerTable)
 
-	-- Insertion de l'entrée dans le tableau
+	-- Insert the entry into the table
 	table.insert(SpellTimer,
 		{
 			Name = NECROSIS_SPELL_TABLE[IndexTable].Name,
@@ -32,22 +32,22 @@ function Necrosis_InsertTimerParTable(IndexTable, Target, LevelTarget, SpellGrou
 			Gtimer = nil
 		});
 
-	-- Association d'un timer graphique au timer
+	-- Associate a graphical timer with the entry
 	SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable);
 
-	-- Tri des entrées par type de sort
+	-- Sort entries by spell type
 	Necrosis_Tri(SpellTimer, "Type");
 	
-	-- Création des groupes (noms des mobs) des timers
+	-- Create timer groups (mob names)
 	SpellGroup, SpellTimer = Necrosis_Parsing(SpellGroup, SpellTimer);
 
 	return SpellGroup, SpellTimer, TimerTable;
 end
 
--- Et pour insérer le timer de pierres
+-- And to insert the stone timer
 function Necrosis_InsertTimerStone(Stone, start, duration, SpellGroup, SpellTimer, TimerTable)
 
-	-- Insertion de l'entrée dans le tableau
+	-- Insert the entry into the table
 	if Stone == "Healthstone" then
 		table.insert(SpellTimer,
 			{
@@ -61,7 +61,7 @@ function Necrosis_InsertTimerStone(Stone, start, duration, SpellGroup, SpellTime
 				Gtimer = nil
 			});
 
-		-- Association d'un timer graphique au timer
+		-- Associate a graphical timer with the entry
 		SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable);
 		
 	elseif Stone == "Spellstone" then
@@ -77,7 +77,7 @@ function Necrosis_InsertTimerStone(Stone, start, duration, SpellGroup, SpellTime
 				Gtimer = nil
 			});
 
-		-- Association d'un timer graphique au timer
+		-- Associate a graphical timer with the entry
 		SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable);
 		
 	elseif Stone == "Soulstone" then
@@ -93,20 +93,20 @@ function Necrosis_InsertTimerStone(Stone, start, duration, SpellGroup, SpellTime
 				Gtimer = nil,
 			});
 
-		-- Association d'un timer graphique au timer
+		-- Associate a graphical timer with the entry
 		SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable);
 	end
 
-	-- Tri des entrées par type de sort	
+	-- Sort entries by spell type
 	Necrosis_Tri(SpellTimer, "Type");
 
-	-- Création des groupes (noms des mobs) des timers
+	-- Create timer groups (mob names)
 	SpellGroup, SpellTimer = Necrosis_Parsing(SpellGroup, SpellTimer);
 
 	return SpellGroup, SpellTimer, TimerTable;
 end
 
--- Pour la création de timers personnels
+-- For creating custom timers
 function NecrosisTimerX(nom, duree, truc, Target, LevelTarget, SpellGroup, SpellTimer, TimerTable)
 	
 	table.insert(SpellTimer,
@@ -121,37 +121,37 @@ function NecrosisTimerX(nom, duree, truc, Target, LevelTarget, SpellGroup, Spell
 				Gtimer = nil
 			});
 
-	-- Association d'un timer graphique au timer
+	-- Associate a graphical timer with the entry
 	SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable);
 
-	-- Tri des entrées par type de sort
+	-- Sort entries by spell type
 	Necrosis_Tri(SpellTimer, "Type");
 	
-	-- Création des groupes (noms des mobs) des timers
+	-- Create timer groups (mob names)
 	SpellGroup, SpellTimer = Necrosis_Parsing(SpellGroup, SpellTimer);
 
 	return SpellGroup, SpellTimer, TimerTable;	
 end
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS DE RETRAIT
+-- REMOVAL FUNCTIONS
 ------------------------------------------------------------------------------------------------------
 
 
--- Connaissant l'index du Timer dans la liste, on le supprime
+-- Remove the timer once its index is known
 function Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable)
 
-		-- Suppression du timer graphique
+		-- Remove the graphical timer
 		local Gtime = SpellTimer[index].Gtimer;
 		TimerTable = Necrosis_RemoveFrame(Gtime, TimerTable);
 		
-		-- On enlève le timer de la liste
+		-- Remove the timer from the list
 		table.remove(SpellTimer, index);
 
 	return SpellTimer, TimerTable;
 end
 
--- Si on veut supprimer spécifiquement un Timer...
+-- When a specific timer must be removed...
 function Necrosis_RetraitTimerParNom(name, SpellTimer, TimerTable)
 	for index = 1, table.getn(SpellTimer), 1 do
 		if SpellTimer[index].Name == name then
@@ -162,16 +162,16 @@ function Necrosis_RetraitTimerParNom(name, SpellTimer, TimerTable)
 	return SpellTimer, TimerTable;
 end
 
--- Fonction pour enlever les timers de combat lors de la regen
+-- Remove combat timers when regeneration starts
 function Necrosis_RetraitTimerCombat(SpellGroup, SpellTimer, TimerTable)
 	for index=1, table.getn(SpellTimer), 1 do
 		if SpellTimer[index] then
-			-- Si les cooldowns sont nominatifs, on enlève le nom
+			-- Remove the target name when cooldowns are per-character
 			if SpellTimer[index].Type == 3 then
 				SpellTimer[index].Target = "";
 				SpellTimer[index].TargetLevel = "";
 			end
-			-- Enlevage des timers de combat
+			-- Remove combat timers
 			if ((SpellTimer[index].Type == 4) or (SpellTimer[index].Type == 5)) then
 				SpellTimer = Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable);
 			end
@@ -189,7 +189,7 @@ function Necrosis_RetraitTimerCombat(SpellGroup, SpellTimer, TimerTable)
 end
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS BOOLEENNES
+-- BOOLEAN FUNCTIONS
 ------------------------------------------------------------------------------------------------------
 
 function Necrosis_TimerExisteDeja(Nom, SpellTimer)
@@ -203,10 +203,10 @@ end
 
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS DE TRI
+-- SORTING FUNCTIONS
 ------------------------------------------------------------------------------------------------------
 
--- On définit les groupes de chaque Timer
+-- Assign each timer to its group
 function Necrosis_Parsing(SpellGroup, SpellTimer)
 	local GroupeOK = false;
 	for index = 1, table.getn(SpellTimer), 1 do
@@ -221,7 +221,7 @@ function Necrosis_Parsing(SpellGroup, SpellTimer)
 				break;
 			end
 		end
-		-- Si le groupe n'existe pas, on en crée un nouveau
+		-- Create a new group if it does not exist
 		if not GroupeOK then
 			table.insert(SpellGroup.Name, SpellTimer[index].Target);
 			table.insert(SpellGroup.SubName, SpellTimer[index].TargetLevel);
@@ -234,7 +234,7 @@ function Necrosis_Parsing(SpellGroup, SpellTimer)
 	return SpellGroup, SpellTimer;
 end
 
--- On trie les timers selon leur groupe
+-- Sort timers by group
 function Necrosis_Tri(SpellTimer, clef)
 	return table.sort(SpellTimer,
 		function (SubTab1, SubTab2)
@@ -243,7 +243,7 @@ function Necrosis_Tri(SpellTimer, clef)
 end
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS D'AFFICHAGE : CREATION DE LA CHAINE DE CARACTERE
+-- DISPLAY FUNCTIONS: STRING CREATION
 ------------------------------------------------------------------------------------------------------
 
 
@@ -256,7 +256,7 @@ function Necrosis_DisplayTimer(display, index, SpellGroup, SpellTimer, Graphical
 	local seconds = 0;
 	local affichage;
 	
-	-- Changement de la couleur suivant le temps restant	
+	-- Change color based on remaining time
 	local percent = (floor(SpellTimer[index].TimeMax - floor(GetTime())) / SpellTimer[index].Time)*100;
 	local color = NecrosisTimerColor(percent);
 	
@@ -264,7 +264,7 @@ function Necrosis_DisplayTimer(display, index, SpellGroup, SpellTimer, Graphical
 		and SpellGroup.SubName[SpellTimer[index].Group] ~= nil
 		and SpellGroup.Name[SpellTimer[index].Group] ~= nil then
 		display = display.."<purple>-------------------------------\n"..SpellGroup.Name[SpellTimer[index].Group].." "..SpellGroup.SubName[SpellTimer[index].Group].."\n-------------------------------<close>\n";
-		-- Crée le tableau qui servira aux timers graphiques
+		-- Build the table used by graphical timers
 		table.insert(GraphicalTimer.texte, SpellGroup.Name[SpellTimer[index].Group].." "..SpellGroup.SubName[SpellTimer[index].Group]);
 		table.insert(GraphicalTimer.TimeMax, 0);
 		table.insert(GraphicalTimer.Time, 0);
@@ -274,7 +274,7 @@ function Necrosis_DisplayTimer(display, index, SpellGroup, SpellTimer, Graphical
 		SpellGroup.Visible[SpellTimer[index].Group] = true;
 	end
 
-	-- Mise en place d'un Chrono plutôt qu'un Compte à Rebours pour l'asservissement
+	-- Use a stopwatch instead of a countdown for Enslave
 	if SpellTimer[index].Name == NECROSIS_SPELL_TABLE[10].Name then
 		seconds = floor(GetTime()) - (SpellTimer[index].TimeMax - SpellTimer[index].Time);
 	else
@@ -298,7 +298,7 @@ function Necrosis_DisplayTimer(display, index, SpellGroup, SpellTimer, Graphical
 	end
 	display = display.."<white>"..affichage.." - <close>";
 
-	-- Crée le tableau qui servira aux timers graphiques
+	-- Build the table used by graphical timers
 	if (SpellTimer[index].Type == 1 or SpellTimer[index].Name == NECROSIS_SPELL_TABLE[16].Name)
 	and (SpellTimer[index].Target ~= "") then
 		if NecrosisConfig.SpellTimerPos == 1 then
@@ -342,7 +342,7 @@ function Necrosis_DisplayTimer(display, index, SpellGroup, SpellTimer, Graphical
 	else
 		display = display.."<close>\n";
 	end
-	-- Affichage des timers graphiques (si sélectionnés)
+	-- Display graphical timers (if enabled)
 	if NecrosisConfig.Graphical then
 		NecrosisAfficheTimer(GraphicalTimer, TimerTable);
 	end

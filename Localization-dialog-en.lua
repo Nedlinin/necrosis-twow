@@ -1,13 +1,13 @@
 ------------------------------------------------------------------------------------------------------
 -- Necrosis LdC
 --
--- Créateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
--- Implémentation de base (FR) : Tilienna Thorondor
--- Reprise du projet : Lomig & Nyx des Larmes de Cenarius, Kael'Thas
+-- Original creator (US): Infernal (http://www.revolvus.com/games/interface/necrosis/)
+-- Base implementation (FR): Tilienna Thorondor
+-- Project continuation: Lomig & Nyx of Larmes de Cenarius, Kael'Thas
 -- 
--- Skins et voix Françaises : Eliah, Ner'zhul
--- Version Allemande par Arne Meier et Halisstra, Lothar
--- Remerciements spéciaux pour Sadyre (JoL)
+-- French skins and voices: Eliah, Ner'zhul
+-- German version: Arne Meier and Halisstra, Lothar
+-- Special thanks to Sadyre (JoL)
 -- Version 06.05.2006-1
 ------------------------------------------------------------------------------------------------------
 
@@ -249,7 +249,7 @@ function Necrosis_Localization_Dialog_En()
 	};
 
 
-	-- Gestion XML - Menu de configuration
+	-- XML handling - configuration menu
 
 	NECROSIS_COLOR_TOOLTIP = {
 		["Purple"] = "Purple",

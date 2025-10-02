@@ -1,13 +1,13 @@
 ------------------------------------------------------------------------------------------------------
 -- Necrosis LdC
 --
--- Créateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
--- Implémentation de base (FR) : Tilienna Thorondor
--- Reprise du projet : Lomig & Nyx des Larmes de Cenarius, Kael'Thas
+-- Original creator (US): Infernal (http://www.revolvus.com/games/interface/necrosis/)
+-- Base implementation (FR): Tilienna Thorondor
+-- Project continuation: Lomig & Nyx of Larmes de Cenarius, Kael'Thas
 -- 
--- Skins et voix Françaises : Eliah, Ner'zhul
--- Version Allemande par Arne Meier et Halisstra, Lothar
--- Remerciements spéciaux pour Sadyre (JoL)
+-- French skins and voices: Eliah, Ner'zhul
+-- German version: Arne Meier and Halisstra, Lothar
+-- Special thanks to Sadyre (JoL)
 -- Version 28.06.2006-1
 ------------------------------------------------------------------------------------------------------
 
@@ -22,7 +22,7 @@ if ( GetLocale() == "deDE" ) then
 NECROSIS_UNIT_WARLOCK = "Hexenmeister";
 
 NECROSIS_ANTI_FEAR_SPELL = {
-	-- Buffs die temporäre Immunität gegenüber Furcht geben
+	-- Buffs that grant temporary immunity to fear
 	["Buff"] = {
 		"Furchtzauberschutz",		-- Dwarf priest racial trait
 		"Wille der Verlassenen",	-- Forsaken racial trait
@@ -150,12 +150,12 @@ NECROSIS_SPELL_TABLE = {
 		Name = "Leerenstein herstellen",		Length = 0,	Type = 0},
 
 };
--- Type 0 = Pas de Timer
--- Type 1 = Timer permanent principal
--- Type 2 = Timer permanent
--- Type 3 = Timer de cooldown
--- Type 4 = Timer de malédiction
--- Type 5 = Timer de combat
+-- Type 0 = No timer
+-- Type 1 = Primary persistent timer
+-- Type 2 = Persistent timer
+-- Type 3 = Cooldown timer
+-- Type 4 = Curse timer
+-- Type 5 = Combat timer
 
 NECROSIS_ITEM = {
 	["Soulshard"] = "Seelensplitter",

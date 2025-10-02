@@ -1,37 +1,37 @@
 ------------------------------------------------------------------------------------------------------
 -- Necrosis LdC
 --
--- Créateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
--- Implémentation de base (FR) : Tilienna Thorondor
--- Reprise du projet : Lomig & Nyx des Larmes de Cenarius, Kael'Thas
+-- Original creator (US): Infernal (http://www.revolvus.com/games/interface/necrosis/)
+-- Base implementation (FR): Tilienna Thorondor
+-- Project continuation: Lomig & Nyx of Larmes de Cenarius, Kael'Thas
 -- 
--- Skins et voix Françaises : Eliah, Ner'zhul
--- Version Allemande par Arne Meier et Halisstra, Lothar
--- Remerciements spéciaux pour Sadyre (JoL)
+-- French skins and voices: Eliah, Ner'zhul
+-- German version: Arne Meier and Halisstra, Lothar
+-- Special thanks to Sadyre (JoL)
 -- Version 30.04.2005-1
 ------------------------------------------------------------------------------------------------------
 
 
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS D'AFFICHAGE (CONSOLE, CHAT, MESSAGE SYSTEME)
+-- DISPLAY FUNCTIONS (CONSOLE, CHAT, SYSTEM MESSAGE)
 ------------------------------------------------------------------------------------------------------
 
 function Necrosis_Msg(msg, type)
 	if (msg and type) then
-		-- Si le type du message est "USER", le message s'affiche sur l'écran...
+		-- If the type is "USER", display the message on screen...
 		if (type == "USER") then
-			-- On colorise astucieusement notre message :D
+			-- Cleverly colorize the message :D
 			msg = Necrosis_MsgAddColor(msg);
 			local Intro = "|CFFFF00FFNe|CFFFF50FFcr|CFFFF99FFos|CFFFFC4FFis|CFFFFFFFF: ";
 			if NecrosisConfig.ChatType then
-				-- ...... sur la première fenêtre de chat
+				-- ...... on the first chat window
 				ChatFrame1:AddMessage(Intro..msg, 1.0, 0.7, 1.0, 1.0, UIERRORS_HOLD_TIME);
 			else
-				-- ...... ou au milieu de l'écran
+				-- ...... or at the center of the screen
 				UIErrorsFrame:AddMessage(Intro..msg, 1.0, 0.7, 1.0, 1.0, UIERRORS_HOLD_TIME);
 			end
-		-- Si le type du message est "WORLD", le message sera envoyé en raid, à défaut en groupe, et à défaut en chat local
+		-- If the type is "WORLD", send the message to the raid, otherwise to the party, otherwise to local chat
 		elseif (type == "WORLD") then
 			if (GetNumRaidMembers() > 0) then
 				SendChatMessage(msg, "RAID");
@@ -40,14 +40,14 @@ function Necrosis_Msg(msg, type)
 			else
 				SendChatMessage(msg, "SAY");
 			end
-		-- Si le type du message est "PARTY", le message sera envoyé en groupe
+		-- If the type is "PARTY", send the message to the party
 		elseif (type == "PARTY") then
 			SendChatMessage(msg, "PARTY");
-		-- Si le type du message est "RAID", le message sera envoyé en raid
+		-- If the type is "RAID", send the message to the raid
 		elseif (type == "RAID") then
 			SendChatMessage(msg, "RAID");
 		elseif (type == "SAY") then
-		-- Si le type du message est "SAY", le message sera envoyé en chat local
+		-- If the type is "SAY", send the message to local chat
 			SendChatMessage(msg, "SAY");
 		end
 	end
@@ -55,10 +55,10 @@ end
 
 
 ------------------------------------------------------------------------------------------------------
--- ... ET LE COLORAMA FUT !
+-- ... AND COLORAMA WAS BORN!
 ------------------------------------------------------------------------------------------------------
 
--- Remplace dans les chaines les codes de coloration par les définitions de couleur associées
+-- Replace color codes in strings with their color definitions
 function Necrosis_MsgAddColor(msg)
 	msg = string.gsub(msg, "<white>", "|CFFFFFFFF");
 	msg = string.gsub(msg, "<lightBlue>", "|CFF99CCFF");
@@ -84,7 +84,7 @@ function Necrosis_MsgAddColor(msg)
 end
 
 
--- Insère dans les timers des codes de coloration en fonction du pourcentage de temps restant
+-- Insert color codes into timers based on remaining duration
 function NecrosisTimerColor(percent)
 	local color = "<brightGreen>";
 	if (percent < 10) then
@@ -110,7 +110,7 @@ function NecrosisTimerColor(percent)
 end
 
 ------------------------------------------------------------------------------------------------------
--- VARIABLES USER-FRIENDLY DANS LES MESSAGES D'INVOCATION
+-- USER-FRIENDLY PLACEHOLDERS IN SUMMON MESSAGES
 ------------------------------------------------------------------------------------------------------
 
 function Necrosis_MsgReplace(msg, target, pet)
