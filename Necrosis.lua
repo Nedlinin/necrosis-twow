@@ -196,6 +196,17 @@ local function Necrosis_SetButtonTexture(button, base, variant)
 	end
 end
 
+local MENU_BUTTON_COUNT = 9;
+
+local function Necrosis_SetMenuAlpha(prefix, alpha)
+	for index = 1, MENU_BUTTON_COUNT, 1 do
+		local frame = getglobal(prefix .. index);
+		if frame then
+			frame:SetAlpha(alpha);
+		end
+	end
+end
+
 -- Menus : Permet l'affichage des menus de buff et de pet
 local PetShow = false;
 local PetMenuShow = false;
@@ -430,15 +441,7 @@ function Necrosis_OnUpdate()
 	if PetShow then
 		if curTime >= AlphaPetVar and AlphaPetMenu > 0 and (not PetVisible) then
 			AlphaPetVar = curTime + 0.1;
-			NecrosisPetMenu1:SetAlpha(AlphaPetMenu);
-			NecrosisPetMenu2:SetAlpha(AlphaPetMenu);
-			NecrosisPetMenu3:SetAlpha(AlphaPetMenu);
-			NecrosisPetMenu4:SetAlpha(AlphaPetMenu);
-			NecrosisPetMenu5:SetAlpha(AlphaPetMenu);
-			NecrosisPetMenu6:SetAlpha(AlphaPetMenu);
-			NecrosisPetMenu7:SetAlpha(AlphaPetMenu);
-			NecrosisPetMenu8:SetAlpha(AlphaPetMenu);
-			NecrosisPetMenu9:SetAlpha(AlphaPetMenu);
+			Necrosis_SetMenuAlpha("NecrosisPetMenu", AlphaPetMenu);
 			AlphaPetMenu = AlphaPetMenu - 0.1;
 		end
 		if AlphaPetMenu <= 0 then
@@ -450,15 +453,7 @@ function Necrosis_OnUpdate()
 	if BuffShow then
 		if curTime >= AlphaBuffVar and AlphaBuffMenu > 0 and (not BuffVisible) then
 			AlphaBuffVar = curTime + 0.1;
-			NecrosisBuffMenu1:SetAlpha(AlphaBuffMenu);
-			NecrosisBuffMenu2:SetAlpha(AlphaBuffMenu);
-			NecrosisBuffMenu3:SetAlpha(AlphaBuffMenu);
-			NecrosisBuffMenu4:SetAlpha(AlphaBuffMenu);
-			NecrosisBuffMenu5:SetAlpha(AlphaBuffMenu);
-			NecrosisBuffMenu6:SetAlpha(AlphaBuffMenu);
-			NecrosisBuffMenu7:SetAlpha(AlphaBuffMenu);
-			NecrosisBuffMenu8:SetAlpha(AlphaBuffMenu);
-			NecrosisBuffMenu9:SetAlpha(AlphaBuffMenu);
+			Necrosis_SetMenuAlpha("NecrosisBuffMenu", AlphaBuffMenu);
 			AlphaBuffMenu = AlphaBuffMenu - 0.1;
 		end
 		if AlphaBuffMenu <= 0 then
@@ -470,15 +465,7 @@ function Necrosis_OnUpdate()
 	if CurseShow then
 		if curTime >= AlphaCurseVar and AlphaCurseMenu > 0 and (not CurseVisible) then
 			AlphaCurseVar = curTime + 0.1;
-			NecrosisCurseMenu1:SetAlpha(AlphaCurseMenu);
-			NecrosisCurseMenu2:SetAlpha(AlphaCurseMenu);
-			NecrosisCurseMenu3:SetAlpha(AlphaCurseMenu);
-			NecrosisCurseMenu4:SetAlpha(AlphaCurseMenu);
-			NecrosisCurseMenu5:SetAlpha(AlphaCurseMenu);
-			NecrosisCurseMenu6:SetAlpha(AlphaCurseMenu);
-			NecrosisCurseMenu7:SetAlpha(AlphaCurseMenu);
-			NecrosisCurseMenu8:SetAlpha(AlphaCurseMenu);
-			NecrosisCurseMenu9:SetAlpha(AlphaCurseMenu);
+			Necrosis_SetMenuAlpha("NecrosisCurseMenu", AlphaCurseMenu);
 			AlphaCurseMenu = AlphaCurseMenu - 0.1;
 		end
 		if AlphaCurseMenu <= 0 then
