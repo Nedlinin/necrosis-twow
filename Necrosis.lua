@@ -274,8 +274,8 @@ local function Necrosis_OnCombatEnd()
 	end
 end
 
-local function Necrosis_OnSpellcastStartEvent()
-	Necrosis_OnSpellcastStart(arg1);
+local function Necrosis_OnSpellcastStartEvent(_, spellName)
+	Necrosis_OnSpellcastStart(spellName);
 end
 
 local function Necrosis_OnTradeRequestEvent()
@@ -286,12 +286,12 @@ local function Necrosis_OnTradeCancelledEvent()
 	Necrosis_SetTradeRequest(false);
 end
 
-local function Necrosis_OnSelfDamageEvent()
-	Necrosis_HandleSelfFearDamage(arg1);
+local function Necrosis_OnSelfDamageEvent(_, message)
+	Necrosis_HandleSelfFearDamage(message);
 end
 
-local function Necrosis_OnUnitPetEvent()
-	if arg1 == "player" then
+local function Necrosis_OnUnitPetEvent(_, unitId)
+	if unitId == "player" then
 		Necrosis_ChangeDemon();
 	end
 end
@@ -818,7 +818,7 @@ function Necrosis_OnEvent(event)
 
 	local handler = NECROSIS_EVENT_HANDLERS[event];
 	if handler then
-		handler();
+		handler(event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
 	end
 end
 
