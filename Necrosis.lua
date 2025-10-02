@@ -207,6 +207,27 @@ local function Necrosis_SetMenuAlpha(prefix, alpha)
 	end
 end
 
+local NECROSIS_MANAGED_EVENTS = {
+	"BAG_UPDATE",
+	"CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS",
+	"CHAT_MSG_SPELL_AURA_GONE_SELF",
+	"CHAT_MSG_SPELL_BREAK_AURA",
+	"PLAYER_REGEN_DISABLED",
+	"PLAYER_REGEN_ENABLED",
+	"UNIT_PET",
+	"SPELLCAST_START",
+	"SPELLCAST_FAILED",
+	"SPELLCAST_INTERRUPTED",
+	"SPELLCAST_STOP",
+	"LEARNED_SPELL_IN_TAB",
+	"CHAT_MSG_SPELL_SELF_DAMAGE",
+	"PLAYER_TARGET_CHANGED",
+	"TRADE_REQUEST",
+	"TRADE_REQUEST_CANCEL",
+	"TRADE_SHOW",
+	"TRADE_CLOSED",
+};
+
 -- Menus : Permet l'affichage des menus de buff et de pet
 local PetShow = false;
 local PetMenuShow = false;
@@ -788,44 +809,14 @@ end
 -- Quand on rentre dans une zone, on reprend la surveillance
 -- Cela permet d'éviter un temps de chargement trop long du mod
 function Necrosis_RegisterManagement(RegistrationType)
-	if RegistrationType == "IN" then
-		NecrosisButton:RegisterEvent("BAG_UPDATE");
-		NecrosisButton:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS");
-		NecrosisButton:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_SELF");
-		NecrosisButton:RegisterEvent("CHAT_MSG_SPELL_BREAK_AURA");
-		NecrosisButton:RegisterEvent("PLAYER_REGEN_DISABLED");
-		NecrosisButton:RegisterEvent("PLAYER_REGEN_ENABLED");
-		NecrosisButton:RegisterEvent("UNIT_PET");
-		NecrosisButton:RegisterEvent("SPELLCAST_START");
-		NecrosisButton:RegisterEvent("SPELLCAST_FAILED");
-		NecrosisButton:RegisterEvent("SPELLCAST_INTERRUPTED");
-		NecrosisButton:RegisterEvent("SPELLCAST_STOP");
-		NecrosisButton:RegisterEvent("LEARNED_SPELL_IN_TAB");
-		NecrosisButton:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE");
-		NecrosisButton:RegisterEvent("PLAYER_TARGET_CHANGED");
-		NecrosisButton:RegisterEvent("TRADE_REQUEST");
-		NecrosisButton:RegisterEvent("TRADE_REQUEST_CANCEL");
-		NecrosisButton:RegisterEvent("TRADE_SHOW");
-		NecrosisButton:RegisterEvent("TRADE_CLOSED");
-	else
-		NecrosisButton:UnregisterEvent("BAG_UPDATE");
-		NecrosisButton:UnregisterEvent("CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS");
-		NecrosisButton:UnregisterEvent("CHAT_MSG_SPELL_AURA_GONE_SELF");
-		NecrosisButton:UnregisterEvent("CHAT_MSG_SPELL_BREAK_AURA");
-		NecrosisButton:UnregisterEvent("PLAYER_REGEN_DISABLED");
-		NecrosisButton:UnregisterEvent("PLAYER_REGEN_ENABLED");
-		NecrosisButton:UnregisterEvent("UNIT_PET");
-		NecrosisButton:UnregisterEvent("SPELLCAST_START");
-		NecrosisButton:UnregisterEvent("SPELLCAST_FAILED");
-		NecrosisButton:UnregisterEvent("SPELLCAST_INTERRUPTED");
-		NecrosisButton:UnregisterEvent("SPELLCAST_STOP");
-		NecrosisButton:UnregisterEvent("LEARNED_SPELL_IN_TAB");
-		NecrosisButton:UnregisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE");
-		NecrosisButton:UnregisterEvent("PLAYER_TARGET_CHANGED");
-		NecrosisButton:UnregisterEvent("TRADE_REQUEST");
-		NecrosisButton:UnregisterEvent("TRADE_REQUEST_CANCEL");
-		NecrosisButton:UnregisterEvent("TRADE_SHOW");
-		NecrosisButton:UnregisterEvent("TRADE_CLOSED");
+	local register = (RegistrationType == "IN");
+	for i = 1, table.getn(NECROSIS_MANAGED_EVENTS), 1 do
+		local event = NECROSIS_MANAGED_EVENTS[i];
+		if register then
+			NecrosisButton:RegisterEvent(event);
+		else
+			NecrosisButton:UnregisterEvent(event);
+		end
 	end
 	return;
 end
