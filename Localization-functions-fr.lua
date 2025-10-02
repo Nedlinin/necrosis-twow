@@ -142,6 +142,12 @@ NECROSIS_SPELL_TABLE = {
 		Name = "Gardien de l'ombre",					Length = 30,	Type = 3},
 	[44] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
 		Name = "Sacrifice d\195\169moniaque",				Length = 0,	Type = 0},
+	[45] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
+		Name = "Création de Pierre gangrenée",		Length = 0,	Type = 0},
+	[46] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
+		Name = "Création de Pierre de colère",		Length = 0,	Type = 0},
+	[47] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
+		Name = "Création de Pierre du Vide",		Length = 0,	Type = 0},
 };
 -- Type 0 = Pas de Timer
 -- Type 1 = Timer permanent principal
@@ -156,6 +162,9 @@ NECROSIS_ITEM = {
 	["Healthstone"] = "Pierre de soins",
 	["Spellstone"] = "Pierre de sort",
 	["Firestone"] = "Pierre de feu",
+	["Felstone"] = "Pierre gangrenée",
+	["Wrathstone"] = "Pierre de colère",
+	["Voidstone"] = "Pierre du Vide",
 	["Offhand"] = "Tenu en main gauche",
 	["Twohand"] = "Deux mains",
 	["InfernalStone"] = "Pierre infernale",
@@ -182,7 +191,10 @@ NECROSIS_CREATE = {
 	[1] = "Cr\195\169ation de Pierre d'\195\162me",
 	[2] = "Cr\195\169ation de Pierre de soins",
 	[3] = "Cr\195\169ation de Pierre de sort",
-	[4] = "Cr\195\169ation de Pierre de feu"
+	[4] = "Cr\195\169ation de Pierre de feu",
+	[5] = "Cr\195\169ation de Pierre gangrenée",
+	[6] = "Cr\195\169ation de Pierre de colère",
+	[7] = "Cr\195\169ation de Pierre du Vide"
 };
 
 NECROSIS_PET_LOCAL_NAME = {

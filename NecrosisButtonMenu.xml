@@ -12,16 +12,6 @@
 		</HitRectInsets>
 		<Layers>
 			<Layer level="ARTWORK">
-				<FontString name="NecrosisShowFirestone_Option" inherits="GameFontNormalSmall">
-					<Color r="1.0" g="1.0" b="1.0" a="1"/>
-					<Anchors>
-						<Anchor point="TOPLEFT" relativeTo="NecrosisButtonMenu" relativeFrom="TOPLEFT">
-							<Offset>
-								<AbsDimension x="60" y="-40"/>
-							</Offset>
-						</Anchor>
-					</Anchors>
-				</FontString>
 				<FontString name="NecrosisShowSpellstone_Option" inherits="GameFontNormalSmall">
 					<Color r="1.0" g="1.0" b="1.0" a="1"/>
 					<Anchors>
@@ -92,6 +82,16 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
+				<FontString name="NecrosisShowStoneMenu_Option" inherits="GameFontNormalSmall">
+					<Color r="1.0" g="1.0" b="1.0" a="1"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="NecrosisButtonMenu" relativeFrom="TOPLEFT">
+							<Offset>
+								<AbsDimension x="60" y="-200"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
 			</Layer>
 		</Layers>
 		<Frames>
@@ -128,24 +128,25 @@
 					</OnLeave>
 				</Scripts>
 			</Slider>
-			<CheckButton name="NecrosisShowFirestone_Button" enableMouse="true" inherits="UICheckButtonTemplate" checked="false">
+			<CheckButton name="NecrosisShowStoneMenu_Button" enableMouse="true" inherits="UICheckButtonTemplate" checked="false">
 				<Size>
 					<AbsDimension x="24" y="24"/>
 				</Size>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="NecrosisButtonMenu" relativeFrom="TOPLEFT">
 						<Offset>
-							<AbsDimension x="30" y="-35"/>
+							<AbsDimension x="30" y="-195"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
 				<Scripts>
 					<OnClick>
 						if (this:GetChecked()) then
-							NecrosisConfig.StonePosition[1] = true;
-							ShowUIPanel(NecrosisFirestoneButton);
+							NecrosisConfig.StonePosition[StonePosStoneMenu] = true;
+							ShowUIPanel(NecrosisStoneMenuButton);
 						else
-							NecrosisConfig.StonePosition[1] = false;
+							NecrosisConfig.StonePosition[StonePosStoneMenu] = false;
+							HideUIPanel(NecrosisStoneMenuButton);
 						end
 						Necrosis_UpdateButtonsScale();
 					</OnClick>
@@ -165,10 +166,11 @@
 				<Scripts>
 					<OnClick>
 						if (this:GetChecked()) then
-							NecrosisConfig.StonePosition[2] = true;
+							NecrosisConfig.StonePosition[StonePosSpellstone] = true;
 							ShowUIPanel(NecrosisSpellstoneButton);
 						else
-							NecrosisConfig.StonePosition[2] = false;
+							NecrosisConfig.StonePosition[StonePosSpellstone] = false;
+							HideUIPanel(NecrosisSpellstoneButton);
 						end
 						Necrosis_UpdateButtonsScale();
 					</OnClick>
@@ -188,10 +190,11 @@
 				<Scripts>
 					<OnClick>
 						if (this:GetChecked()) then
-							NecrosisConfig.StonePosition[3] = true;
+							NecrosisConfig.StonePosition[StonePosHealthstone] = true;
 							ShowUIPanel(NecrosisHealthstoneButton);
 						else
-							NecrosisConfig.StonePosition[3] = false;
+							NecrosisConfig.StonePosition[StonePosHealthstone] = false;
+							HideUIPanel(NecrosisHealthstoneButton);
 						end
 						Necrosis_UpdateButtonsScale();
 					</OnClick>
@@ -211,10 +214,11 @@
 				<Scripts>
 					<OnClick>
 						if (this:GetChecked()) then
-							NecrosisConfig.StonePosition[4] = true;
+							NecrosisConfig.StonePosition[StonePosSoulstone] = true;
 							ShowUIPanel(NecrosisSoulstoneButton);
 						else
-							NecrosisConfig.StonePosition[4] = false;
+							NecrosisConfig.StonePosition[StonePosSoulstone] = false;
+							HideUIPanel(NecrosisSoulstoneButton);
 						end
 						Necrosis_UpdateButtonsScale();
 					</OnClick>
@@ -234,10 +238,10 @@
 				<Scripts>
 					<OnClick>
 						if (this:GetChecked()) then
-							NecrosisConfig.StonePosition[5] = true;
+							NecrosisConfig.StonePosition[StonePosBuffMenu] = true;
 							ShowUIPanel(NecrosisBuffMenuButton);
 						else
-							NecrosisConfig.StonePosition[5] = false;
+							NecrosisConfig.StonePosition[StonePosBuffMenu] = false;
 							HideUIPanel(NecrosisBuffMenuButton);
 						end
 						Necrosis_UpdateButtonsScale();
@@ -258,10 +262,10 @@
 				<Scripts>
 					<OnClick>
 						if (this:GetChecked()) then
-							NecrosisConfig.StonePosition[6] = true;
+							NecrosisConfig.StonePosition[StonePosMount] = true;
 							ShowUIPanel(NecrosisMountButton);
 						else
-							NecrosisConfig.StonePosition[6] = false;
+							NecrosisConfig.StonePosition[StonePosMount] = false;
 							HideUIPanel(NecrosisMountButton);
 						end
 						Necrosis_UpdateButtonsScale();
@@ -282,10 +286,10 @@
 				<Scripts>
 					<OnClick>
 						if (this:GetChecked()) then
-							NecrosisConfig.StonePosition[7] = true;
+							NecrosisConfig.StonePosition[StonePosPetMenu] = true;
 							ShowUIPanel(NecrosisPetMenuButton);
 						else
-							NecrosisConfig.StonePosition[7] = false;
+							NecrosisConfig.StonePosition[StonePosPetMenu] = false;
 							HideUIPanel(NecrosisPetMenuButton);
 						end
 						Necrosis_UpdateButtonsScale();
@@ -306,11 +310,11 @@
 				<Scripts>
 					<OnClick>
 						if (this:GetChecked()) then
-							NecrosisConfig.StonePosition[8] = true;
-							ShowUIPanel(NecrosisCurseButton);
+							NecrosisConfig.StonePosition[StonePosCurseMenu] = true;
+							ShowUIPanel(NecrosisCurseMenuButton);
 						else
-							NecrosisConfig.StonePosition[8] = false;
-							HideUIPanel(NecrosisCurseButton);
+							NecrosisConfig.StonePosition[StonePosCurseMenu] = false;
+							HideUIPanel(NecrosisCurseMenuButton);
 						end
 						Necrosis_UpdateButtonsScale();
 					</OnClick>

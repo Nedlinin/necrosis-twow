@@ -142,6 +142,12 @@ NECROSIS_SPELL_TABLE = {
 		Name = "Schattenzauberschutz",			Length = 30,	Type = 3},
 	[44] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
 		Name = "D\195\164monische Opferung",		Length = 0,	Type = 0},
+	[45] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
+		Name = "Teufelsstein herstellen",		Length = 0,	Type = 0},
+	[46] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
+		Name = "Zornstein herstellen",		Length = 0,	Type = 0},
+	[47] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
+		Name = "Leerenstein herstellen",		Length = 0,	Type = 0},
 
 };
 -- Type 0 = Pas de Timer
@@ -157,6 +163,9 @@ NECROSIS_ITEM = {
 	["Healthstone"] = "Gesundheitsstein",
 	["Spellstone"] = "Zauberstein",
 	["Firestone"] = "Feuerstein",
+	["Felstone"] = "Teufelsstein",
+	["Wrathstone"] = "Zornstein",
+	["Voidstone"] = "Leerenstein",
 	["Offhand"] = "Schildhand",
 	["Twohand"] = "Zweihand",
 	["InfernalStone"] = "H\195\182llenstein",
@@ -183,7 +192,10 @@ NECROSIS_CREATE = {
 	[1] = "Seelenstein herstellen",
 	[2] = "Gesundheitsstein herstellen",
 	[3] = "Zauberstein herstellen",
-	[4] = "Feuerstein herstellen"
+	[4] = "Feuerstein herstellen",
+	[5] = "Teufelsstein herstellen",
+	[6] = "Zornstein herstellen",
+	[7] = "Leerenstein herstellen"
 };
 
 NECROSIS_PET_LOCAL_NAME = {

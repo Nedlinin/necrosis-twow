@@ -65,13 +65,25 @@ function Necrosis_Localization_Dialog_En()
 			Label = "|c00FF4444Firestone|r",
 			Text = {"Create","Use"}
 		},
+		["Felstone"] = {
+			Label = "|c0044FF44Felstone|r",
+			Text = {"Create","Use"}
+		},
+		["Wrathstone"] = {
+			Label = "|c00FF4444Wrathstone|r",
+			Text = {"Create","Use"}
+		},
+		["Voidstone"] = {
+			Label = "|c00800080Voidstone|r",
+			Text = {"Create","Use"}
+		},
 		["SpellTimer"] = {
 			Label = "|c00FFFFFFSpell Durations|r",
 			Text = "Active Spells on the target",
 			Right = "Right Click for Hearthstone to "
 		},
 		["ShadowTrance"] = {
-			Label = "|c00FFFFFFShadow Transe|r"
+			Label = "|c00FFFFFFShadow Trance|r"
 		},
 		["Domination"] = {
 			Label = "|c00FFFFFFFel Domination|r"
@@ -163,6 +175,9 @@ function Necrosis_Localization_Dialog_En()
 		["Curse"] = {
 			Label = "|c00FFFFFFCurse Menu|r\nRight click to keep the menu open"
 		},
+		["Stone"] = {
+			Label = "|c00FFFFFFStone Menu|r\nRight click to keep the menu open"
+		},
 		["Radar"] = {
 			Label = "|c00FFFFFFSense Demons|r"
 		},
@@ -188,30 +203,30 @@ function Necrosis_Localization_Dialog_En()
 
 	NECROSIS_MESSAGE = {
 		["Error"] = {
-			["InfernalStoneNotPresent"] = "You need an Infernal Stone to do that !",
-			["SoulShardNotPresent"] = "You need a Soul shard to do that !",
-			["DemoniacStoneNotPresent"] = "You need a Demoniac Figurine to do that !",
-			["NoRiding"] = "You do not have any Steed to ride !",
-			["NoFireStoneSpell"] = "You do not have any Firestone creation spell",
-			["NoSpellStoneSpell"] = "You do not have any Spellstone creation spell",
-			["NoHealthStoneSpell"] = "You do not have any Healthstone creation spell",
-			["NoSoulStoneSpell"] = "You do not have any Soulstone creation spell",
-			["FullHealth"] = "You cannot use your Healthstone as you are not hurt",
+			["InfernalStoneNotPresent"] = "You need an Infernal Stone to do that!",
+			["SoulShardNotPresent"] = "You need a Soul shard to do that!",
+			["DemoniacStoneNotPresent"] = "You need a Demonic Figurine to do that!",
+			["NoRiding"] = "You do not have any Steed to ride!",
+			["NoFireStoneSpell"] = "You do not have any Firestone creation spell.",
+			["NoSpellStoneSpell"] = "You do not have any Spellstone creation spell.",
+			["NoHealthStoneSpell"] = "You do not have any Healthstone creation spell.",
+			["NoSoulStoneSpell"] = "You do not have any Soulstone creation spell.",
+			["FullHealth"] = "You cannot use your Healthstone as you are not hurt.",
 			["BagAlreadySelect"] = "Error : This bag is already selected.",
 			["WrongBag"] = "Error : The number must be between 0 and 4.",
 			["BagIsNumber"] = "Error : Please type a number.",
-			["NoHearthStone"] = "Error : You do not have a Hearthstone in your inventory",
-			["SpellStoneIsOnCooldown"] = "Error : Your Spellstone is on cooldown"
+			["NoHearthStone"] = "Error : You do not have a Hearthstone in your inventory.",
+			["SpellStoneIsOnCooldown"] = "Error : Your Spellstone is on cooldown."
 		},
 		["Bag"] = {
 			["FullPrefix"] = "Your ",
-			["FullSuffix"] = " is full !",
-			["FullDestroySuffix"] = " is full; Next shards will be destroyed !",
+			["FullSuffix"] = " is full!",
+			["FullDestroySuffix"] = " is full; Next shards will be destroyed!",
 			["SelectedPrefix"] = "You have chosen your ",
 			["SelectedSuffix"] = " to keep your shards."
 		},
 		["Interface"] = {
-			["Welcome"] = "<white>/necro to show the setting menu !",
+			["Welcome"] = "<white>/necro to show the setting menu!",
 			["TooltipOn"] = "Tooltips turned on" ,
 			["TooltipOff"] = "Tooltips turned off",
 			["MessageOn"] = "Chat messaging turned on",
@@ -227,7 +242,7 @@ function Necrosis_Localization_Dialog_En()
 		["EquipMessage"] = "Equip ",
 		["SwitchMessage"] = " instead of ",
 		["Information"] = {
-			["FearProtect"] = "Your target has got a fear protection !!!!",
+			["FearProtect"] = "Your target has got a fear protection!!!!",
 			["EnslaveBreak"] = "Your demon broke his chains...",
 			["SoulstoneEnd"] = "<lightYellow>Your Soulstone has faded."
 		}
@@ -272,6 +287,7 @@ function Necrosis_Localization_Dialog_En()
 		["BuffMenu"] = "Put buff menu on the left",
 		["PetMenu"] = "Put pet menu on the left",
 		["CurseMenu"] = "Put curse menu on the left",
+		["StoneMenu"] = "Put stones menu on the left",
 		["STimerLeft"] = "Show timers on the left side of the button",
 		["ShowCount"] = "Show the Shard count in Necrosis",
 		["CountType"] = "Stone type counted",
@@ -280,10 +296,11 @@ function Necrosis_Localization_Dialog_En()
 		["ShowMessage"] = "Activate random speeches",
 		["ShowDemonSummon"] = "Activate random speeches (demon)",
 		["ShowSteedSummon"] = "Activate random speeches (steed)",
+		["ShowRitualSummon"] = "Activate random speeches (ritual)",
 		["ChatType"] = "Declare Necrosis messages as system messages",
 		["NecrosisSize"] = "Size of the Necrosis button",
 		["BanishSize"] = "Size of the Banish button",
-		["TranseSize"] = "Size of Transe and Anti-fear buttons",
+		["TranseSize"] = "Size of Trance and Anti-fear buttons",
 		["Skin"] = "Skin of the Necrosis Sphere",
 		["Show"] = {
 			["Firestone"] = "Show Firestone button",
@@ -293,6 +310,7 @@ function Necrosis_Localization_Dialog_En()
 			["Steed"] = "Show Steed button",
 			["Buff"] = "Show Spell menu button",
 			["Curse"] = "Show Curse menu button",
+			["Stone"] = "Show Stones menu button",
 			["Demon"] = "Show Demon menu button",
 			["Tooltips"] = "Show tooltips"
 		},

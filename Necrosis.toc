@@ -13,4 +13,5 @@ NecrosisShardMenu.xml
 NecrosisMessageMenu.xml
 NecrosisButtonMenu.xml
 NecrosisTimerMenu.xml
+NecrosisStoneMenu.xml
 NecrosisGraphOptionMenu.xml
