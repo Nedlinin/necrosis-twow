@@ -330,6 +330,18 @@ local NECROSIS_EVENT_HANDLERS = {
 	CHAT_MSG_SPELL_BREAK_AURA = Necrosis_OnDebuffEvent,
 };
 
+local function Necrosis_RegisterSpecialFrame(frameName)
+	if not UISpecialFrames then
+		UISpecialFrames = {};
+	end
+	for index = 1, table.getn(UISpecialFrames), 1 do
+		if UISpecialFrames[index] == frameName then
+			return;
+		end
+	end
+	table.insert(UISpecialFrames, frameName);
+end
+
 -- Menus: Enables display of the buff and pet menus
 local PetShow = false;
 local PetMenuShow = false;
@@ -492,7 +504,9 @@ function Necrosis_OnLoad()
 	for eventName in pairs(NECROSIS_EVENT_HANDLERS) do
 		NecrosisButton:RegisterEvent(eventName);
 	end
-	
+
+	Necrosis_RegisterSpecialFrame("NecrosisGeneralFrame");
+
 	-- Register graphical components
 	NecrosisButton:RegisterForDrag("LeftButton");
 	NecrosisButton:RegisterForClicks("LeftButtonUp", "RightButtonUp");
