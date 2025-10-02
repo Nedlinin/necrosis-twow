@@ -891,15 +891,23 @@ function Necrosis_SelfEffect(action)
 			if NecrosisConfig.SteedSummon and NecrosisTellMounted
 				and NecrosisConfig.ChatMsg and NECROSIS_PET_MESSAGE[6] and not NecrosisConfig.SM
 				then
-					local tempnum = random(1, table.getn(NECROSIS_PET_MESSAGE[6]));
-					while tempnum == SteedMess and table.getn(NECROSIS_PET_MESSAGE[6]) >= 2 do
-						tempnum = random(1, table.getn(NECROSIS_PET_MESSAGE[6]));
+					local mountMessages = NECROSIS_PET_MESSAGE[6];
+					local messageCount = table.getn(mountMessages);
+					if messageCount > 0 then
+						local tempnum = random(1, messageCount);
+						if messageCount >= 2 then
+							while tempnum == SteedMess do
+								tempnum = random(1, messageCount);
+							end
+						end
+						SteedMess = tempnum;
+						local lines = mountMessages[tempnum];
+						local lineCount = table.getn(lines);
+						for i = 1, lineCount, 1 do
+							Necrosis_Msg(Necrosis_MsgReplace(lines[i]), "SAY");
+						end
+						NecrosisTellMounted = false;
 					end
-					SteedMess = tempnum;
-					for i = 1, table.getn(NECROSIS_PET_MESSAGE[6][tempnum]) do
-						Necrosis_Msg(Necrosis_MsgReplace(NECROSIS_PET_MESSAGE[6][tempnum][i]), "SAY");
-					end
-					NecrosisTellMounted = false;
 			end
 			Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 2);
 			
@@ -957,13 +965,21 @@ function Necrosis_SpellManagement()
 			and (NecrosisConfig.ChatMsg or NecrosisConfig.SM)
 			and NecrosisConfig.RitualMessage
 			and NECROSIS_INVOCATION_MESSAGES then
-				local tempnum = random(1, table.getn(NECROSIS_INVOCATION_MESSAGES));
-				while tempnum == TPMess and table.getn(NECROSIS_INVOCATION_MESSAGES) >= 2 do
-					tempnum = random(1, table.getn(NECROSIS_INVOCATION_MESSAGES));
-				end
-				TPMess = tempnum;
-				for i = 1, table.getn(NECROSIS_INVOCATION_MESSAGES[tempnum]) do
-					Necrosis_Msg(Necrosis_MsgReplace(NECROSIS_INVOCATION_MESSAGES[tempnum][i], SpellTargetName), "WORLD");
+				local ritualMessages = NECROSIS_INVOCATION_MESSAGES;
+				local ritualCount = table.getn(ritualMessages);
+				if ritualCount > 0 then
+					local tempnum = random(1, ritualCount);
+					if ritualCount >= 2 then
+						while tempnum == TPMess do
+							tempnum = random(1, ritualCount);
+						end
+					end
+					TPMess = tempnum;
+					local lines = ritualMessages[tempnum];
+					local lineCount = table.getn(lines);
+					for i = 1, lineCount, 1 do
+						Necrosis_Msg(Necrosis_MsgReplace(lines[i], SpellTargetName), "WORLD");
+					end
 				end
 		elseif StoneIDInSpellTable[5] ~= 0 and SpellCastName == NECROSIS_SPELL_TABLE[StoneIDInSpellTable[5]].Name then -- Create Felstone
 			LastStone = 1
@@ -1501,17 +1517,25 @@ function Necrosis_UpdateIcons()
 		SoulstoneMode = 3;
 		SoulstoneWaiting = true;
 		-- Si on vient de poser la pierre, on l'annonce au raid
-		if SoulstoneAdvice and NECROSIS_SOULSTONE_ALERT_MESSAGE then
-			local tempnum = random(1, table.getn(NECROSIS_SOULSTONE_ALERT_MESSAGE));
-			while tempnum == RezMess and table.getn(NECROSIS_SOULSTONE_ALERT_MESSAGE) >= 2 do
-			tempnum = random(1, table.getn(NECROSIS_SOULSTONE_ALERT_MESSAGE));
+			if SoulstoneAdvice and NECROSIS_SOULSTONE_ALERT_MESSAGE then
+				local alertMessages = NECROSIS_SOULSTONE_ALERT_MESSAGE;
+				local alertCount = table.getn(alertMessages);
+				if alertCount > 0 then
+					local tempnum = random(1, alertCount);
+					if alertCount >= 2 then
+						while tempnum == RezMess do
+							tempnum = random(1, alertCount);
+						end
+					end
+					RezMess = tempnum;
+					local lines = alertMessages[tempnum];
+					local lineCount = table.getn(lines);
+					for i = 1, lineCount, 1 do
+						Necrosis_Msg(Necrosis_MsgReplace(lines[i], SoulstoneTarget), "WORLD");
+					end
+					SoulstoneAdvice = false;
+				end
 			end
-			RezMess = tempnum;
-			for i = 1, table.getn(NECROSIS_SOULSTONE_ALERT_MESSAGE[tempnum]) do
-				Necrosis_Msg(Necrosis_MsgReplace(NECROSIS_SOULSTONE_ALERT_MESSAGE[tempnum][i], SoulstoneTarget), "WORLD");
-			end
-			SoulstoneAdvice = false;
-		end
 	end
 
 	-- Si la Pierre a été utilisée et qu'il y a une pierre en inventaire
@@ -3315,25 +3339,41 @@ function Necrosis_PetCast(type, click)
 			end
 		end
 		if NecrosisConfig.DemonSummon and NecrosisConfig.ChatMsg and not NecrosisConfig.SM then
-			if NecrosisConfig.PetName[(type - 2)] == " " and NECROSIS_PET_MESSAGE[5] then
-				local tempnum = random(1, table.getn(NECROSIS_PET_MESSAGE[5]));
-				while tempnum == PetMess and table.getn(NECROSIS_PET_MESSAGE[5]) >= 2 do
-					tempnum = random(1, table.getn(NECROSIS_PET_MESSAGE[5]));
+				if NecrosisConfig.PetName[(type - 2)] == " " and NECROSIS_PET_MESSAGE[5] then
+					local genericMessages = NECROSIS_PET_MESSAGE[5];
+					local genericCount = table.getn(genericMessages);
+					if genericCount > 0 then
+						local tempnum = random(1, genericCount);
+						if genericCount >= 2 then
+							while tempnum == PetMess do
+								tempnum = random(1, genericCount);
+							end
+						end
+						PetMess = tempnum;
+						local lines = genericMessages[tempnum];
+						local lineCount = table.getn(lines);
+						for i = 1, lineCount, 1 do
+							Necrosis_Msg(Necrosis_MsgReplace(lines[i]), "SAY");
+						end
+					end
+				elseif NECROSIS_PET_MESSAGE[(type - 2)] then
+					local specificMessages = NECROSIS_PET_MESSAGE[(type - 2)];
+					local specificCount = table.getn(specificMessages);
+					if specificCount > 0 then
+						local tempnum = random(1, specificCount);
+						if specificCount >= 2 then
+							while tempnum == PetMess do
+								tempnum = random(1, specificCount);
+							end
+						end
+						PetMess = tempnum;
+						local lines = specificMessages[tempnum];
+						local lineCount = table.getn(lines);
+						for i = 1, lineCount, 1 do
+							Necrosis_Msg(Necrosis_MsgReplace(lines[i], nil , type - 2), "SAY");
+						end
+					end
 				end
-				PetMess = tempnum;
-				for i = 1, table.getn(NECROSIS_PET_MESSAGE[5][tempnum]) do
-					Necrosis_Msg(Necrosis_MsgReplace(NECROSIS_PET_MESSAGE[5][tempnum][i]), "SAY");
-				end
-			elseif NECROSIS_PET_MESSAGE[(type - 2)] then
-				local tempnum = random(1, table.getn(NECROSIS_PET_MESSAGE[(type - 2)]));
-				while tempnum == PetMess and table.getn(NECROSIS_PET_MESSAGE[(type - 2)]) >= 2 do
-					tempnum = random(1, table.getn(NECROSIS_PET_MESSAGE[(type - 2)]));
-				end
-				PetMess = tempnum;
-				for i = 1, table.getn(NECROSIS_PET_MESSAGE[(type - 2)][tempnum]) do
-					Necrosis_Msg(Necrosis_MsgReplace(NECROSIS_PET_MESSAGE[(type - 2)][tempnum][i], nil , type - 2), "SAY");
-				end
-			end
 		end
 	end
 	CastSpell(NECROSIS_SPELL_TABLE[type].ID, "spell");
