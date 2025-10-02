@@ -207,25 +207,127 @@ local function Necrosis_SetMenuAlpha(prefix, alpha)
 	end
 end
 
-local NECROSIS_MANAGED_EVENTS = {
-	"BAG_UPDATE",
-	"CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS",
-	"CHAT_MSG_SPELL_AURA_GONE_SELF",
-	"CHAT_MSG_SPELL_BREAK_AURA",
-	"PLAYER_REGEN_DISABLED",
-	"PLAYER_REGEN_ENABLED",
-	"UNIT_PET",
-	"SPELLCAST_START",
-	"SPELLCAST_FAILED",
-	"SPELLCAST_INTERRUPTED",
-	"SPELLCAST_STOP",
-	"LEARNED_SPELL_IN_TAB",
-	"CHAT_MSG_SPELL_SELF_DAMAGE",
-	"PLAYER_TARGET_CHANGED",
-	"TRADE_REQUEST",
-	"TRADE_REQUEST_CANCEL",
-	"TRADE_SHOW",
-	"TRADE_CLOSED",
+local function Necrosis_OnBagUpdate()
+	if NecrosisConfig.SoulshardSort then
+		Necrosis_SoulshardSwitch("CHECK");
+	else
+		Necrosis_BagExplore();
+	end
+end
+
+local function Necrosis_OnSpellcastStart(spellName)
+	SpellCastName = spellName;
+	SpellTargetName = UnitName("target");
+	if not SpellTargetName then
+		SpellTargetName = "";
+	end
+	SpellTargetLevel = UnitLevel("target");
+	if not SpellTargetLevel then
+		SpellTargetLevel = "";
+	end
+end
+
+local function Necrosis_ClearSpellcastContext()
+	SpellCastName = nil;
+	SpellCastRank = nil;
+	SpellTargetName = nil;
+	SpellTargetLevel = nil;
+end
+
+local function Necrosis_SetTradeRequest(active)
+	NecrosisTradeRequest = active;
+end
+
+local function Necrosis_OnTargetChanged()
+	if NecrosisConfig.AntiFearAlert and AFCurrentTargetImmune then
+		AFCurrentTargetImmune = false;
+	end
+end
+
+local function Necrosis_HandleSelfFearDamage(message)
+	if not NecrosisConfig.AntiFearAlert or not message then
+		return;
+	end
+	for spell, creatureName in string.gfind(message, NECROSIS_ANTI_FEAR_SRCH) do
+		if spell == NECROSIS_SPELL_TABLE[13].Name or spell == NECROSIS_SPELL_TABLE[19].Name then
+			AFCurrentTargetImmune = true;
+			break;
+		end
+	end
+end
+
+local function Necrosis_OnSpellLearned()
+	Necrosis_SpellSetup();
+	Necrosis_CreateMenu();
+	Necrosis_ButtonSetup();
+end
+
+local function Necrosis_OnCombatEnd()
+	PlayerCombat = false;
+	SpellGroup, SpellTimer, TimerTable = Necrosis_RetraitTimerCombat(SpellGroup, SpellTimer, TimerTable);
+	for i = 1, 10, 1 do
+		local frameName = "NecrosisTarget"..i.."Text";
+		local frameItem = getglobal(frameName);
+		if frameItem:IsShown() then
+			frameItem:Hide();
+		end
+	end
+end
+
+local function Necrosis_OnSpellcastStartEvent()
+	Necrosis_OnSpellcastStart(arg1);
+end
+
+local function Necrosis_OnTradeRequestEvent()
+	Necrosis_SetTradeRequest(true);
+end
+
+local function Necrosis_OnTradeCancelledEvent()
+	Necrosis_SetTradeRequest(false);
+end
+
+local function Necrosis_OnSelfDamageEvent()
+	Necrosis_HandleSelfFearDamage(arg1);
+end
+
+local function Necrosis_OnUnitPetEvent()
+	if arg1 == "player" then
+		Necrosis_ChangeDemon();
+	end
+end
+
+local function Necrosis_OnBuffEvent()
+	Necrosis_SelfEffect("BUFF");
+end
+
+local function Necrosis_OnDebuffEvent()
+	Necrosis_SelfEffect("DEBUFF");
+end
+
+local function Necrosis_OnCombatStartEvent()
+	PlayerCombat = true;
+end
+
+
+local NECROSIS_EVENT_HANDLERS = {
+	BAG_UPDATE = Necrosis_OnBagUpdate,
+	SPELLCAST_START = Necrosis_OnSpellcastStartEvent,
+	SPELLCAST_STOP = Necrosis_SpellManagement,
+	SPELLCAST_FAILED = Necrosis_ClearSpellcastContext,
+	SPELLCAST_INTERRUPTED = Necrosis_ClearSpellcastContext,
+	TRADE_REQUEST = Necrosis_OnTradeRequestEvent,
+	TRADE_SHOW = Necrosis_OnTradeRequestEvent,
+	TRADE_REQUEST_CANCEL = Necrosis_OnTradeCancelledEvent,
+	TRADE_CLOSED = Necrosis_OnTradeCancelledEvent,
+	PLAYER_TARGET_CHANGED = Necrosis_OnTargetChanged,
+	CHAT_MSG_SPELL_SELF_DAMAGE = Necrosis_OnSelfDamageEvent,
+	LEARNED_SPELL_IN_TAB = Necrosis_OnSpellLearned,
+	PLAYER_REGEN_ENABLED = Necrosis_OnCombatEnd,
+	PLAYER_REGEN_DISABLED = Necrosis_OnCombatStartEvent,
+	UNIT_PET = Necrosis_OnUnitPetEvent,
+	CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS = Necrosis_OnBuffEvent,
+	CHAT_MSG_SPELL_AURA_GONE_SELF = Necrosis_OnDebuffEvent,
+	CHAT_MSG_SPELL_BREAK_AURA = Necrosis_OnDebuffEvent,
 };
 
 -- Menus : Permet l'affichage des menus de buff et de pet
@@ -386,24 +488,10 @@ function Necrosis_OnLoad()
 	-- Enregistrement des événements interceptés par Necrosis
 	this:RegisterEvent("PLAYER_ENTERING_WORLD");
 	this:RegisterEvent("PLAYER_LEAVING_WORLD");
-	NecrosisButton:RegisterEvent("BAG_UPDATE");
-	NecrosisButton:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS");
-	NecrosisButton:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_SELF");
-	NecrosisButton:RegisterEvent("CHAT_MSG_SPELL_BREAK_AURA");
-	NecrosisButton:RegisterEvent("PLAYER_REGEN_DISABLED");
-	NecrosisButton:RegisterEvent("PLAYER_REGEN_ENABLED");
-	NecrosisButton:RegisterEvent("UNIT_PET");
-	NecrosisButton:RegisterEvent("SPELLCAST_START");
-	NecrosisButton:RegisterEvent("SPELLCAST_FAILED");
-	NecrosisButton:RegisterEvent("SPELLCAST_INTERRUPTED");
-	NecrosisButton:RegisterEvent("SPELLCAST_STOP");
-	NecrosisButton:RegisterEvent("LEARNED_SPELL_IN_TAB");
-	NecrosisButton:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE");
-	NecrosisButton:RegisterEvent("PLAYER_TARGET_CHANGED");
-	NecrosisButton:RegisterEvent("TRADE_REQUEST");
-	NecrosisButton:RegisterEvent("TRADE_REQUEST_CANCEL");
-	NecrosisButton:RegisterEvent("TRADE_SHOW");
-	NecrosisButton:RegisterEvent("TRADE_CLOSED");
+	
+	for eventName in pairs(NECROSIS_EVENT_HANDLERS) do
+		NecrosisButton:RegisterEvent(eventName);
+	end
 	
 	-- Enregistrement des composants graphiques
 	NecrosisButton:RegisterForDrag("LeftButton");
@@ -704,126 +792,26 @@ end
 function Necrosis_OnEvent(event)
 	if (event == "PLAYER_ENTERING_WORLD") then
 		Necrosis_In = true;
+		return;
 	elseif (event == "PLAYER_LEAVING_WORLD") then
 		Necrosis_In = false;
+		return;
 	end
-		
-	-- Traditionnel test : Le joueur est-il bien Démoniste ?
-	-- Le jeu est-il bine chargé ?
+
 	if (not Loaded) or (not Necrosis_In) or UnitClass("player") ~= NECROSIS_UNIT_WARLOCK then 
 		return;
 	end
 
-	-- Si le contenu des sacs a changé, on vérifie que les Fragments d'âme sont toujours dans le bon sac
-	if (event == "BAG_UPDATE") then
-		if (NecrosisConfig.SoulshardSort) then
-			Necrosis_SoulshardSwitch("CHECK");
-		else
-			Necrosis_BagExplore();
-		end
-	-- Gestion de la fin de l'incantation des sorts
-	elseif (event == "SPELLCAST_STOP") then
-		Necrosis_SpellManagement();
-	-- Quand le démoniste commence à incanter un sort, on intercepte le nom de celui-ci
-	-- On sauve également le nom de la cible du sort ainsi que son niveau
-	elseif (event == "SPELLCAST_START") then
-		SpellCastName = arg1;
-		SpellTargetName = UnitName("target");
-		if not SpellTargetName then
-			SpellTargetName = "";
-		end
-		SpellTargetLevel = UnitLevel("target");
-		if not SpellTargetLevel then
-			SpellTargetLevel = "";
-		end	
-	-- Quand le démoniste stoppe son incantation, on relache le nom de celui-ci
-	elseif (event == "SPELLCAST_FAILED") or (event == "SPELLCAST_INTERRUPTED") then
-		SpellCastName = nil;
-		SpellCastRank = nil;
-		SpellTargetName = nil;
-		SpellTargetLevel = nil;
-	-- Flag si une fenetre de Trade est ouverte, afin de pouvoir trader automatiquement les pierres de soin
-	elseif event == "TRADE_REQUEST" or event == "TRADE_SHOW" then
-		NecrosisTradeRequest = true;
-	elseif event == "TRADE_REQUEST_CANCEL" or event == "TRADE_CLOSED" then
-		NecrosisTradeRequest = false;
-	-- AntiFear button hide on target change
-	elseif event == "PLAYER_TARGET_CHANGED" then
-		if NecrosisConfig.AntiFearAlert and AFCurrentTargetImmune then
-			AFCurrentTargetImmune = false;
-		end
-	-- AntiFear immunity on cast detection
-	elseif event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
-		if NecrosisConfig.AntiFearAlert then
-			for spell, creatureName in string.gfind(arg1, NECROSIS_ANTI_FEAR_SRCH) do			
-				-- We check if the casted spell on the immune target is Fear or Death Coil
-				if spell == NECROSIS_SPELL_TABLE[13].Name or spell == NECROSIS_SPELL_TABLE[19].Name then
-					AFCurrentTargetImmune = true;
-					break;
-				end
-			end
-		end
-	
-	-- Si le Démoniste apprend un nouveau sort / rang de sort, on récupère la nouvelle liste des sorts
-	-- Si le Démoniste apprend un nouveau sort de buff ou d'invocation, on recrée les boutons
-	elseif (event == "LEARNED_SPELL_IN_TAB") then
-		Necrosis_SpellSetup();
-		Necrosis_CreateMenu();
-		Necrosis_ButtonSetup();
-	
-	-- A la fin du combat, on arrête de signaler le Crépuscule
-	-- On enlève les timers de sorts ainsi que les noms des mobs
-	elseif (event == "PLAYER_REGEN_ENABLED") then
-		PlayerCombat = false;
-		SpellGroup, SpellTimer, TimerTable = Necrosis_RetraitTimerCombat(SpellGroup, SpellTimer, TimerTable);
-		for i = 1, 10, 1 do
-			local frameName = "NecrosisTarget"..i.."Text";
-			local frameItem = getglobal(frameName);
-			if frameItem:IsShown() then
-				frameItem:Hide();
-			end
-		end
-	-- Quand le démoniste change de démon
-	elseif (event == "UNIT_PET" and arg1 == "player") then
-		Necrosis_ChangeDemon();
-	-- Actions personnelles -- "Buffs"
-	elseif (event == "CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS") then
-		Necrosis_SelfEffect("BUFF");
-	-- Actions personnelles -- "Debuffs"
-	elseif event == "CHAT_MSG_SPELL_AURA_GONE_SELF" or event == "CHAT_MSG_SPELL_BREAK_AURA" then
-		Necrosis_SelfEffect("DEBUFF");
-	elseif event == "PLAYER_REGEN_DISABLED" then
-		PlayerCombat = true;
-	-- Fin de l'écran de chargement
+	local handler = NECROSIS_EVENT_HANDLERS[event];
+	if handler then
+		handler();
 	end
-	return;
 end
 
 ------------------------------------------------------------------------------------------------------
 -- FONCTIONS NECROSIS "ON EVENT"
 ------------------------------------------------------------------------------------------------------
 
--- Events : PLAYER_ENTERING_WORLD et PLAYER_LEAVING_WORLD
--- Fonction appliquée à chaque écran de chargement
--- Quand on sort d'une zone, on arrête de surveiller les envents
--- Quand on rentre dans une zone, on reprend la surveillance
--- Cela permet d'éviter un temps de chargement trop long du mod
-function Necrosis_RegisterManagement(RegistrationType)
-	local register = (RegistrationType == "IN");
-	for i = 1, table.getn(NECROSIS_MANAGED_EVENTS), 1 do
-		local event = NECROSIS_MANAGED_EVENTS[i];
-		if register then
-			NecrosisButton:RegisterEvent(event);
-		else
-			NecrosisButton:UnregisterEvent(event);
-		end
-	end
-	return;
-end
-
--- event : UNIT_PET
--- Permet de timer les asservissements, ainsi que de prévenir pour les ruptures d'asservissement
--- Change également le nom du pet au remplacement de celui-ci
 function Necrosis_ChangeDemon()
 	-- Si le nouveau démon est un démon asservi, on place un timer de 5 minutes
 	if (Necrosis_UnitHasEffect("pet", NECROSIS_SPELL_TABLE[10].Name)) then
