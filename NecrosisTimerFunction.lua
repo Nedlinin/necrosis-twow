@@ -19,6 +19,10 @@
 -- That's what the timer table is for!
 function Necrosis_InsertTimerParTable(IndexTable, Target, LevelTarget, SpellGroup, SpellTimer, TimerTable)
 
+	if type(Necrosis_DebugPrint) == "function" then
+		Necrosis_DebugPrint("InsertTimer", "index=", IndexTable, "name=", NECROSIS_SPELL_TABLE[IndexTable].Name or "?", "target=", Target or "");
+	end
+
 	-- Insert the entry into the table
 	table.insert(SpellTimer,
 		{
@@ -49,6 +53,9 @@ function Necrosis_InsertTimerStone(Stone, start, duration, SpellGroup, SpellTime
 
 	-- Insert the entry into the table
 	if Stone == "Healthstone" then
+		if type(Necrosis_DebugPrint) == "function" then
+			Necrosis_DebugPrint("InsertTimerStone", Stone, "duration=", 120);
+		end
 		table.insert(SpellTimer,
 			{
 				Name = NECROSIS_COOLDOWN.Healthstone,
@@ -65,6 +72,9 @@ function Necrosis_InsertTimerStone(Stone, start, duration, SpellGroup, SpellTime
 		SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable);
 		
 	elseif Stone == "Spellstone" then
+		if type(Necrosis_DebugPrint) == "function" then
+			Necrosis_DebugPrint("InsertTimerStone", Stone, "duration=", 120);
+		end
 		table.insert(SpellTimer,
 			{
 				Name = NECROSIS_COOLDOWN.Spellstone,
@@ -81,6 +91,9 @@ function Necrosis_InsertTimerStone(Stone, start, duration, SpellGroup, SpellTime
 		SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable);
 		
 	elseif Stone == "Soulstone" then
+		if type(Necrosis_DebugPrint) == "function" then
+			Necrosis_DebugPrint("InsertTimerStone", Stone, "duration=", duration or "nil");
+		end
 		table.insert(SpellTimer,
 			{
 				Name = NECROSIS_SPELL_TABLE[11].Name,
@@ -305,6 +318,15 @@ function Necrosis_DisplayTimer(display, index, SpellGroup, SpellTimer, Graphical
 			affichage = affichage.." - "..SpellTimer[index].Target;
 		else
 			affichage = SpellTimer[index].Target.." - "..affichage;
+		end
+	end
+	if not SpellTimer[index].Gtimer or SpellTimer[index].Gtimer == 0 then
+		for slot = 1, table.getn(TimerTable), 1 do
+			if not TimerTable[slot] then
+				TimerTable[slot] = true;
+				SpellTimer[index].Gtimer = slot;
+				break;
+			end
 		end
 	end
 	table.insert(GraphicalTimer.texte, SpellTimer[index].Name);

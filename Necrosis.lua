@@ -216,6 +216,7 @@ local function Necrosis_OnBagUpdate()
 end
 
 local function Necrosis_OnSpellcastStart(spellName)
+	Necrosis_DebugPrint("SPELLCAST_START", spellName or "nil");
 	SpellCastName = spellName;
 	SpellTargetName = UnitName("target");
 	if not SpellTargetName then
@@ -483,6 +484,38 @@ local TPMess = 0
 local lOriginal_GameTooltip_ClearMoney;
 
 local Necrosis_In = true;
+
+local DEBUG_TIMER_EVENTS = false;
+
+local function Necrosis_DebugPrint(...)
+	if not DEBUG_TIMER_EVENTS or not DEFAULT_CHAT_FRAME then
+		return;
+	end
+	local message = "|cffff66ffNecrosis Debug:|r ";
+	local count = arg and table.getn(arg) or 0;
+	if count == 0 then
+		DEFAULT_CHAT_FRAME:AddMessage(message);
+		return;
+	end
+	for index = 1, count, 1 do
+		message = message .. tostring(arg[index]);
+		if index < count then
+			message = message .. " ";
+		end
+	end
+	DEFAULT_CHAT_FRAME:AddMessage(message);
+end
+
+_G.Necrosis_DebugPrint = Necrosis_DebugPrint;
+
+function Necrosis_SetTimerDebug(enabled)
+	if enabled then
+		DEBUG_TIMER_EVENTS = true;
+	else
+		DEBUG_TIMER_EVENTS = false;
+	end
+	Necrosis_DebugPrint("Timer debug", DEBUG_TIMER_EVENTS and "enabled" or "disabled");
+end
 
 ------------------------------------------------------------------------------------------------------
 -- FONCTIONS NECROSIS APPLIQUEES A L'ENTREE DANS LE JEU
@@ -860,6 +893,7 @@ end
 -- Handles buffs and debuffs appearing on the Warlock
 -- Based on the combat log
 function Necrosis_SelfEffect(action)
+	Necrosis_DebugPrint("SelfEffect", action, arg1 or "nil");
 	if action == "BUFF" then
 		-- Insert a timer when the Warlock gains Demon Sacrifice
 		if arg1 == NECROSIS_TRANSLATION.SacrificeGain then
@@ -897,11 +931,19 @@ function Necrosis_SelfEffect(action)
 			DominationUp = true;
 			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 2);
 		end
-		-- Update the Amplify Curse button when active and start the cooldown timer
-		if  string.find(arg1, NECROSIS_SPELL_TABLE[42].Name) and NECROSIS_SPELL_TABLE[42].ID ~= nil then
-			AmplifyUp = true;
-			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 2);
-		end
+	-- Update the Amplify Curse button when active and start the cooldown timer
+	if  string.find(arg1, NECROSIS_SPELL_TABLE[42].Name) and NECROSIS_SPELL_TABLE[42].ID ~= nil then
+		AmplifyUp = true;
+		Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 2);
+	end
+	-- Track Demon Armor/Skin on the player
+	if NECROSIS_SPELL_TABLE[31].Name and string.find(arg1, NECROSIS_SPELL_TABLE[31].Name) then
+		SpellTimer, TimerTable = Necrosis_RetraitTimerParNom(NECROSIS_SPELL_TABLE[31].Name, SpellTimer, TimerTable);
+		SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerParTable(31, UnitName("player"), UnitLevel("player"), SpellGroup, SpellTimer, TimerTable);
+	elseif NECROSIS_SPELL_TABLE[36].Name and string.find(arg1, NECROSIS_SPELL_TABLE[36].Name) then
+		SpellTimer, TimerTable = Necrosis_RetraitTimerParNom(NECROSIS_SPELL_TABLE[36].Name, SpellTimer, TimerTable);
+		SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerParTable(36, UnitName("player"), UnitLevel("player"), SpellGroup, SpellTimer, TimerTable);
+	end
 	else
 		-- Update the mount button when the Warlock dismounts
 		if string.find(arg1, NECROSIS_SPELL_TABLE[1].Name) or  string.find(arg1, NECROSIS_SPELL_TABLE[2].Name) then
@@ -919,6 +961,12 @@ function Necrosis_SelfEffect(action)
 			AmplifyUp = false;
 			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 1);
 		end
+		-- Remove the Demon Armor/Skin timer when it fades
+		if NECROSIS_SPELL_TABLE[31].Name and string.find(arg1, NECROSIS_SPELL_TABLE[31].Name) then
+			SpellTimer, TimerTable = Necrosis_RetraitTimerParNom(NECROSIS_SPELL_TABLE[31].Name, SpellTimer, TimerTable);
+		elseif NECROSIS_SPELL_TABLE[36].Name and string.find(arg1, NECROSIS_SPELL_TABLE[36].Name) then
+			SpellTimer, TimerTable = Necrosis_RetraitTimerParNom(NECROSIS_SPELL_TABLE[36].Name, SpellTimer, TimerTable);
+		end
 	end
 	return;
 end
@@ -927,6 +975,7 @@ end
 -- Handles everything related to spells after they finish casting
 function Necrosis_SpellManagement()
 	local SortActif = false;
+	Necrosis_DebugPrint("Necrosis_SpellManagement", "SpellCastName=", SpellCastName or "nil", "Target=", SpellTargetName or "nil");
 	if (SpellCastName) then
 		-- If the spell was Soulstone Resurrection, start its timer
 		if (SpellCastName == NECROSIS_SPELL_TABLE[11].Name) then
