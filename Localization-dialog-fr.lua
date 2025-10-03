@@ -4,39 +4,37 @@
 -- Original creator (US): Infernal (http://www.revolvus.com/games/interface/necrosis/)
 -- Base implementation (FR): Tilienna Thorondor
 -- Project continuation: Lomig & Nyx of Larmes de Cenarius, Kael'Thas
--- 
+--
 -- French skins and voices: Eliah, Ner'zhul
 -- German version: Arne Meier and Halisstra, Lothar
 -- Special thanks to Sadyre (JoL)
 -- Version 28.06.2006-1
 ------------------------------------------------------------------------------------------------------
 
-
 ------------------------------------------------
 -- FRENCH VERSION TEXTS --
 ------------------------------------------------
 
 function Necrosis_Localization_Dialog_Fr()
-
 	function NecrosisLocalization()
-		Necrosis_Localization_Speech_Fr();
+		Necrosis_Localization_Speech_Fr()
 	end
 
 	NECROSIS_COOLDOWN = {
 		["Spellstone"] = "Temps de recharge Pierre de sort",
-		["Healthstone"] = "Temps de recharge Pierre de soins"
-	};
+		["Healthstone"] = "Temps de recharge Pierre de soins",
+	}
 
 	NecrosisTooltipData = {
 		["Main"] = {
 			Label = "|c00FFFFFFNecrosis|r",
 			Stone = {
-				[true] = "Oui";
-				[false] = "Non";
+				[true] = "Oui",
+				[false] = "Non",
 			},
 			Hellspawn = {
-				[true] = "On";
-				[false] = "Off";
+				[true] = "On",
+				[false] = "Off",
 			},
 			["Soulshard"] = "Fragment(s) d'\195\162me : ",
 			["InfernalStone"] = "Pierre(s) infernale(s) : ",
@@ -51,153 +49,152 @@ function Necrosis_Localization_Dialog_Fr()
 		},
 		["Soulstone"] = {
 			Label = "|c00FF99FFPierre d'\195\162me|r",
-			Text = {"Cr\195\169ation","Utilisation","Utilis\195\169e","En attente"}
+			Text = { "Cr\195\169ation", "Utilisation", "Utilis\195\169e", "En attente" },
 		},
 		["Healthstone"] = {
 			Label = "|c0066FF33Pierre de soins|r",
-			Text = {"Création","Utilisation"}
+			Text = { "Création", "Utilisation" },
 		},
 		["Spellstone"] = {
 			Label = "|c0099CCFFPierre de sort|r",
-			Text = {"Création","Utilisation"}
+			Text = { "Création", "Utilisation" },
 		},
 		["Firestone"] = {
 			Label = "|c00FF4444Pierre de feu|r",
-			Text = {"Création","Utilisation"}
+			Text = { "Création", "Utilisation" },
 		},
 		["Felstone"] = {
 			Label = "|c0044FF44Pierre gangrenée|r",
-			Text = {"Création","Utilisation"}
+			Text = { "Création", "Utilisation" },
 		},
 		["Wrathstone"] = {
 			Label = "|c00FF4444Pierre de colère|r",
-			Text = {"Création","Utilisation"}
+			Text = { "Création", "Utilisation" },
 		},
 		["Voidstone"] = {
 			Label = "|c00800080Pierre du Vide|r",
-			Text = {"Création","Utilisation"}
+			Text = { "Création", "Utilisation" },
 		},
 		["SpellTimer"] = {
 			Label = "|c00FFFFFFDur\195\169e des sorts|r",
 			Text = "Sorts actifs sur la cible",
-			Right = "Clic droit pour pierre de foyer vers "
+			Right = "Clic droit pour pierre de foyer vers ",
 		},
 		["ShadowTrance"] = {
-			Label = "|c00FFFFFFTranse de l'ombre|r"
+			Label = "|c00FFFFFFTranse de l'ombre|r",
 		},
 		["Domination"] = {
-			Label = "|c00FFFFFFDomination corrompue|r"
+			Label = "|c00FFFFFFDomination corrompue|r",
 		},
 		["Enslave"] = {
-			Label = "|c00FFFFFFAsservissement|r"
+			Label = "|c00FFFFFFAsservissement|r",
 		},
 		["Armor"] = {
-			Label = "|c00FFFFFFArmure d\195\169moniaque|r"
+			Label = "|c00FFFFFFArmure d\195\169moniaque|r",
 		},
 		["Invisible"] = {
-			Label = "|c00FFFFFFD\195\169tection de l'invisibilit\195\169|r"
+			Label = "|c00FFFFFFD\195\169tection de l'invisibilit\195\169|r",
 		},
 		["Aqua"] = {
-			Label = "|c00FFFFFFRespiration interminable|r"
+			Label = "|c00FFFFFFRespiration interminable|r",
 		},
 		["Kilrogg"] = {
-			Label = "|c00FFFFFFOeil de Kilrogg|r"
+			Label = "|c00FFFFFFOeil de Kilrogg|r",
 		},
 		["Banish"] = {
-			Label = "|c00FFFFFFBannir|r"
+			Label = "|c00FFFFFFBannir|r",
 		},
 		["TP"] = {
-			Label = "|c00FFFFFFRituel d'invocation|r"
+			Label = "|c00FFFFFFRituel d'invocation|r",
 		},
 		["SoulLink"] = {
-			Label = "|c00FFFFFFLien spirituel|r"
+			Label = "|c00FFFFFFLien spirituel|r",
 		},
 		["ShadowProtection"] = {
-			Label = "|c00FFFFFFGardien de l'ombre|r"
+			Label = "|c00FFFFFFGardien de l'ombre|r",
 		},
 		["Imp"] = {
-			Label = "|c00FFFFFFDiablotin|r"
+			Label = "|c00FFFFFFDiablotin|r",
 		},
 		["Void"] = {
-			Label = "|c00FFFFFFMarcheur \195\169th\195\169r\195\169|r"
+			Label = "|c00FFFFFFMarcheur \195\169th\195\169r\195\169|r",
 		},
 		["Succubus"] = {
-			Label = "|c00FFFFFFSuccube|r"
+			Label = "|c00FFFFFFSuccube|r",
 		},
 		["Fel"] = {
-			Label = "|c00FFFFFFChasseur corrompu|r"
+			Label = "|c00FFFFFFChasseur corrompu|r",
 		},
 		["Infernal"] = {
-			Label = "|c00FFFFFFInfernal|r"
+			Label = "|c00FFFFFFInfernal|r",
 		},
 		["Doomguard"] = {
-			Label = "|c00FFFFFFGarde funeste|r"
+			Label = "|c00FFFFFFGarde funeste|r",
 		},
 		["Sacrifice"] = {
-			Label = "|c00FFFFFFSacrifice d\195\169moniaque|r"
+			Label = "|c00FFFFFFSacrifice d\195\169moniaque|r",
 		},
 		["Amplify"] = {
-			Label = "|c00FFFFFFMal\195\169diction amplifi\195\169e|r"
+			Label = "|c00FFFFFFMal\195\169diction amplifi\195\169e|r",
 		},
 		["Weakness"] = {
-			Label = "|c00FFFFFFMal\195\169diction de faiblesse|r"
+			Label = "|c00FFFFFFMal\195\169diction de faiblesse|r",
 		},
 		["Agony"] = {
-			Label = "|c00FFFFFFMal\195\169diction d'agonie|r"
+			Label = "|c00FFFFFFMal\195\169diction d'agonie|r",
 		},
 		["Reckless"] = {
-			Label = "|c00FFFFFFMal\195\169diction de t\195\169m\195\169rit\195\169|r"
+			Label = "|c00FFFFFFMal\195\169diction de t\195\169m\195\169rit\195\169|r",
 		},
 		["Tongues"] = {
-			Label = "|c00FFFFFFMal\195\169diction des langages|r"
+			Label = "|c00FFFFFFMal\195\169diction des langages|r",
 		},
 		["Exhaust"] = {
-			Label = "|c00FFFFFFMal\195\169diction de fatigue|r"
+			Label = "|c00FFFFFFMal\195\169diction de fatigue|r",
 		},
 		["Elements"] = {
-			Label = "|c00FFFFFFMal\195\169diction des \195\169l\195\169ments|r"
+			Label = "|c00FFFFFFMal\195\169diction des \195\169l\195\169ments|r",
 		},
 		["Shadow"] = {
-			Label = "|c00FFFFFFMal\195\169diction de l'ombre|r"
+			Label = "|c00FFFFFFMal\195\169diction de l'ombre|r",
 		},
 		["Doom"] = {
-			Label = "|c00FFFFFFMal\195\169diction funeste|r"
+			Label = "|c00FFFFFFMal\195\169diction funeste|r",
 		},
 		["Mount"] = {
-			Label = "|c00FFFFFFMonture|r"
+			Label = "|c00FFFFFFMonture|r",
 		},
 		["Buff"] = {
-			Label = "|c00FFFFFFMenu des sorts|r\nClic droit pour laisser ouvert"
+			Label = "|c00FFFFFFMenu des sorts|r\nClic droit pour laisser ouvert",
 		},
 		["Pet"] = {
-			Label = "|c00FFFFFFMenu des d\195\169mons|r\nClic droit pour laisser ouvert"
+			Label = "|c00FFFFFFMenu des d\195\169mons|r\nClic droit pour laisser ouvert",
 		},
 		["Curse"] = {
-			Label = "|c00FFFFFFMenu des mal\195\169dictions|r\nClic droit pour laisser ouvert"
+			Label = "|c00FFFFFFMenu des mal\195\169dictions|r\nClic droit pour laisser ouvert",
 		},
 		["Stone"] = {
-			Label = "|c00FFFFFFMenu des pierres|r\nClic droit pour laisser ouvert"
+			Label = "|c00FFFFFFMenu des pierres|r\nClic droit pour laisser ouvert",
 		},
 		["Radar"] = {
-			Label = "|c00FFFFFFD\195\169tection des d\195\169mons|r"
+			Label = "|c00FFFFFFD\195\169tection des d\195\169mons|r",
 		},
 		["AmplifyCooldown"] = "Clic droit pour amplifier la mal\195\169diction",
 		["DominationCooldown"] = "Clic droit pour invocation rapide",
 		["LastSpell"] = "Clic du milieu pour caster ",
-	};
+	}
 
 	NECROSIS_SOUND = {
 		["Fear"] = "Interface\\AddOns\\Necrosis\\sounds\\Fear-Fr.mp3",
 		["SoulstoneEnd"] = "Interface\\AddOns\\Necrosis\\sounds\\SoulstoneEnd-Fr.mp3",
 		["EnslaveEnd"] = "Interface\\AddOns\\Necrosis\\sounds\\EnslaveDemonEnd-Fr.mp3",
-		["ShadowTrance"] = "Interface\\AddOns\\Necrosis\\sounds\\ShadowTrance-Fr.mp3"
-	};
+		["ShadowTrance"] = "Interface\\AddOns\\Necrosis\\sounds\\ShadowTrance-Fr.mp3",
+	}
 
 	NECROSIS_NIGHTFALL_TEXT = {
 		["NoBoltSpell"] = "Vos n'avez pas le sort Trait de l'ombre.",
-		["Message"] = "<white>T<lightPurple1>r<lightPurple2>a<purple>n<darkPurple1>s<darkPurple2>e d<darkPurple1>e l<purple>'<lightPurple2>o<lightPurple1>m<white>b<lightPurple1>r<lightPurple2>e"
-	};
-
+		["Message"] = "<white>T<lightPurple1>r<lightPurple2>a<purple>n<darkPurple1>s<darkPurple2>e d<darkPurple1>e l<purple>'<lightPurple2>o<lightPurple1>m<white>b<lightPurple1>r<lightPurple2>e",
+	}
 
 	NECROSIS_MESSAGE = {
 		["Error"] = {
@@ -214,38 +211,37 @@ function Necrosis_Localization_Dialog_Fr()
 			["WrongBag"] = "Erreur : Le No doit \195\170tre compris entre 0 et 4",
 			["BagIsNumber"] = "Erreur : Veuillez taper un chiffre.",
 			["NoHearthStone"] = "Erreur : Vous n'avez pas de pierre de foyer dans votre inventaire",
-			["SpellStoneIsOnCooldown"] = "Erreur : Votre Pierre de sort est en cours de recharge"
+			["SpellStoneIsOnCooldown"] = "Erreur : Votre Pierre de sort est en cours de recharge",
 		},
 		["Bag"] = {
 			["FullPrefix"] = "Votre ",
 			["FullSuffix"] = " est plein !",
 			["FullDestroySuffix"] = " est plein; les prochains fragments seront detruits !",
 			["SelectedPrefix"] = "Vous avez choisi votre ",
-			["SelectedSuffix"] = " pour stocker vos fragments"
+			["SelectedSuffix"] = " pour stocker vos fragments",
 		},
 		["Interface"] = {
 			["Welcome"] = "<white>/necro pour les options !",
-			["TooltipOn"] = "Bulles d'aide activ\195\169es" ,
+			["TooltipOn"] = "Bulles d'aide activ\195\169es",
 			["TooltipOff"] = "Bulles d'aide d\195\169sactiv\195\169es",
 			["MessageOn"] = "Messages Pierre d'\195\162me et Invocation de joueur activ\195\169s",
 			["MessageOff"] = "Messages Pierre d'\195\162me et Invocation de joueur desactiv\195\169s",
 			["MessagePosition"] = "<- position des messages systeme Necrosis ->",
 			["DefaultConfig"] = "<lightYellow>Configuration par defaut charg\195\169e.",
-			["UserConfig"] = "<lightYellow>Configuration charg\195\169e"
+			["UserConfig"] = "<lightYellow>Configuration charg\195\169e",
 		},
 		["Help"] = {
 			"/necro recall -- Centre Necrosis and tous les boutons au centre de l'écran",
-			"/necro sm -- Remplace les messages de pierre d'\195\162me et d'invocation par des versions courtes spéciales raid"
+			"/necro sm -- Remplace les messages de pierre d'\195\162me et d'invocation par des versions courtes spéciales raid",
 		},
 		["EquipMessage"] = "Equipe ",
 		["SwitchMessage"] = " \195\160 la place de ",
 		["Information"] = {
 			["FearProtect"] = "La cible est prot\195\168g\195\169e contre la peur !!!!",
 			["EnslaveBreak"] = "Votre D\195\169mon a bris\195\169 ses chaines...",
-			["SoulstoneEnd"] = "<lightYellow>Votre Pierre d'\195\162me vient de s'eteindre."
-		}
-	};
-
+			["SoulstoneEnd"] = "<lightYellow>Votre Pierre d'\195\162me vient de s'eteindre.",
+		},
+	}
 
 	-- XML handling - configuration menu
 
@@ -255,9 +251,9 @@ function Necrosis_Localization_Dialog_Fr()
 		["Pink"] = "Rose",
 		["Orange"] = "Orange",
 		["Turquoise"] = "Turquoise",
-		["X"] = "X"
-	};
-	
+		["X"] = "X",
+	}
+
 	NECROSIS_CONFIGURATION = {
 		["Menu1"] = "Configuration des fragments",
 		["Menu2"] = "Configuration des messages",
@@ -310,13 +306,12 @@ function Necrosis_Localization_Dialog_Fr()
 			["Buff"] = "Affiche le bouton des Buffs",
 			["Curse"] = "Affiche le bouton des Mal\195\169dictions",
 			["Demon"] = "Affiche le bouton d'invocation des D\195\169mons",
-			["Tooltips"] = "Affiche les bulles d'aides"
+			["Tooltips"] = "Affiche les bulles d'aides",
 		},
 		["Count"] = {
 			["Shard"] = "Fragments d'\195\162me",
 			["Inferno"] = "Pierres d'invocations",
-			["Rez"] = "Timer de Rez"
-		}
-	};
-
+			["Rez"] = "Timer de Rez",
+		},
+	}
 end

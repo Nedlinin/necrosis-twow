@@ -8,7 +8,6 @@
 -- Version 01.05.2006-2
 ------------------------------------------------------------------------------------------------------
 
-
 -- Warlock summoning texts
 ----------------------------------------
 -- Below are the summoning texts for the warlock. You can customise them
@@ -29,7 +28,6 @@
 -- I hope the comments I added are understandable
 -- Otherwise feel free to post on the forum thread or email me (lomig@larmes-cenarius.net)
 
-
 -- Texts for a summoning by a warlock
 --------------------------------------
 -- Here are some summoning speeches for your warlock. Feel free to change them to
@@ -40,7 +38,7 @@
 -- The target's name is replaced with <target>
 -- you need to add before the } :
 -- "In a few seconds <target> will be able to help us",
--- 
+--
 -- The same mechanism exists for soulstone messages
 --
 -- As for the demon summoning, it seems to be complicated but it is not
@@ -49,7 +47,6 @@
 -- These speeches can span multiple sentences in the in-game chat window
 -- I added notes to the example sentences; I hope they are clear
 -- If not, do not hesitate to email me (lomig@larmes-cenarius.net)
-
 
 -- Texts for the Ritual of Summoning
 ----------------------------------------
@@ -60,7 +57,7 @@
 -- If you want to write "In wenigen Sekunden wird 'Spielername' in der Lage sein uns zu helfen"
 -- add before the };
 -- "In wenigen Sekunden wird <target> in der Lage sein uns zu helfen",
--- 
+--
 -- The same applies to soulstone messages.
 --
 -- Summoning demons may look complicated, but it really is not
@@ -70,13 +67,11 @@
 -- I added a few comments to the example sentences and hope they are understandable
 -- If anything is unclear, feel free to contact me (lomig@larmes-cenarius.net)
 
-
 -------------------------------------
 --  ENGLISH VERSION --
 -------------------------------------
 
 function Necrosis_Localization_Speech_En()
-
 	NECROSIS_INVOCATION_MESSAGES = {
 		[1] = {
 			"Arcanum Taxi Cab! I am summoning <target>, please click on the portal.",
@@ -91,16 +86,16 @@ function Necrosis_Localization_Speech_En()
 		[4] = {
 			"If you do not want a sprawling, phlegm-looking and asthmatic creature to come from this portal, click on it to help <target> find a path in Hell as quick as possible!",
 		},
-	};
+	}
 
 	NECROSIS_SOULSTONE_ALERT_MESSAGE = {
 		[1] = {
 			"If you cherish the idea of a mass suicide, <target> now can self-resurrect, so all should be fine. Go ahead.",
 		},
-		[2]= {
+		[2] = {
 			"<target> can go afk to drink a cup of coffee or so, soulstone is in place to allow for the wipe...",
 		},
-	};
+	}
 
 	NECROSIS_PET_MESSAGE = {
 		-- Imp
@@ -113,7 +108,7 @@ function Necrosis_Localization_Speech_En()
 			[2] = {
 				"<pet>! HEEL! NOW!",
 			},
-		};
+		},
 		-- Voidwalker
 		[2] = {
 			-- Summon speech 1
@@ -123,21 +118,21 @@ function Necrosis_Localization_Speech_En()
 				-- Second sentence in the chat window
 				"<pet>, please help!",
 			},
-		};
+		},
 		-- Succubus
 		[3] = {
 			-- Summon speech 1
 			[1] = {
 				"<pet> baby, please help me sweet heart!",
 			},
-		};
+		},
 		-- Felhunter
 		[4] = {
 			-- Summon speech 1
 			[1] = {
 				"<pet>! <pet>! Come on boy, come here! <pet>!",
 			},
-		};
+		},
 		-- Sentences for the first summon: when Necrosis does not yet know your demon names
 		[5] = {
 			-- Summon speech 1
@@ -154,7 +149,7 @@ function Necrosis_Localization_Speech_En()
 				-- Second sentence in the chat window
 				"COME TO ME, CREATURE OF HELL AND NIGHTMARE!",
 			},
-		};
+		},
 		-- Sentences for the steed summon
 		[6] = {
 			-- Summon speech 1
@@ -169,14 +164,13 @@ function Necrosis_Localization_Speech_En()
 				-- Second sentence in the chat window
 				"AH AHA HA HA AH AH!",
 			},
-		};
-	};
-	
-	NECROSIS_SHORT_MESSAGES = {
-		{{"--> <target> is soulstoned for 30 minutes <--"}},
-		{{"<TP> Summoning <target>, please click on the portal <TP>"}},
-	};
+		},
+	}
 
+	NECROSIS_SHORT_MESSAGES = {
+		{ { "--> <target> is soulstoned for 30 minutes <--" } },
+		{ { "<TP> Summoning <target>, please click on the portal <TP>" } },
+	}
 end
 
 -------------------------------------
@@ -184,7 +178,6 @@ end
 -------------------------------------
 
 function Necrosis_Localization_Speech_Fr()
-
 	NECROSIS_INVOCATION_MESSAGES = {
 		[1] = {
 			"Taxi des Arcanes ! J'invoque <target>, cliquez sur le portail svp !",
@@ -212,7 +205,7 @@ function Necrosis_Localization_Speech_Fr()
 			"(Cliquez vite sur le portail sinon je continue...)",
 			"C'EST <target> ! <target> ! <target> !",
 		},
-	};
+	}
 
 	NECROSIS_SOULSTONE_ALERT_MESSAGE = {
 		[1] = {
@@ -246,7 +239,7 @@ function Necrosis_Localization_Speech_Fr()
 			"Sur <target> poser une belle pierre d’\195\162me,",
 			"Voil\195\160 qui peut ma foi \195\169viter bien des drames !",
 		},
-	};
+	}
 
 	NECROSIS_PET_MESSAGE = {
 		-- Imp
@@ -262,7 +255,7 @@ function Necrosis_Localization_Speech_Fr()
 			[3] = {
 				"Attendez, je sors mon briquet !",
 			},
-		};
+		},
 		-- Felhunter
 		[2] = {
 			-- Random sentence 1
@@ -277,7 +270,7 @@ function Necrosis_Localization_Speech_Fr()
 				"GRAOUbouhhhhh GROUAHOUhououhhaahpfffROUAH !",
 				"(Non je ne suis pas dingue, j'imite le bruit du marcheur en rut !)",
 			},
-		};
+		},
 		-- Succubus
 		[3] = {
 			-- Random sentence 1
@@ -290,7 +283,7 @@ function Necrosis_Localization_Speech_Fr()
 			[3] = {
 				"<pet> ? Viens ici ma louloutte !",
 			},
-		};
+		},
 		-- Felhunter
 		[4] = {
 			-- Random sentence 1
@@ -304,7 +297,7 @@ function Necrosis_Localization_Speech_Fr()
 			[3] = {
 				"Une minute, je sors le caniche et j’arrive !",
 			},
-		};
+		},
 		-- Sentence for the first pet summon (when Necrosis does not yet know its name)
 		[5] = {
 			-- Random sentence 1
@@ -330,8 +323,7 @@ function Necrosis_Localization_Speech_Fr()
 			[4] = {
 				"En farfouillant dans le monde abyssal, on trouve de ces trucs... Regardez, ceci par exemple !",
 			},
-				
-		};
+		},
 		-- Sentences for the steed summon
 		[6] = {
 			-- Random sentence 1
@@ -350,26 +342,22 @@ function Necrosis_Localization_Speech_Fr()
 				"Et hop, un cheval tout feu tout flamme !",
 			},
 			[5] = {
-				"Vous savez, depuis que j’ai mis une selle ignifug\195\169e, je n'ai plus de probl\195\168me de culotte !"
+				"Vous savez, depuis que j’ai mis une selle ignifug\195\169e, je n'ai plus de probl\195\168me de culotte !",
 			},
-		};
-	};
+		},
+	}
 
 	NECROSIS_SHORT_MESSAGES = {
-		{{"--> <target> est prot\195\169g\195\169 par une pierre d'\195\162me <--"}},
-		{{"<TP> Invocation de <target> en cours, cliquez sur le portail svp <TP>"}}
-	};
-
+		{ { "--> <target> est prot\195\169g\195\169 par une pierre d'\195\162me <--" } },
+		{ { "<TP> Invocation de <target> en cours, cliquez sur le portail svp <TP>" } },
+	}
 end
-
-
 
 -------------------------------------
 --  GERMAN VERSION --
 -------------------------------------
 
 function Necrosis_Localization_Speech_De()
-
 	NECROSIS_INVOCATION_MESSAGES = {
 		[1] = {
 			"Arcanum Taxi Cab! Ich beschw\195\182re <target>, bitte klicke auf das Portal.",
@@ -385,7 +373,7 @@ function Necrosis_Localization_Speech_De()
 			"Wenn Du nicht m\195\182chtest, dass eine auf dem Boden kriechende, schleimige und einfach gr\195\164ssliche Kreatur aus diesem Portal kommt,",
 			"klicke drauf und hilf <target>, so schnell wie m\195\182glich einen Weg zur H\195\182lle zu finden!",
 		},
-	};
+	}
 
 	NECROSIS_SOULSTONE_ALERT_MESSAGE = {
 		[1] = {
@@ -394,13 +382,12 @@ function Necrosis_Localization_Speech_De()
 		[2] = {
 			"<target> kann afk gehen um eine Tasse Kaffee oder so zu trinken, denn er wird Dank dieses Seelensteins in der Lage sein, unseren Tod zu \195\188berleben",
 		},
-};
+	}
 
-	
 	NECROSIS_SHORT_MESSAGES = {
-		{{"--> <target> hat nun einen Seelenstein aktiv f\195\188r 30 Minuten <--"}},
-		{{"<Portal> Ich beschw\195\182re <target>, bitte klickt auf das Tor <Portal>"}}
-	};
+		{ { "--> <target> hat nun einen Seelenstein aktiv f\195\188r 30 Minuten <--" } },
+		{ { "<Portal> Ich beschw\195\182re <target>, bitte klickt auf das Tor <Portal>" } },
+	}
 
 	NECROSIS_PET_MESSAGE = {
 		-- Imp
@@ -413,7 +400,7 @@ function Necrosis_Localization_Speech_De()
 			[2] = {
 				"<pet>! SCHWING DIE BEINE! JETZT SOFORT!",
 			},
-		};
+		},
 		-- Voidwalker
 		[2] = {
 			-- Summoning speech 1
@@ -423,21 +410,21 @@ function Necrosis_Localization_Speech_De()
 				-- Second sentence in the chat window
 				"<pet>, hilf mir!",
 			},
-		};
+		},
 		-- Succubus
 		[3] = {
 			-- Summoning speech 1
 			[1] = {
 				"<pet>, Baby, sei ein Schatzi und hilf mir!",
 			},
-		};
+		},
 		-- Felhunter
 		[4] = {
 			-- Summoning speech 1
 			[1] = {
 				"<pet>! <pet>! Bei Fu\195\159, mein Guter, bei Fu\195\159! <pet>!",
 			},
-		};
+		},
 		-- Sentences for the first summon: when Necrosis does not know your demon's name
 		[5] = {
 			-- Summoning speech 1
@@ -454,7 +441,7 @@ function Necrosis_Localization_Speech_De()
 				-- Second sentence in the chat window
 				"KOMM ZU MIR, KREATUR, DIE DU KOMMST AUS DER H\195\150LLE UND ENDLOSEN ALPTR\195\132UMEN!",
 			},
-		};
+		},
 		-- Summoning speeches for the mount
 		[6] = {
 			-- Summoning speech 1
@@ -469,11 +456,9 @@ function Necrosis_Localization_Speech_De()
 				-- Second sentence in the chat window
 				"AH AHA HA HA AH AH!",
 			},
-		};
-	};
-
+		},
+	}
 end
-
 
 -- For special characters:
 -- Special characters:

@@ -4,39 +4,37 @@
 -- Original creator (US): Infernal (http://www.revolvus.com/games/interface/necrosis/)
 -- Base implementation (FR): Tilienna Thorondor
 -- Project continuation: Lomig & Nyx of Larmes de Cenarius, Kael'Thas
--- 
+--
 -- French skins and voices: Eliah, Ner'zhul
 -- German version: Arne Meier and Halisstra, Lothar
 -- Special thanks to Sadyre (JoL)
 -- Version 11.05.2006-1
 ------------------------------------------------------------------------------------------------------
 
-
 ------------------------------------------------
 -- GERMAN VERSION TEXTS --
 ------------------------------------------------
 
 function Necrosis_Localization_Dialog_De()
-
 	function NecrosisLocalization()
-		Necrosis_Localization_Speech_De();
+		Necrosis_Localization_Speech_De()
 	end
 
 	NECROSIS_COOLDOWN = {
 		["Spellstone"] = "Zauberstein Cooldown",
-		["Healthstone"] = "Gesundheitsstein Cooldown"
-	};
+		["Healthstone"] = "Gesundheitsstein Cooldown",
+	}
 
 	NecrosisTooltipData = {
 		["Main"] = {
 			Label = "|c00FFFFFFNecrosis|r",
 			Stone = {
-				[true] = "Ja";
-				[false] = "Nein";
+				[true] = "Ja",
+				[false] = "Nein",
 			},
 			Hellspawn = {
-				[true] = "An";
-				[false] = "Aus";
+				[true] = "An",
+				[false] = "Aus",
 			},
 			["Soulshard"] = "Seelensplitter : ",
 			["InfernalStone"] = "H\195\182llensteine : ",
@@ -51,155 +49,152 @@ function Necrosis_Localization_Dialog_De()
 		},
 		["Soulstone"] = {
 			Label = "|c00FF99FFSeelenstein|r",
-			Text = {"Erstelle","Verwende","Benutzt","Warten"}
+			Text = { "Erstelle", "Verwende", "Benutzt", "Warten" },
 		},
 		["Healthstone"] = {
 			Label = "|c0066FF33Gesundheitsstein|r",
-			Text = {"Erstelle","Verwende"}
+			Text = { "Erstelle", "Verwende" },
 		},
 		["Spellstone"] = {
 			Label = "|c0099CCFFZauberstein|r",
-			Text = {"Erstelle","Verwende"}
+			Text = { "Erstelle", "Verwende" },
 		},
 		["Firestone"] = {
 			Label = "|c00FF4444Feuerstein|r",
-			Text = {"Erstelle","Verwende"}
+			Text = { "Erstelle", "Verwende" },
 		},
 		["Felstone"] = {
 			Label = "|c0044FF44Teufelsstein|r",
-			Text = {"Erstelle","Verwende"}
+			Text = { "Erstelle", "Verwende" },
 		},
 		["Wrathstone"] = {
 			Label = "|c00FF4444Zornstein|r",
-			Text = {"Erstelle","Verwende"}
+			Text = { "Erstelle", "Verwende" },
 		},
 		["Voidstone"] = {
 			Label = "|c00800080Leerenstein|r",
-			Text = {"Erstelle","Verwende"}
+			Text = { "Erstelle", "Verwende" },
 		},
 		["SpellTimer"] = {
 			Label = "|c00FFFFFFSpruchdauer|r",
 			Text = "Aktive Spr\195\188che auf dem Ziel\n",
-			Right = "Rechtsklick f\195\188r Ruhestein nach "
+			Right = "Rechtsklick f\195\188r Ruhestein nach ",
 		},
 		["ShadowTrance"] = {
-			Label = "|c00FFFFFFSchatten Trance|r"
+			Label = "|c00FFFFFFSchatten Trance|r",
 		},
 		["Domination"] = {
-			Label = "|c00FFFFFFTeufelsbeherrschung|r"
+			Label = "|c00FFFFFFTeufelsbeherrschung|r",
 		},
 		["Enslave"] = {
-			Label = "|c00FFFFFFVersklavt|r"
+			Label = "|c00FFFFFFVersklavt|r",
 		},
 		["Armor"] = {
-			Label = "|c00FFFFFFD\195\164monenr\195\188stung|r"
+			Label = "|c00FFFFFFD\195\164monenr\195\188stung|r",
 		},
 		["Invisible"] = {
-			Label = "|c00FFFFFFEntdecke Unsichtbarkeit|r"
+			Label = "|c00FFFFFFEntdecke Unsichtbarkeit|r",
 		},
 		["Aqua"] = {
-			Label = "|c00FFFFFFUnendlicher Atem|r"
+			Label = "|c00FFFFFFUnendlicher Atem|r",
 		},
 		["Kilrogg"] = {
-			Label = "|c00FFFFFFAuge von Kilrogg|r"
+			Label = "|c00FFFFFFAuge von Kilrogg|r",
 		},
 		["Banish"] = {
-			Label = "|c00FFFFFFVerbannen|r"
+			Label = "|c00FFFFFFVerbannen|r",
 		},
 		["TP"] = {
-			Label = "|c00FFFFFFRitual der Beschw\195\182rung|r"
+			Label = "|c00FFFFFFRitual der Beschw\195\182rung|r",
 		},
 		["SoulLink"] = {
-			Label = "|c00FFFFFFSeelenverbindung|r"
+			Label = "|c00FFFFFFSeelenverbindung|r",
 		},
 		["ShadowProtection"] = {
-			Label = "|c00FFFFFFSchattenzauberschutz|r"
+			Label = "|c00FFFFFFSchattenzauberschutz|r",
 		},
 		["Imp"] = {
-			Label = "|c00FFFFFFWichtel|r"
+			Label = "|c00FFFFFFWichtel|r",
 		},
 		["Void"] = {
-			Label = "|c00FFFFFFLeerwandler|r"
+			Label = "|c00FFFFFFLeerwandler|r",
 		},
 		["Succubus"] = {
-			Label = "|c00FFFFFFSukkubus|r"
+			Label = "|c00FFFFFFSukkubus|r",
 		},
 		["Fel"] = {
-			Label = "|c00FFFFFFTeufelsj\195\164ger|r"
+			Label = "|c00FFFFFFTeufelsj\195\164ger|r",
 		},
 		["Infernal"] = {
-			Label = "|c00FFFFFFH\195\182llenbestie|r"
+			Label = "|c00FFFFFFH\195\182llenbestie|r",
 		},
 		["Doomguard"] = {
-			Label = "|c00FFFFFFVerdammniswache|r"
+			Label = "|c00FFFFFFVerdammniswache|r",
 		},
 		["Sacrifice"] = {
-			Label = "|c00FFFFFFD\195\164monenopferung|r"
+			Label = "|c00FFFFFFD\195\164monenopferung|r",
 		},
 		["Amplify"] = {
-			Label = "|c00FFFFFFFluch verst\195\164rken|r"
+			Label = "|c00FFFFFFFluch verst\195\164rken|r",
 		},
 		["Weakness"] = {
-			Label = "|c00FFFFFFFluch der Schw\195\164che|r"
+			Label = "|c00FFFFFFFluch der Schw\195\164che|r",
 		},
 		["Agony"] = {
-			Label = "|c00FFFFFFFluch der Pein|r"
+			Label = "|c00FFFFFFFluch der Pein|r",
 		},
 		["Reckless"] = {
-			Label = "|c00FFFFFFFluch der Tollk\195\188hnheit|r"
+			Label = "|c00FFFFFFFluch der Tollk\195\188hnheit|r",
 		},
 		["Tongues"] = {
-			Label = "|c00FFFFFFFluch der Sprachen|r"
+			Label = "|c00FFFFFFFluch der Sprachen|r",
 		},
 		["Exhaust"] = {
-			Label = "|c00FFFFFFFluch der Ersch\195\182pfung|r"
+			Label = "|c00FFFFFFFluch der Ersch\195\182pfung|r",
 		},
 		["Elements"] = {
-			Label = "|c00FFFFFFFluch der Elemente|r"
+			Label = "|c00FFFFFFFluch der Elemente|r",
 		},
 		["Shadow"] = {
-			Label = "|c00FFFFFFFluch der Schatten|r"
+			Label = "|c00FFFFFFFluch der Schatten|r",
 		},
 		["Doom"] = {
-			Label = "|c00FFFFFFFluch der Verdammnis|r"
+			Label = "|c00FFFFFFFluch der Verdammnis|r",
 		},
 		["Mount"] = {
-			Label = "|c00FFFFFFMount|r"
+			Label = "|c00FFFFFFMount|r",
 		},
 		["Buff"] = {
-			Label = "|c00FFFFFFSpruch Men\195\188|r\nRechtsklick um das Men\195\188 zu \195\182ffnen"
+			Label = "|c00FFFFFFSpruch Men\195\188|r\nRechtsklick um das Men\195\188 zu \195\182ffnen",
 		},
 		["Pet"] = {
-			Label = "|c00FFFFFFD\195\164monen Men\195\188|r\nRechtsklick um das Men\195\188 zu \195\182ffnen"
+			Label = "|c00FFFFFFD\195\164monen Men\195\188|r\nRechtsklick um das Men\195\188 zu \195\182ffnen",
 		},
 		["Curse"] = {
-			Label = "|c00FFFFFFFluch Men\195\188|r\nRechtsklick um das Men\195\188 zu \195\182ffnen"
+			Label = "|c00FFFFFFFluch Men\195\188|r\nRechtsklick um das Men\195\188 zu \195\182ffnen",
 		},
 		["Stone"] = {
-			Label = "|c00FFFFFFSteine Men\195\188|r\nRechtsklick um das Men\195\188 zu \195\182ffnen"
+			Label = "|c00FFFFFFSteine Men\195\188|r\nRechtsklick um das Men\195\188 zu \195\182ffnen",
 		},
 		["Radar"] = {
-			Label = "|c00FFFFFFD\195\164monen sp\195\188ren|r"
+			Label = "|c00FFFFFFD\195\164monen sp\195\188ren|r",
 		},
 		["AmplifyCooldown"] = "Mit der rechten Taste klicken f\195\188r verstärken",
 		["DominationCooldown"] = "Mit der rechten Taste klicken f\195\188r eine schnelle Beschw\195\182rung",
 		["LastSpell"] = "Mittlere Taste klicken f\195\188r ",
-	};
-
+	}
 
 	NECROSIS_SOUND = {
 		["Fear"] = "Interface\\AddOns\\Necrosis\\sounds\\Fear-En.mp3",
 		["SoulstoneEnd"] = "Interface\\AddOns\\Necrosis\\sounds\\SoulstoneEnd-En.mp3",
 		["EnslaveEnd"] = "Interface\\AddOns\\Necrosis\\sounds\\EnslaveDemonEnd-En.mp3",
-		["ShadowTrance"] = "Interface\\AddOns\\Necrosis\\sounds\\ShadowTrance-En.mp3"
-	};
-
+		["ShadowTrance"] = "Interface\\AddOns\\Necrosis\\sounds\\ShadowTrance-En.mp3",
+	}
 
 	NECROSIS_NIGHTFALL_TEXT = {
 		["NoBoltSpell"] = "Du hast scheinbar keinen Schattenblitz Zauber.",
-		["Message"] = "<white>S<lightPurple1>c<lightPurple2>h<purple>a<darkPurple1>tt<darkPurple2>en<darkPurple1>tr<purple>a<lightPurple2>n<lightPurple1>c<white>e"
-	};
-
+		["Message"] = "<white>S<lightPurple1>c<lightPurple2>h<purple>a<darkPurple1>tt<darkPurple2>en<darkPurple1>tr<purple>a<lightPurple2>n<lightPurple1>c<white>e",
+	}
 
 	NECROSIS_MESSAGE = {
 		["Error"] = {
@@ -216,38 +211,37 @@ function Necrosis_Localization_Dialog_De()
 			["WrongBag"] = "Fehler : Die Zahl muss zwischen 0 und 4 sein.",
 			["BagIsNumber"] = "Fehler : Bitte gib eine Zahl an.",
 			["NoHearthStone"] = "Fehler : Du hast keinen Ruhestein im Inventar",
-			["SpellStoneIsOnCooldown"] = "Fehler : Dein Zauberstein befindet sich auf Abklingzeit"
+			["SpellStoneIsOnCooldown"] = "Fehler : Dein Zauberstein befindet sich auf Abklingzeit",
 		},
 		["Bag"] = {
 			["FullPrefix"] = "Dein ",
 			["FullSuffix"] = " ist voll !",
 			["FullDestroySuffix"] = " ist voll; folgende Seelensplitter werden zerst\195\182rt !",
 			["SelectedPrefix"] = "Du hast deinen ",
-			["SelectedSuffix"] = " f\195\188r deine Seelensplitter gew\195\164hlt."
+			["SelectedSuffix"] = " f\195\188r deine Seelensplitter gew\195\164hlt.",
 		},
 		["Interface"] = {
 			["Welcome"] = "<white>/necro f\195\188r das Einstellungsmen\195\188.",
-			["TooltipOn"] = "Tooltips an" ,
+			["TooltipOn"] = "Tooltips an",
 			["TooltipOff"] = "Tooltips aus",
 			["MessageOn"] = "Chat Nachrichten an",
 			["MessageOff"] = "Chat Nachrichten aus",
 			["MessagePosition"] = "<- Hier werden Nachrichten von Necrosis erscheinen ->",
 			["DefaultConfig"] = "<lightYellow>Standard-Einstellungen geladen.",
-			["UserConfig"] = "<lightYellow>Einstellungen geladen."
+			["UserConfig"] = "<lightYellow>Einstellungen geladen.",
 		},
 		["Help"] = {
 			"/necro recall -- Zentriere Necrosis und alle Buttons in der Mitte des Bildschirms",
-			"/necro sm -- Ersetze Seelenstein- und Beschw\195\182rungs-Zufallsnachrichten durch eine kurze, raidgeeignete Version"
+			"/necro sm -- Ersetze Seelenstein- und Beschw\195\182rungs-Zufallsnachrichten durch eine kurze, raidgeeignete Version",
 		},
 		["EquipMessage"] = "Ausr\195\188ste ",
 		["SwitchMessage"] = " anstelle von ",
 		["Information"] = {
 			["FearProtect"] = "Dein Ziel hat Fear-Protection!!!",
 			["EnslaveBreak"] = "Dein D\195\164mon hat seine Ketten gebrochen...",
-			["SoulstoneEnd"] = "<lightYellow>Dein Seelenstein ist ausgelaufen."
-		}
-	};
-
+			["SoulstoneEnd"] = "<lightYellow>Dein Seelenstein ist ausgelaufen.",
+		},
+	}
 
 	-- XML handling - configuration menu
 
@@ -257,9 +251,9 @@ function Necrosis_Localization_Dialog_De()
 		["Pink"] = "Pink",
 		["Orange"] = "Orange",
 		["Turquoise"] = "T\195\188rkis",
-		["X"] = "X"
-	};
-	
+		["X"] = "X",
+	}
+
 	NECROSIS_CONFIGURATION = {
 		["Menu1"] = "Splitter Einstellungen",
 		["Menu2"] = "Nachrichten Einstellungen",
@@ -288,7 +282,7 @@ function Necrosis_Localization_Dialog_De()
 		["CurseMenu"] = "Setze das Fluch Men\195\188 nach links",
 		["StoneMenu"] = "Setze das Steine Men\195\188 nach links",
 		["PetMenu"] = "Setze das Diener Men\195\188 nach links",
-		["STimerLeft"] = "Zeige die Timer auf der linken Seite des Knopfes",		
+		["STimerLeft"] = "Zeige die Timer auf der linken Seite des Knopfes",
 		["ShowCount"] = "Zeige die Anzahl der Seelensplitter in Necrosis",
 		["CountType"] = "Stein Typ gez\195\164hlt",
 		["Circle"] = "Anzeige in der grafischen Sph\195\164re",
@@ -299,7 +293,7 @@ function Necrosis_Localization_Dialog_De()
 		["ShowRitualSummon"] = "Zuf\195\164llige Spr\195\188che (Ritual)",
 		["ChatType"] = "Necrosis Nachrichten als System-Nachrichten anzeigen",
 		["NecrosisSize"] = "Gr\195\182\195\159e des Necrosis Button",
-		["BanishSize"] = "Gr\195\182\195\159e des Verbannen Button",		
+		["BanishSize"] = "Gr\195\182\195\159e des Verbannen Button",
 		["TranseSize"] = "Gr\195\182\195\159e des Trance und Anti-Fear Buttons",
 		["Skin"] = "Aussehen der Necrosis Sph\195\164re",
 		["Show"] = {
@@ -312,13 +306,12 @@ function Necrosis_Localization_Dialog_De()
 			["Buff"] = "Zeige den Spruch Men\195\188 Button",
 			["Demon"] = "Zeige den D\195\164monen Men\195\188 Button",
 			["Curse"] = "Zeige den Fluch Men\195\188 Button",
-			["Tooltips"] = "Zeige Tooltips"
+			["Tooltips"] = "Zeige Tooltips",
 		},
 		["Count"] = {
 			["Shard"] = "Seelensplitter",
 			["Inferno"] = "D\195\164monenen-Beschw\195\182rungs-Steine",
-			["Rez"] = "Wiederbelebungs-Timer"
-		}
-	};
-
+			["Rez"] = "Wiederbelebungs-Timer",
+		},
+	}
 end
