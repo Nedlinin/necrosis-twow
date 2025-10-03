@@ -17,7 +17,7 @@
 					<Anchors>
 						<Anchor point="TOPLEFT" relativeTo="NecrosisButtonMenu" relativeFrom="TOPLEFT">
 							<Offset>
-								<AbsDimension x="60" y="-60"/>
+							<AbsDimension x="60" y="-80"/>
 							</Offset>
 						</Anchor>
 					</Anchors>
@@ -27,7 +27,7 @@
 					<Anchors>
 						<Anchor point="TOPLEFT" relativeTo="NecrosisButtonMenu" relativeFrom="TOPLEFT">
 							<Offset>
-								<AbsDimension x="60" y="-80"/>
+							<AbsDimension x="60" y="-60"/>
 							</Offset>
 						</Anchor>
 					</Anchors>
@@ -159,7 +159,7 @@
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="NecrosisButtonMenu" relativeFrom="TOPLEFT">
 						<Offset>
-							<AbsDimension x="30" y="-55"/>
+						<AbsDimension x="30" y="-75"/>
 						</Offset>
 					</Anchor>
 				</Anchors>
@@ -183,7 +183,7 @@
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="NecrosisButtonMenu" relativeFrom="TOPLEFT">
 						<Offset>
-							<AbsDimension x="30" y="-75"/>
+						<AbsDimension x="30" y="-55"/>
 						</Offset>
 					</Anchor>
 				</Anchors>

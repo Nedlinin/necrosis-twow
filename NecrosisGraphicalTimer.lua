@@ -73,6 +73,7 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 					JustifInverse = "RIGHT"
 				end
 
+				if(timerData.Gtimer[index] == nil) then return end
 				local frameName1 = "NecrosisTimer" .. timerData.Gtimer[index] .. "Text"
 				local frameItem1 = getglobal(frameName1)
 				local frameName2 = "NecrosisTimer" .. timerData.Gtimer[index] .. "Bar"
@@ -166,7 +167,12 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 end
 
 function Necrosis_AddTimerFrame(timerList, timerSlots)
-	for i = 1, table.getn(timerSlots), 1 do
+	if not timerSlots then
+		timerSlots = {}
+	end
+
+	local slotCount = table.getn(timerSlots)
+	for i = 1, slotCount, 1 do
 		if not timerSlots[i] then
 			timerSlots[i] = true
 			timerList[table.getn(timerList)].Gtimer = i
@@ -176,10 +182,27 @@ function Necrosis_AddTimerFrame(timerList, timerSlots)
 				for j = 1, 4, 1 do
 					frameName = "NecrosisTimer" .. i .. elements[j]
 					frameItem = getglobal(frameName)
-					frameItem:Show()
+					if frameItem then
+						frameItem:Show()
+					end
 				end
 			end
-			break
+			return timerList, timerSlots
+		end
+	end
+
+	-- No available slot, append a new one
+	local newIndex = slotCount + 1
+	timerSlots[newIndex] = true
+	timerList[table.getn(timerList)].Gtimer = newIndex
+	if NecrosisConfig.Graphical then
+		local elements = { "Text", "Bar", "Texture", "OutText" }
+		for j = 1, 4, 1 do
+			frameName = "NecrosisTimer" .. newIndex .. elements[j]
+			frameItem = getglobal(frameName)
+			if frameItem then
+				frameItem:Show()
+			end
 		end
 	end
 	return timerList, timerSlots
