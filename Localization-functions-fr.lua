@@ -58,7 +58,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Invocation d'un palefroi corrompu",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[2] = {
 			ID = nil,
@@ -67,7 +67,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Invocation d'un destrier de l'effroi",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[3] = {
 			ID = nil,
@@ -76,7 +76,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Invocation d'un diablotin",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[4] = {
 			ID = nil,
@@ -85,7 +85,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Invocation d'un marcheur du Vide",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[5] = {
 			ID = nil,
@@ -94,7 +94,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Invocation d'une succube",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[6] = {
 			ID = nil,
@@ -103,7 +103,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Invocation d'un chasseur corrompu",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[7] = {
 			ID = nil,
@@ -112,10 +112,26 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Trait de l'ombre",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
-		[8] = { ID = nil, Rank = nil, CastTime = nil, Mana = nil, Name = "Inferno", Length = 3600, Type = 3 },
-		[9] = { ID = nil, Rank = nil, CastTime = nil, Mana = nil, Name = "Bannir", Length = 30, Type = 2 },
+		[8] = {
+			ID = nil,
+			Rank = nil,
+			CastTime = nil,
+			Mana = nil,
+			Name = "Inferno",
+			Length = 3600,
+			Type = NECROSIS_TIMER_TYPE.COOLDOWN,
+		},
+		[9] = {
+			ID = nil,
+			Rank = nil,
+			CastTime = nil,
+			Mana = nil,
+			Name = "Bannir",
+			Length = 30,
+			Type = NECROSIS_TIMER_TYPE.SELF_BUFF,
+		},
 		[10] = {
 			ID = nil,
 			Rank = nil,
@@ -123,7 +139,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Asservir d\195\169mon",
 			Length = 30000,
-			Type = 2,
+			Type = NECROSIS_TIMER_TYPE.SELF_BUFF,
 		},
 		[11] = {
 			ID = nil,
@@ -132,11 +148,35 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "R\195\169surrection de Pierre d'\195\162me",
 			Length = 1800,
-			Type = 1,
+			Type = NECROSIS_TIMER_TYPE.PRIMARY,
 		},
-		[12] = { ID = nil, Rank = nil, CastTime = nil, Mana = nil, Name = "Immolation", Length = 15, Type = 5 },
-		[13] = { ID = nil, Rank = nil, CastTime = nil, Mana = nil, Name = "Peur", Length = 15, Type = 5 },
-		[14] = { ID = nil, Rank = nil, CastTime = nil, Mana = nil, Name = "Corruption", Length = 17, Type = 5 },
+		[12] = {
+			ID = nil,
+			Rank = nil,
+			CastTime = nil,
+			Mana = nil,
+			Name = "Immolation",
+			Length = 15,
+			Type = NECROSIS_TIMER_TYPE.COMBAT,
+		},
+		[13] = {
+			ID = nil,
+			Rank = nil,
+			CastTime = nil,
+			Mana = nil,
+			Name = "Peur",
+			Length = 15,
+			Type = NECROSIS_TIMER_TYPE.COMBAT,
+		},
+		[14] = {
+			ID = nil,
+			Rank = nil,
+			CastTime = nil,
+			Mana = nil,
+			Name = "Corruption",
+			Length = 17,
+			Type = NECROSIS_TIMER_TYPE.COMBAT,
+		},
 		[15] = {
 			ID = nil,
 			Rank = nil,
@@ -144,7 +184,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Domination corrompue",
 			Length = 300,
-			Type = 3,
+			Type = NECROSIS_TIMER_TYPE.COOLDOWN,
 		},
 		[16] = {
 			ID = nil,
@@ -153,9 +193,17 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Mal\195\169diction funeste",
 			Length = 60,
-			Type = 3,
+			Type = NECROSIS_TIMER_TYPE.COOLDOWN,
 		},
-		[17] = { ID = nil, Rank = nil, CastTime = nil, Mana = nil, Name = "Sacrifice", Length = 30, Type = 3 },
+		[17] = {
+			ID = nil,
+			Rank = nil,
+			CastTime = nil,
+			Mana = nil,
+			Name = "Sacrifice",
+			Length = 30,
+			Type = NECROSIS_TIMER_TYPE.COOLDOWN,
+		},
 		[18] = {
 			ID = nil,
 			Rank = nil,
@@ -163,7 +211,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Feu de l'\195\162me",
 			Length = 60,
-			Type = 3,
+			Type = NECROSIS_TIMER_TYPE.COOLDOWN,
 		},
 		[19] = {
 			ID = nil,
@@ -172,7 +220,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Voile mortel",
 			Length = 120,
-			Type = 3,
+			Type = NECROSIS_TIMER_TYPE.COOLDOWN,
 		},
 		[20] = {
 			ID = nil,
@@ -181,7 +229,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Br\195\187lure de l'ombre",
 			Length = 15,
-			Type = 3,
+			Type = NECROSIS_TIMER_TYPE.COOLDOWN,
 		},
 		[21] = {
 			ID = nil,
@@ -190,7 +238,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Conflagration",
 			Length = 10,
-			Type = 3,
+			Type = NECROSIS_TIMER_TYPE.COOLDOWN,
 		},
 		[22] = {
 			ID = nil,
@@ -199,7 +247,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Mal\195\169diction d'agonie",
 			Length = 24,
-			Type = 4,
+			Type = NECROSIS_TIMER_TYPE.CURSE,
 		},
 		[23] = {
 			ID = nil,
@@ -208,7 +256,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Mal\195\169diction de faiblesse",
 			Length = 120,
-			Type = 4,
+			Type = NECROSIS_TIMER_TYPE.CURSE,
 		},
 		[24] = {
 			ID = nil,
@@ -217,7 +265,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Mal\195\169diction de t\195\169m\195\169rit\195\169",
 			Length = 120,
-			Type = 4,
+			Type = NECROSIS_TIMER_TYPE.CURSE,
 		},
 		[25] = {
 			ID = nil,
@@ -226,7 +274,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Mal\195\169diction des langages",
 			Length = 30,
-			Type = 4,
+			Type = NECROSIS_TIMER_TYPE.CURSE,
 		},
 		[26] = {
 			ID = nil,
@@ -235,7 +283,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Mal\195\169diction des \195\169l\195\169ments",
 			Length = 300,
-			Type = 4,
+			Type = NECROSIS_TIMER_TYPE.CURSE,
 		},
 		[27] = {
 			ID = nil,
@@ -244,7 +292,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Mal\195\169diction de l'ombre",
 			Length = 300,
-			Type = 4,
+			Type = NECROSIS_TIMER_TYPE.CURSE,
 		},
 		[28] = {
 			ID = nil,
@@ -253,7 +301,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Siphon de vie",
 			Length = 30,
-			Type = 5,
+			Type = NECROSIS_TIMER_TYPE.COMBAT,
 		},
 		[29] = {
 			ID = nil,
@@ -262,7 +310,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Hurlement de terreur",
 			Length = 40,
-			Type = 3,
+			Type = NECROSIS_TIMER_TYPE.COOLDOWN,
 		},
 		[30] = {
 			ID = nil,
@@ -271,7 +319,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Rituel de mal\195\169diction",
 			Length = 3600,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[31] = {
 			ID = nil,
@@ -280,7 +328,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Armure d\195\169moniaque",
 			Length = 1800,
-			Type = 2,
+			Type = NECROSIS_TIMER_TYPE.SELF_BUFF,
 		},
 		[32] = {
 			ID = nil,
@@ -289,7 +337,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Respiration interminable",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[33] = {
 			ID = nil,
@@ -298,7 +346,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Invisibilit\195\169",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[34] = {
 			ID = nil,
@@ -307,7 +355,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Oeil de Kilrogg",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[35] = {
 			ID = nil,
@@ -316,7 +364,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Asservir d\195\169mon",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[36] = {
 			ID = nil,
@@ -325,7 +373,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Peau de d\195\169mon",
 			Length = 1800,
-			Type = 2,
+			Type = NECROSIS_TIMER_TYPE.SELF_BUFF,
 		},
 		[37] = {
 			ID = nil,
@@ -334,9 +382,17 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Rituel d'invocation",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
-		[38] = { ID = nil, Rank = nil, CastTime = nil, Mana = nil, Name = "Lien spirituel", Length = 0, Type = 0 },
+		[38] = {
+			ID = nil,
+			Rank = nil,
+			CastTime = nil,
+			Mana = nil,
+			Name = "Lien spirituel",
+			Length = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
+		},
 		[39] = {
 			ID = nil,
 			Rank = nil,
@@ -344,7 +400,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "D\195\169tection des d\195\169mons",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[40] = {
 			ID = nil,
@@ -353,9 +409,17 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Mal\195\169diction de fatigue",
 			Length = 12,
-			Type = 4,
+			Type = NECROSIS_TIMER_TYPE.CURSE,
 		},
-		[41] = { ID = nil, Rank = nil, CastTime = nil, Mana = nil, Name = "Connexion", Length = 0, Type = 0 },
+		[41] = {
+			ID = nil,
+			Rank = nil,
+			CastTime = nil,
+			Mana = nil,
+			Name = "Connexion",
+			Length = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
+		},
 		[42] = {
 			ID = nil,
 			Rank = nil,
@@ -363,7 +427,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Mal\195\169diction amplifi\195\169e",
 			Length = 180,
-			Type = 3,
+			Type = NECROSIS_TIMER_TYPE.COOLDOWN,
 		},
 		[43] = {
 			ID = nil,
@@ -372,7 +436,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Gardien de l'ombre",
 			Length = 30,
-			Type = 3,
+			Type = NECROSIS_TIMER_TYPE.COOLDOWN,
 		},
 		[44] = {
 			ID = nil,
@@ -381,7 +445,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Sacrifice d\195\169moniaque",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[45] = {
 			ID = nil,
@@ -390,7 +454,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Création de Pierre gangrenée",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[46] = {
 			ID = nil,
@@ -399,7 +463,7 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Création de Pierre de colère",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 		[47] = {
 			ID = nil,
@@ -408,15 +472,15 @@ if GetLocale() == "frFR" then
 			Mana = nil,
 			Name = "Création de Pierre du Vide",
 			Length = 0,
-			Type = 0,
+			Type = NECROSIS_TIMER_TYPE.NONE,
 		},
 	}
-	-- Type 0 = No timer
-	-- Type 1 = Primary persistent timer
-	-- Type 2 = Persistent timer
-	-- Type 3 = Cooldown timer
-	-- Type 4 = Curse timer
-	-- Type 5 = Combat timer
+	-- NECROSIS_TIMER_TYPE.NONE = No timer
+	-- NECROSIS_TIMER_TYPE.PRIMARY = Primary persistent timer
+	-- NECROSIS_TIMER_TYPE.SELF_BUFF = Persistent timer
+	-- NECROSIS_TIMER_TYPE.COOLDOWN = Cooldown timer
+	-- NECROSIS_TIMER_TYPE.CURSE = Curse timer
+	-- NECROSIS_TIMER_TYPE.COMBAT = Combat timer
 
 	NECROSIS_ITEM = {
 		["Soulshard"] = "Fragment d'\195\162me",

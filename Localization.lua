@@ -11,6 +11,16 @@
 -- Version 05.09.2006-1
 ------------------------------------------------------------------------------------------------------
 
+NECROSIS_TIMER_TYPE = {
+	NONE = 0,
+	PRIMARY = 1,
+	SELF_BUFF = 2,
+	COOLDOWN = 3,
+	CURSE = 4,
+	COMBAT = 5,
+	CUSTOM = 6,
+}
+
 NecrosisData = {}
 NecrosisData.Version = "1.6.0"
 NecrosisData.Author = "Lomig & Nyx"

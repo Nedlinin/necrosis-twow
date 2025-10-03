@@ -80,6 +80,8 @@ local SpellGroup = {
 	Visible = { true, true, true },
 }
 
+local TIMER_TYPE = NECROSIS_TIMER_TYPE
+
 -- Clears contents but preserves subtable objects
 local function clear_tables(t)
 	for k, v in pairs(t) do
@@ -438,7 +440,7 @@ local function Necrosis_OnPlayerAuraEvent(_, unitId)
 	end
 
 	if type(TRACKED_SELF_BUFFS) ~= "table" then
-		TRACKED_SELF_BUFFS = { 31, 36 }
+		TRACKED_SELF_BUFFS = { 31, 36, 11 }
 	end
 
 	for _, spellIndex in ipairs(TRACKED_SELF_BUFFS) do
@@ -512,7 +514,7 @@ local LastRefreshedBuffTime = 0
 
 local LastAuraScanTime = 0
 
-local TRACKED_SELF_BUFFS = { 31, 36 }
+local TRACKED_SELF_BUFFS = { 31, 36, 11 }
 
 local function Necrosis_GetBuffSpellIndexByName(buffName)
 	if not buffName then
@@ -901,7 +903,8 @@ function Necrosis_OnUpdate()
 				local timerExists = Necrosis_TimerExists and Necrosis_TimerExists(data.Name)
 				if buffId and timeLeft > 0 then
 					local durationSeconds = floor(timeLeft)
-					local expiry = floor(curTime + durationSeconds)
+					local expiry = floor(GetTime() + durationSeconds)
+					local baseDuration = data.Length or durationSeconds
 					local updated = false
 					if type(Necrosis_UpdateTimerEntry) == "function" then
 						updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
@@ -910,7 +913,7 @@ function Necrosis_OnUpdate()
 							data.Name,
 							playerName,
 							playerLevel,
-							durationSeconds,
+							baseDuration,
 							expiry,
 							data.Type
 						)
@@ -925,6 +928,18 @@ function Necrosis_OnUpdate()
 							SpellTimer,
 							TimerTable
 						)
+						if type(Necrosis_UpdateTimerEntry) == "function" then
+							updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
+								SpellGroup,
+								SpellTimer,
+								data.Name,
+								playerName,
+								playerLevel,
+								baseDuration,
+								expiry,
+								data.Type
+							)
+						end
 					end
 					LastRefreshedBuffName = data.Name
 					LastRefreshedBuffTime = curTime
@@ -1190,7 +1205,7 @@ function Necrosis_OnUpdate()
 					-- If the targeted unit is no longer affected by the spell (resist)
 					if
 						SpellTimer
-						and (SpellTimer[index].Type == 4 or SpellTimer[index].Type == 5)
+						and (SpellTimer[index].Type == TIMER_TYPE.CURSE or SpellTimer[index].Type == TIMER_TYPE.COMBAT)
 						and SpellTimer[index].Target == UnitName("target")
 					then
 						-- Cheat a little to let the mob fully register the debuff ^^
@@ -3929,10 +3944,10 @@ end
 function NecrosisTimer(timerName, durationSeconds)
 	local targetName = UnitName("target")
 	local targetLevel = UnitLevel("target")
-	local timerType = 6
+	local timerType = TIMER_TYPE.CUSTOM
 	if not targetName then
 		targetName = ""
-		timerType = 2
+		timerType = TIMER_TYPE.SELF_BUFF
 	end
 	if not targetLevel then
 		targetLevel = ""

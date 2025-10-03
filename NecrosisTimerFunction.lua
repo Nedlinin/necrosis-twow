@@ -17,6 +17,8 @@
 
 SpellTimer = {}
 
+local TIMER_TYPE = NECROSIS_TIMER_TYPE
+
 local function wipe_table(t)
 	for key in pairs(t) do
 		t[key] = nil
@@ -232,6 +234,9 @@ function Necrosis_InsertCustomTimer(
 	local target = targetName or ""
 	local level = targetLevel or ""
 	local timeRemaining = duration or 0
+	if timeRemaining <= 0 then
+		return SpellGroup, SpellTimer, TimerTable
+	end
 	local expiryTime = floor(GetTime() + timeRemaining)
 	local updated
 	updated, SpellGroup, SpellTimer =
@@ -286,12 +291,12 @@ function Necrosis_RemoveCombatTimers(SpellGroup, SpellTimer, TimerTable)
 	for index = 1, table.getn(SpellTimer), 1 do
 		if SpellTimer[index] then
 			-- Remove the target name when cooldowns are per-character
-			if SpellTimer[index].Type == 3 then
+			if SpellTimer[index].Type == TIMER_TYPE.COOLDOWN then
 				SpellTimer[index].Target = ""
 				SpellTimer[index].TargetLevel = ""
 			end
 			-- Remove combat timers
-			if (SpellTimer[index].Type == 4) or (SpellTimer[index].Type == 5) then
+			if (SpellTimer[index].Type == TIMER_TYPE.CURSE) or (SpellTimer[index].Type == TIMER_TYPE.COMBAT) then
 				SpellTimer = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
 			end
 		end
