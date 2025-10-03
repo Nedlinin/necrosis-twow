@@ -1423,12 +1423,12 @@ function Necrosis_SelfEffect(action)
 		-- Change the Domination button when the Warlock is no longer under its effect
 		if string.find(arg1, NECROSIS_SPELL_TABLE[15].Name) and NECROSIS_SPELL_TABLE[15].ID ~= nil then
 			DominationUp = false
-			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 1)
+			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 3)
 		end
 		-- Change the Amplify Curse button when the Warlock leaves its effect
 		if string.find(arg1, NECROSIS_SPELL_TABLE[42].Name) and NECROSIS_SPELL_TABLE[42].ID ~= nil then
 			AmplifyUp = false
-			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 1)
+			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 3)
 		end
 		-- Remove the Demon Armor/Skin timer when it fades
 		if NECROSIS_SPELL_TABLE[31].Name and string.find(arg1, NECROSIS_SPELL_TABLE[31].Name) then
@@ -2142,15 +2142,15 @@ function Necrosis_UpdateIcons()
 
 	-- Demon button
 	-----------------------------------------------
-	local ManaPet = { "1", "1", "1", "1", "1", "1" }
+	local ManaPet = { "3", "3", "3", "3", "3", "3" }
 
 	-- Si cooldown de domination corrompue on grise
 	if NECROSIS_SPELL_TABLE[15].ID and not DominationUp then
 		local start, duration = GetSpellCooldown(NECROSIS_SPELL_TABLE[15].ID, "spell")
 		if start > 0 and duration > 0 then
-			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 3)
-		else
 			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 1)
+		else
+			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 3)
 		end
 	end
 
@@ -2158,9 +2158,9 @@ function Necrosis_UpdateIcons()
 	if NECROSIS_SPELL_TABLE[43].ID then
 		local start2, duration2 = GetSpellCooldown(NECROSIS_SPELL_TABLE[43].ID, "spell")
 		if start2 > 0 and duration2 > 0 then
-			Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 3)
-		else
 			Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 1)
+		else
+			Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 3)
 		end
 	end
 
@@ -2168,9 +2168,9 @@ function Necrosis_UpdateIcons()
 	if NECROSIS_SPELL_TABLE[42].ID and not AmplifyUp then
 		local start3, duration3 = GetSpellCooldown(NECROSIS_SPELL_TABLE[42].ID, "spell")
 		if start3 > 0 and duration3 > 0 then
-			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 3)
-		else
 			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 1)
+		else
+			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 3)
 		end
 	end
 
@@ -2179,21 +2179,21 @@ function Necrosis_UpdateIcons()
 		if NECROSIS_SPELL_TABLE[3].ID then
 			if NECROSIS_SPELL_TABLE[3].Mana > mana then
 				for i = 1, 6, 1 do
-					ManaPet[i] = "3"
+					ManaPet[i] = "1"
 				end
 			elseif NECROSIS_SPELL_TABLE[4].ID then
 				if NECROSIS_SPELL_TABLE[4].Mana > mana then
 					for i = 2, 6, 1 do
-						ManaPet[i] = "3"
+						ManaPet[i] = "1"
 					end
 				elseif NECROSIS_SPELL_TABLE[8].ID then
 					if NECROSIS_SPELL_TABLE[8].Mana > mana then
 						for i = 5, 6, 1 do
-							ManaPet[i] = "3"
+							ManaPet[i] = "1"
 						end
 					elseif NECROSIS_SPELL_TABLE[30].ID then
 						if NECROSIS_SPELL_TABLE[30].Mana > mana then
-							ManaPet[6] = "3"
+							ManaPet[6] = "1"
 						end
 					end
 				end
@@ -2204,14 +2204,14 @@ function Necrosis_UpdateIcons()
 	-- Grey out the button when no stone is available for the summon
 	if SoulshardState.count == 0 then
 		for i = 2, 4, 1 do
-			ManaPet[i] = "3"
+			ManaPet[i] = "1"
 		end
 	end
 	if InfernalStone == 0 then
-		ManaPet[5] = "3"
+		ManaPet[5] = "1"
 	end
 	if DemoniacStone == 0 then
-		ManaPet[6] = "3"
+		ManaPet[6] = "1"
 	end
 
 	-- Apply textures to the pet buttons
@@ -2274,57 +2274,57 @@ function Necrosis_UpdateIcons()
 		if MountAvailable and not NecrosisMounted then
 			if NECROSIS_SPELL_TABLE[2].ID then
 				if NECROSIS_SPELL_TABLE[2].Mana > mana or PlayerCombat then
-					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 3)
-				else
 					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 1)
+				else
+					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 3)
 				end
 			else
 				if NECROSIS_SPELL_TABLE[1].Mana > mana or PlayerCombat then
-					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 3)
-				else
 					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 1)
+				else
+					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 3)
 				end
 			end
 		end
 		if NECROSIS_SPELL_TABLE[35].ID then
 			if NECROSIS_SPELL_TABLE[35].Mana > mana or SoulshardState.count == 0 then
-				Necrosis_SetButtonTexture(NecrosisPetMenu8, "Enslave", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisPetMenu8, "Enslave", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisPetMenu8, "Enslave", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[31].ID then
 			if NECROSIS_SPELL_TABLE[31].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 3)
 			end
 		elseif NECROSIS_SPELL_TABLE[36].ID then
 			if NECROSIS_SPELL_TABLE[36].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[32].ID then
 			if NECROSIS_SPELL_TABLE[32].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu2, "Aqua", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu2, "Aqua", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisBuffMenu2, "Aqua", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[33].ID then
 			if NECROSIS_SPELL_TABLE[33].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu3, "Invisible", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu3, "Invisible", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisBuffMenu3, "Invisible", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[34].ID then
 			if NECROSIS_SPELL_TABLE[34].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu4, "Kilrogg", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu4, "Kilrogg", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisBuffMenu4, "Kilrogg", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[37].ID then
@@ -2336,30 +2336,30 @@ function Necrosis_UpdateIcons()
 		end
 		if NECROSIS_SPELL_TABLE[38].ID then
 			if NECROSIS_SPELL_TABLE[38].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu7, "Lien", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu7, "Lien", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisBuffMenu7, "Lien", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[43].ID then
 			if NECROSIS_SPELL_TABLE[43].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[9].ID then
 			if NECROSIS_SPELL_TABLE[9].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu9, "Banish", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu9, "Banish", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisBuffMenu9, "Banish", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[44].ID then
 			if not UnitExists("Pet") then
-				Necrosis_SetButtonTexture(NecrosisPetMenu9, "Sacrifice", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisPetMenu9, "Sacrifice", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisPetMenu9, "Sacrifice", 3)
 			end
 		end
 	end
@@ -2371,58 +2371,58 @@ function Necrosis_UpdateIcons()
 		-- Grey out the button when there is not enough mana
 		if NECROSIS_SPELL_TABLE[23].ID then
 			if NECROSIS_SPELL_TABLE[23].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu2, "Weakness", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu2, "Weakness", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisCurseMenu2, "Weakness", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[22].ID then
 			if NECROSIS_SPELL_TABLE[22].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu3, "Agony", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu3, "Agony", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisCurseMenu3, "Agony", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[24].ID then
 			if NECROSIS_SPELL_TABLE[24].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu4, "Reckless", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu4, "Reckless", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisCurseMenu4, "Reckless", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[25].ID then
 			if NECROSIS_SPELL_TABLE[25].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu5, "Tongues", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu5, "Tongues", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisCurseMenu5, "Tongues", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[40].ID then
 			if NECROSIS_SPELL_TABLE[40].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu6, "Exhaust", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu6, "Exhaust", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisCurseMenu6, "Exhaust", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[26].ID then
 			if NECROSIS_SPELL_TABLE[26].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu7, "Elements", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu7, "Elements", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisCurseMenu7, "Elements", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[27].ID then
 			if NECROSIS_SPELL_TABLE[27].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu8, "Shadow", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu8, "Shadow", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisCurseMenu8, "Shadow", 3)
 			end
 		end
 		if NECROSIS_SPELL_TABLE[16].ID then
 			if NECROSIS_SPELL_TABLE[16].Mana > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu9, "Doom", 3)
-			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu9, "Doom", 1)
+			else
+				Necrosis_SetButtonTexture(NecrosisCurseMenu9, "Doom", 3)
 			end
 		end
 	end
