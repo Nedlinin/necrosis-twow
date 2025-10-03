@@ -2489,7 +2489,7 @@ function Necrosis_BagExplore()
 				end
 				for _, stoneKey in ipairs(STONE_ITEM_KEYS) do
 					local pattern = NECROSIS_ITEM[stoneKey]
-					if pattern and itemName == pattern then
+					if pattern and string.find(itemName, pattern, 1, true) then
 						Necrosis_RecordStoneInventory(stoneKey, container, slot)
 						break
 					end
