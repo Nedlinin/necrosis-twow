@@ -44,7 +44,7 @@ function Necrosis_InsertTimerEntry(IndexTable, Target, LevelTarget, SpellGroup, 
 	})
 
 	-- Associate a graphical timer with the entry
-	SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable)
+	SpellTimer, TimerTable = Necrosis_AddTimerFrame(SpellTimer, TimerTable)
 
 	-- Sort entries by spell type
 	Necrosis_SortTimers(SpellTimer, "Type")
@@ -74,7 +74,7 @@ function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTime
 		})
 
 		-- Associate a graphical timer with the entry
-		SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable)
+		SpellTimer, TimerTable = Necrosis_AddTimerFrame(SpellTimer, TimerTable)
 	elseif Stone == "Spellstone" then
 		if type(Necrosis_DebugPrint) == "function" then
 			Necrosis_DebugPrint("InsertTimerStone", Stone, "duration=", 120)
@@ -91,7 +91,7 @@ function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTime
 		})
 
 		-- Associate a graphical timer with the entry
-		SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable)
+		SpellTimer, TimerTable = Necrosis_AddTimerFrame(SpellTimer, TimerTable)
 	elseif Stone == "Soulstone" then
 		if type(Necrosis_DebugPrint) == "function" then
 			Necrosis_DebugPrint("InsertTimerStone", Stone, "duration=", duration or "nil")
@@ -108,7 +108,7 @@ function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTime
 		})
 
 		-- Associate a graphical timer with the entry
-		SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable)
+		SpellTimer, TimerTable = Necrosis_AddTimerFrame(SpellTimer, TimerTable)
 	end
 
 	-- Sort entries by spell type
@@ -134,7 +134,7 @@ function Necrosis_InsertCustomTimer(nom, duree, truc, Target, LevelTarget, Spell
 	})
 
 	-- Associate a graphical timer with the entry
-	SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable)
+	SpellTimer, TimerTable = Necrosis_AddTimerFrame(SpellTimer, TimerTable)
 
 	-- Sort entries by spell type
 	Necrosis_SortTimers(SpellTimer, "Type")
@@ -153,7 +153,7 @@ end
 function Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
 	-- Remove the graphical timer
 	local Gtime = SpellTimer[index].Gtimer
-	TimerTable = Necrosis_RemoveFrame(Gtime, TimerTable)
+	TimerTable = Necrosis_RemoveTimerFrame(Gtime, TimerTable)
 
 	-- Remove the timer from the list
 	table.remove(SpellTimer, index)
@@ -376,7 +376,7 @@ function Necrosis_DisplayTimer(display, index, SpellGroup, SpellTimer, Graphical
 	end
 	-- Display graphical timers (if enabled)
 	if NecrosisConfig.Graphical then
-		NecrosisAfficheTimer(GraphicalTimer, TimerTable)
+		Necrosis_DisplayTimerFrames(GraphicalTimer, TimerTable)
 	end
 
 	return display, SpellGroup, GraphicalTimer, TimerTable

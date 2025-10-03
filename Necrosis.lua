@@ -404,6 +404,68 @@ local function Necrosis_ShowMenuFrames(menuState)
 	end
 end
 
+local function Necrosis_HasSpell(spellIndex)
+	return spellIndex and NECROSIS_SPELL_TABLE[spellIndex] and NECROSIS_SPELL_TABLE[spellIndex].ID
+end
+
+local function Necrosis_ShouldAddMenuEntry(entry)
+	if entry.condition then
+		return entry.condition()
+	end
+	if entry.spell then
+		return Necrosis_HasSpell(entry.spell)
+	end
+	if entry.spells then
+		local requireAll = entry.check == "all"
+		if requireAll then
+			for index = 1, table.getn(entry.spells), 1 do
+				if not Necrosis_HasSpell(entry.spells[index]) then
+					return false
+				end
+			end
+			return true
+		end
+		for index = 1, table.getn(entry.spells), 1 do
+			if Necrosis_HasSpell(entry.spells[index]) then
+				return true
+			end
+		end
+		return false
+	end
+	return false
+end
+
+local function Necrosis_BuildMenu(definition)
+	if not definition then
+		return
+	end
+	local menuState = definition.state
+	if not menuState then
+		return
+	end
+	Necrosis_HideMenuFrames(definition.prefix, definition.count)
+	local anchor = getglobal(definition.anchor)
+	if not anchor then
+		return
+	end
+	local menuPos = NecrosisConfig[definition.configKey] or 0
+	for index = 1, table.getn(definition.entries), 1 do
+		local entry = definition.entries[index]
+		if Necrosis_ShouldAddMenuEntry(entry) then
+			local frame = Necrosis_AddMenuFrame(menuState, entry.frame, anchor, menuPos)
+			if frame then
+				if entry.texture then
+					Necrosis_SetButtonTexture(frame, entry.texture[1], entry.texture[2])
+				end
+				if entry.onAdd then
+					entry.onAdd(frame)
+				end
+			end
+		end
+	end
+	Necrosis_ShowMenuFrames(menuState)
+end
+
 local function Necrosis_ToggleMenu(state, button, options)
 	state.open = not state.open
 	if not state.open then
@@ -854,7 +916,7 @@ function Necrosis_OnUpdate()
 							if NecrosisConfig.Sound then
 								PlaySoundFile(NECROSIS_SOUND.SoulstoneEnd)
 							end
-							Necrosis_RemoveFrame(SpellTimer[index].Gtimer, TimerTable)
+							Necrosis_RemoveTimerFrame(SpellTimer[index].Gtimer, TimerTable)
 							-- Update the Soulstone button appearance
 							Necrosis_UpdateIcons()
 						-- Otherwise remove the timer quietly (except for Enslave)
@@ -3083,196 +3145,86 @@ function Necrosis_CreateMenu()
 	MenuState.Buff.frames = {}
 	MenuState.Stone.frames = {}
 
-	Necrosis_HideMenuFrames("NecrosisPetMenu", 9)
-	Necrosis_HideMenuFrames("NecrosisBuffMenu", 9)
-	Necrosis_HideMenuFrames("NecrosisCurseMenu", 9)
-	Necrosis_HideMenuFrames("NecrosisStoneMenu", 4)
+	local menuDefinitions = {
+		{
+			state = MenuState.Pet,
+			prefix = "NecrosisPetMenu",
+			count = 9,
+			anchor = "NecrosisPetMenuButton",
+			configKey = "PetMenuPos",
+			entries = {
+				{ frame = "NecrosisPetMenu1", spells = { 15 } },
+				{ frame = "NecrosisPetMenu2", spells = { 3 } },
+				{ frame = "NecrosisPetMenu3", spells = { 4 } },
+				{ frame = "NecrosisPetMenu4", spells = { 5 } },
+				{ frame = "NecrosisPetMenu5", spells = { 6 } },
+				{ frame = "NecrosisPetMenu6", spells = { 8 } },
+				{ frame = "NecrosisPetMenu7", spells = { 30 } },
+				{ frame = "NecrosisPetMenu8", spells = { 35 } },
+				{ frame = "NecrosisPetMenu9", spells = { 44 } },
+			},
+		},
+		{
+			state = MenuState.Buff,
+			prefix = "NecrosisBuffMenu",
+			count = 9,
+			anchor = "NecrosisBuffMenuButton",
+			configKey = "BuffMenuPos",
+			entries = {
+				{ frame = "NecrosisBuffMenu1", spells = { 31, 36 } },
+				{ frame = "NecrosisBuffMenu2", spells = { 32 } },
+				{ frame = "NecrosisBuffMenu3", spells = { 33 } },
+				{ frame = "NecrosisBuffMenu4", spells = { 34 } },
+				{ frame = "NecrosisBuffMenu5", spells = { 37 } },
+				{ frame = "NecrosisBuffMenu6", spells = { 39 } },
+				{ frame = "NecrosisBuffMenu7", spells = { 38 } },
+				{ frame = "NecrosisBuffMenu8", spells = { 43 } },
+				{ frame = "NecrosisBuffMenu9", spells = { 9 } },
+			},
+		},
+		{
+			state = MenuState.Curse,
+			prefix = "NecrosisCurseMenu",
+			count = 9,
+			anchor = "NecrosisCurseMenuButton",
+			configKey = "CurseMenuPos",
+			entries = {
+				{ frame = "NecrosisCurseMenu1", spells = { 42 } },
+				{ frame = "NecrosisCurseMenu2", spells = { 23 } },
+				{ frame = "NecrosisCurseMenu3", spells = { 22 } },
+				{ frame = "NecrosisCurseMenu4", spells = { 24 } },
+				{ frame = "NecrosisCurseMenu5", spells = { 25 } },
+				{ frame = "NecrosisCurseMenu6", spells = { 40 } },
+				{ frame = "NecrosisCurseMenu7", spells = { 26 } },
+				{ frame = "NecrosisCurseMenu8", spells = { 27 } },
+				{ frame = "NecrosisCurseMenu9", spells = { 16 } },
+			},
+		},
+		{
+			state = MenuState.Stone,
+			prefix = "NecrosisStoneMenu",
+			count = 4,
+			anchor = "NecrosisStoneMenuButton",
+			configKey = "StoneMenuPos",
+			entries = {
+				{ frame = "NecrosisStoneMenu1", spells = { 45 }, texture = { "Felstone", 2 } },
+				{ frame = "NecrosisStoneMenu2", spells = { 46 }, texture = { "Wrathstone", 2 } },
+				{ frame = "NecrosisStoneMenu3", spells = { 47 }, texture = { "Voidstone", 2 } },
+				{
+					frame = "NecrosisStoneMenu4",
+					condition = function()
+						return StoneIDInSpellTable[4] ~= 0
+					end,
+					texture = { "FirestoneButton", 2 },
+				},
+			},
+		},
+	}
 
-	-- Pet menu
-	if NECROSIS_SPELL_TABLE[15].ID then
-		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu1", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
+	for index = 1, table.getn(menuDefinitions), 1 do
+		local definition = menuDefinitions[index]
+		Necrosis_BuildMenu(definition)
 	end
-	if NECROSIS_SPELL_TABLE[3].ID then
-		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu2", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[4].ID then
-		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu3", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[5].ID then
-		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu4", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[6].ID then
-		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu5", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[8].ID then
-		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu6", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[30].ID then
-		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu7", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[35].ID then
-		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu8", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[44].ID then
-		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu9", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
-	end
-
-	Necrosis_ShowMenuFrames(MenuState.Pet)
-
-	-- Buff menu
-	if NECROSIS_SPELL_TABLE[31].ID or NECROSIS_SPELL_TABLE[36].ID then
-		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu1", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[32].ID then
-		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu2", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[33].ID then
-		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu3", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[34].ID then
-		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu4", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[37].ID then
-		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu5", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[39].ID then
-		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu6", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[38].ID then
-		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu7", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[43].ID then
-		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu8", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
-	end
-	if NECROSIS_SPELL_TABLE[9].ID then
-		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu9", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
-	end
-
-	Necrosis_ShowMenuFrames(MenuState.Buff)
-
-	-- Curse menu
-	if NECROSIS_SPELL_TABLE[42].ID then
-		Necrosis_AddMenuFrame(
-			MenuState.Curse,
-			"NecrosisCurseMenu1",
-			"NecrosisCurseMenuButton",
-			NecrosisConfig.CurseMenuPos
-		)
-	end
-	if NECROSIS_SPELL_TABLE[23].ID then
-		Necrosis_AddMenuFrame(
-			MenuState.Curse,
-			"NecrosisCurseMenu2",
-			"NecrosisCurseMenuButton",
-			NecrosisConfig.CurseMenuPos
-		)
-	end
-	if NECROSIS_SPELL_TABLE[22].ID then
-		Necrosis_AddMenuFrame(
-			MenuState.Curse,
-			"NecrosisCurseMenu3",
-			"NecrosisCurseMenuButton",
-			NecrosisConfig.CurseMenuPos
-		)
-	end
-	if NECROSIS_SPELL_TABLE[24].ID then
-		Necrosis_AddMenuFrame(
-			MenuState.Curse,
-			"NecrosisCurseMenu4",
-			"NecrosisCurseMenuButton",
-			NecrosisConfig.CurseMenuPos
-		)
-	end
-	if NECROSIS_SPELL_TABLE[25].ID then
-		Necrosis_AddMenuFrame(
-			MenuState.Curse,
-			"NecrosisCurseMenu5",
-			"NecrosisCurseMenuButton",
-			NecrosisConfig.CurseMenuPos
-		)
-	end
-	if NECROSIS_SPELL_TABLE[40].ID then
-		Necrosis_AddMenuFrame(
-			MenuState.Curse,
-			"NecrosisCurseMenu6",
-			"NecrosisCurseMenuButton",
-			NecrosisConfig.CurseMenuPos
-		)
-	end
-	if NECROSIS_SPELL_TABLE[26].ID then
-		Necrosis_AddMenuFrame(
-			MenuState.Curse,
-			"NecrosisCurseMenu7",
-			"NecrosisCurseMenuButton",
-			NecrosisConfig.CurseMenuPos
-		)
-	end
-	if NECROSIS_SPELL_TABLE[27].ID then
-		Necrosis_AddMenuFrame(
-			MenuState.Curse,
-			"NecrosisCurseMenu8",
-			"NecrosisCurseMenuButton",
-			NecrosisConfig.CurseMenuPos
-		)
-	end
-	if NECROSIS_SPELL_TABLE[16].ID then
-		Necrosis_AddMenuFrame(
-			MenuState.Curse,
-			"NecrosisCurseMenu9",
-			"NecrosisCurseMenuButton",
-			NecrosisConfig.CurseMenuPos
-		)
-	end
-
-	Necrosis_ShowMenuFrames(MenuState.Curse)
-
-	-- Stone menu
-	if NECROSIS_SPELL_TABLE[45].ID then
-		local frame = Necrosis_AddMenuFrame(
-			MenuState.Stone,
-			"NecrosisStoneMenu1",
-			"NecrosisStoneMenuButton",
-			NecrosisConfig.StoneMenuPos
-		)
-		if frame then
-			Necrosis_SetButtonTexture(frame, "Felstone", 2)
-		end
-	end
-	if NECROSIS_SPELL_TABLE[46].ID then
-		local frame = Necrosis_AddMenuFrame(
-			MenuState.Stone,
-			"NecrosisStoneMenu2",
-			"NecrosisStoneMenuButton",
-			NecrosisConfig.StoneMenuPos
-		)
-		if frame then
-			Necrosis_SetButtonTexture(frame, "Wrathstone", 2)
-		end
-	end
-	if NECROSIS_SPELL_TABLE[47].ID then
-		local frame = Necrosis_AddMenuFrame(
-			MenuState.Stone,
-			"NecrosisStoneMenu3",
-			"NecrosisStoneMenuButton",
-			NecrosisConfig.StoneMenuPos
-		)
-		if frame then
-			Necrosis_SetButtonTexture(frame, "Voidstone", 2)
-		end
-	end
-	if StoneIDInSpellTable[4] ~= 0 then
-		local frame = Necrosis_AddMenuFrame(
-			MenuState.Stone,
-			"NecrosisStoneMenu4",
-			"NecrosisStoneMenuButton",
-			NecrosisConfig.StoneMenuPos
-		)
-		if frame then
-			Necrosis_SetButtonTexture(frame, "FirestoneButton", 2)
-		end
-	end
-
-	Necrosis_ShowMenuFrames(MenuState.Stone)
 end
 
 -- Handle casts triggered from the buff menu
@@ -3325,73 +3277,56 @@ function Necrosis_CurseCast(type, click)
 end
 
 -- Handle casts triggered from the stone menu
+local StoneCastDefinitions = {
+	[1] = { inventoryKey = "Felstone", stoneIndex = 5 },
+	[2] = { inventoryKey = "Wrathstone", stoneIndex = 6 },
+	[3] = { inventoryKey = "Voidstone", stoneIndex = 7 },
+	[4] = { inventoryKey = "Firestone", stoneIndex = 4 },
+}
+
 function Necrosis_StoneCast(type, click)
-	if type == 1 then -- Felstone
-		if StoneInventory.Felstone.onHand then
-			SpellStopCasting()
-			UseContainerItem(StoneInventory.Felstone.location[1], StoneInventory.Felstone.location[2])
-			return
-		else
-			local spellID = StoneIDInSpellTable[5]
-			if spellID and NECROSIS_SPELL_TABLE[spellID] and NECROSIS_SPELL_TABLE[spellID].ID then
-				if NECROSIS_SPELL_TABLE[spellID].Mana > UnitMana("player") then
-					Necrosis_Msg(NECROSIS_MESSAGE.Error.NoMana, "USER")
-					return
-				end
-				CastSpell(NECROSIS_SPELL_TABLE[spellID].ID, "spell")
-				LastCast.Stone.id = type
-				LastCast.Stone.click = click
-			end
-		end
-	elseif type == 2 then -- Wrathstone
-		if StoneInventory.Wrathstone.onHand then
-			SpellStopCasting()
-			UseContainerItem(StoneInventory.Wrathstone.location[1], StoneInventory.Wrathstone.location[2])
-			return
-		else
-			local spellID = StoneIDInSpellTable[6]
-			if spellID and NECROSIS_SPELL_TABLE[spellID] and NECROSIS_SPELL_TABLE[spellID].ID then
-				if NECROSIS_SPELL_TABLE[spellID].Mana > UnitMana("player") then
-					Necrosis_Msg(NECROSIS_MESSAGE.Error.NoMana, "USER")
-					return
-				end
-				CastSpell(NECROSIS_SPELL_TABLE[spellID].ID, "spell")
-				LastCast.Stone.id = type
-				LastCast.Stone.click = click
-			end
-		end
-	elseif type == 3 then -- Voidstone
-		if StoneInventory.Voidstone.onHand then
-			SpellStopCasting()
-			UseContainerItem(StoneInventory.Voidstone.location[1], StoneInventory.Voidstone.location[2])
-			return
-		else
-			local spellID = StoneIDInSpellTable[7]
-			if spellID and NECROSIS_SPELL_TABLE[spellID] and NECROSIS_SPELL_TABLE[spellID].ID then
-				if NECROSIS_SPELL_TABLE[spellID].Mana > UnitMana("player") then
-					Necrosis_Msg(NECROSIS_MESSAGE.Error.NoMana, "USER")
-					return
-				end
-				CastSpell(NECROSIS_SPELL_TABLE[spellID].ID, "spell")
-				LastCast.Stone.id = type
-				LastCast.Stone.click = click
-			end
-		end
-	elseif type == 4 then -- Firestone
-		if StoneInventory.Firestone.onHand then
-			SpellStopCasting()
-			UseContainerItem(StoneInventory.Firestone.location[1], StoneInventory.Firestone.location[2])
-			return
-		else
-			if StoneIDInSpellTable[4] ~= 0 then
-				CastSpell(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]].ID, "spell")
-				LastCast.Stone.id = type
-				LastCast.Stone.click = click
-			else
-				Necrosis_Msg(NECROSIS_MESSAGE.Error.NoFireStoneSpell, "USER")
-			end
-		end
+	local definition = StoneCastDefinitions[type]
+	if not definition then
+		return
 	end
+
+	local stoneData = StoneInventory[definition.inventoryKey]
+	if stoneData and stoneData.onHand then
+		SpellStopCasting()
+		UseContainerItem(stoneData.location[1], stoneData.location[2])
+		return
+	end
+
+	local stoneSpellIndex = nil
+	if definition.stoneIndex then
+		stoneSpellIndex = StoneIDInSpellTable[definition.stoneIndex]
+	end
+	local stoneSpell = nil
+	if stoneSpellIndex and stoneSpellIndex ~= 0 then
+		stoneSpell = NECROSIS_SPELL_TABLE[stoneSpellIndex]
+	end
+	if not stoneSpell or not stoneSpell.ID then
+		local errorTable = NECROSIS_MESSAGE and NECROSIS_MESSAGE.Error
+		if errorTable then
+			local messageKey = "No" .. definition.inventoryKey .. "Spell"
+			local message = errorTable[messageKey]
+			if message then
+				Necrosis_Msg(message, "USER")
+			end
+		end
+	else
+		if stoneSpell.Mana and stoneSpell.Mana > UnitMana("player") then
+			local errorTable = NECROSIS_MESSAGE and NECROSIS_MESSAGE.Error
+			if errorTable and errorTable.NoMana then
+				Necrosis_Msg(errorTable.NoMana, "USER")
+			end
+			return
+		end
+		CastSpell(stoneSpell.ID, "spell")
+		LastCast.Stone.id = type
+		LastCast.Stone.click = click
+	end
+
 	MenuState.Stone.alpha = 1
 	MenuState.Stone.fadeAt = GetTime() + 3
 end

@@ -21,11 +21,11 @@
 -- temps = "numeric timer",
 -- Gtimer = "Index of the associated timer (between 1 and 65)"
 -- }
-function NecrosisAfficheTimer(tableau, pointeur)
+function Necrosis_DisplayTimerFrames(timerData, pointer)
 	-- Define the position where the first frame appears
 	-- Force the first frame to always be the first mob (makes sense :P)
 
-	if tableau ~= nil then
+	if timerData ~= nil then
 		local TimerTarget = 0
 		local yPosition = NecrosisConfig.SensListe * 5
 
@@ -37,9 +37,9 @@ function NecrosisAfficheTimer(tableau, pointeur)
 			PositionTitre = { -13, -11 }
 		end
 
-		for index = 1, table.getn(tableau.texte), 1 do
+		for index = 1, table.getn(timerData.texte), 1 do
 			-- If the entry is a mob title
-			if tableau.titre[index] then
+			if timerData.titre[index] then
 				-- Switch to the next mob group
 				TimerTarget = TimerTarget + 1
 				if TimerTarget ~= 1 then
@@ -62,7 +62,7 @@ function NecrosisAfficheTimer(tableau, pointeur)
 				)
 				yPosition = yPosition - PositionTitre[2]
 				-- Name the frame and display it! :)
-				frameItem:SetText(tableau.texte[index])
+				frameItem:SetText(timerData.texte[index])
 				if not frameItem:IsShown() then
 					frameItem:Show()
 				end
@@ -73,15 +73,15 @@ function NecrosisAfficheTimer(tableau, pointeur)
 					JustifInverse = "RIGHT"
 				end
 
-				local frameName1 = "NecrosisTimer" .. tableau.Gtimer[index] .. "Text"
+				local frameName1 = "NecrosisTimer" .. timerData.Gtimer[index] .. "Text"
 				local frameItem1 = getglobal(frameName1)
-				local frameName2 = "NecrosisTimer" .. tableau.Gtimer[index] .. "Bar"
+				local frameName2 = "NecrosisTimer" .. timerData.Gtimer[index] .. "Bar"
 				local frameItem2 = getglobal(frameName2)
-				local frameName3 = "NecrosisTimer" .. tableau.Gtimer[index] .. "Texture"
+				local frameName3 = "NecrosisTimer" .. timerData.Gtimer[index] .. "Texture"
 				local frameItem3 = getglobal(frameName3)
-				local frameName4 = "NecrosisTimer" .. tableau.Gtimer[index] .. "Spark"
+				local frameName4 = "NecrosisTimer" .. timerData.Gtimer[index] .. "Spark"
 				local frameItem4 = getglobal(frameName4)
-				local frameName5 = "NecrosisTimer" .. tableau.Gtimer[index] .. "OutText"
+				local frameName5 = "NecrosisTimer" .. timerData.Gtimer[index] .. "OutText"
 				local frameItem5 = getglobal(frameName5)
 
 				frameItem1:ClearAllPoints()
@@ -98,7 +98,7 @@ function NecrosisAfficheTimer(tableau, pointeur)
 					frameItem1:SetTextColor(1, 1, 1)
 				end
 				frameItem1:SetJustifyH("LEFT")
-				frameItem1:SetText(tableau.texte[index])
+				frameItem1:SetText(timerData.texte[index])
 				frameItem2:ClearAllPoints()
 				frameItem2:SetPoint(
 					NecrosisConfig.SpellTimerJust,
@@ -107,11 +107,11 @@ function NecrosisAfficheTimer(tableau, pointeur)
 					NecrosisConfig.SpellTimerPos * 23,
 					yPosition
 				)
-				frameItem2:SetMinMaxValues(tableau.TimeMax[index] - tableau.Time[index], tableau.TimeMax[index])
-				frameItem2:SetValue(2 * tableau.TimeMax[index] - (tableau.Time[index] + floor(GetTime())))
+				frameItem2:SetMinMaxValues(timerData.TimeMax[index] - timerData.Time[index], timerData.TimeMax[index])
+				frameItem2:SetValue(2 * timerData.TimeMax[index] - (timerData.Time[index] + floor(GetTime())))
 				local r, g
 				local b = 37 / 255
-				local PercentColor = (tableau.TimeMax[index] - floor(GetTime())) / tableau.Time[index]
+				local PercentColor = (timerData.TimeMax[index] - floor(GetTime())) / timerData.Time[index]
 				if PercentColor > 0.5 then
 					r = (49 / 255) + (((1 - PercentColor) * 2) * (1 - (49 / 255)))
 					g = 207 / 255
@@ -138,10 +138,13 @@ function NecrosisAfficheTimer(tableau, pointeur)
 					NecrosisConfig.SpellTimerPos * 5,
 					1
 				)
-				frameItem5:SetText(tableau.temps[index])
+				frameItem5:SetText(timerData.temps[index])
 
 				local sparkPosition = 150
-					- ((floor(GetTime()) - (tableau.TimeMax[index] - tableau.Time[index])) / tableau.Time[index])
+					- (
+							(floor(GetTime()) - (timerData.TimeMax[index] - timerData.Time[index]))
+							/ timerData.Time[index]
+						)
 						* 150
 				if sparkPosition < 1 then
 					sparkPosition = 1
@@ -162,11 +165,11 @@ function NecrosisAfficheTimer(tableau, pointeur)
 	end
 end
 
-function Necrosis_AddFrame(SpellTimer, TimerTable)
-	for i = 1, table.getn(TimerTable), 1 do
-		if not TimerTable[i] then
-			TimerTable[i] = true
-			SpellTimer[table.getn(SpellTimer)].Gtimer = i
+function Necrosis_AddTimerFrame(timerList, timerSlots)
+	for i = 1, table.getn(timerSlots), 1 do
+		if not timerSlots[i] then
+			timerSlots[i] = true
+			timerList[table.getn(timerList)].Gtimer = i
 			-- Display the associated graphical timer
 			if NecrosisConfig.Graphical then
 				local elements = { "Text", "Bar", "Texture", "OutText" }
@@ -179,20 +182,20 @@ function Necrosis_AddFrame(SpellTimer, TimerTable)
 			break
 		end
 	end
-	return SpellTimer, TimerTable
+	return timerList, timerSlots
 end
 
-function Necrosis_RemoveFrame(Gtime, TimerTable)
+function Necrosis_RemoveTimerFrame(frameIndex, timerSlots)
 	-- Hide the graphical timer
 	local elements = { "Text", "Bar", "Texture", "OutText" }
 	for j = 1, 4, 1 do
-		frameName = "NecrosisTimer" .. Gtime .. elements[j]
+		frameName = "NecrosisTimer" .. frameIndex .. elements[j]
 		frameItem = getglobal(frameName)
 		frameItem:Hide()
 	end
 
 	-- Mark the graphical timer as reusable
-	TimerTable[Gtime] = false
+	timerSlots[frameIndex] = false
 
-	return TimerTable
+	return timerSlots
 end
