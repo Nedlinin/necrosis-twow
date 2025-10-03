@@ -29,6 +29,7 @@ local ReusableGroupNames = {}
 local ReusableGroupSubNames = {}
 local ReusableGroupVisible = {}
 local ReusableGroupKeyCache = {}
+-- Pool of recycled target-level lookup tables so we can avoid reallocating them each refresh
 local ReusableGroupKeyBucketPool = {}
 
 local function Necrosis_FinalizeTimerInsert(spellGroup, spellTimer, timerTable)
@@ -63,6 +64,7 @@ function Necrosis_UpdateTimerEntry(spellGroup, spellTimer, name, target, level, 
 			end
 			timer.Target = target
 			timer.TargetLevel = level
+			-- Avoid re-sorting and regrouping unless spell metadata actually changed
 			local needsResort = timerType and timerType ~= originalType
 			local needsReassign = needsResort or originalTarget ~= target or originalLevel ~= level
 			if needsResort then
@@ -364,6 +366,7 @@ function Necrosis_AssignTimerGroups(SpellGroup, SpellTimer)
 	wipe_table(ReusableGroupSubNames)
 	wipe_table(ReusableGroupVisible)
 
+	-- Return previously used target buckets to the pool before rebuilding the map
 	for target, bucket in pairs(ReusableGroupKeyCache) do
 		if type(bucket) == "table" then
 			for key in pairs(bucket) do
@@ -395,6 +398,7 @@ function Necrosis_AssignTimerGroups(SpellGroup, SpellTimer)
 	local function ensureGroupIndex(target, level)
 		target = target or ""
 		local levelValue = level ~= nil and level or ""
+		-- Each target keeps a small table of level -> group index to minimize lookups
 		local bucket = groupByTarget[target]
 		if not bucket then
 			local poolIndex = table.getn(ReusableGroupKeyBucketPool)
@@ -462,6 +466,7 @@ function Necrosis_DisplayTimer(
 	graphCount,
 	currentTime
 )
+	-- textBuffer and graphCount let callers reuse preallocated storage between updates
 	if not SpellTimer then
 		return SpellGroup, TimerTable, graphCount
 	end

@@ -93,6 +93,7 @@ local function clear_tables(t)
 	end
 end
 
+-- Clear array contents without releasing the table; used by per-frame buffers
 local function wipe_array(t)
 	for index = table.getn(t), 1, -1 do
 		t[index] = nil
@@ -1137,6 +1138,7 @@ function Necrosis_OnUpdate()
 	if SpellTimer then
 		if update then
 			wipe_array(TextTimerSegments)
+			-- Reuse the shared buffer to avoid rebuilding timer strings each frame
 			local textBuffer = TextTimerSegments
 			local graphCount = 0
 			local previousActive = GraphicalTimer.activeCount or 0
@@ -1207,6 +1209,7 @@ function Necrosis_OnUpdate()
 					end
 				end
 			end
+			-- Clear leftover graphical timer slots when the active count shrinks
 			if previousActive > graphCount then
 				for slotIndex = graphCount + 1, previousActive, 1 do
 					GraphicalTimer.texte[slotIndex] = nil
@@ -2489,6 +2492,7 @@ function Necrosis_BagExplore()
 				end
 				for _, stoneKey in ipairs(STONE_ITEM_KEYS) do
 					local pattern = NECROSIS_ITEM[stoneKey]
+					-- Ranked stones include the size in their item name (e.g. "Major Healthstone"), so use a literal substring match
 					if pattern and string.find(itemName, pattern, 1, true) then
 						Necrosis_RecordStoneInventory(stoneKey, container, slot)
 						break
