@@ -364,6 +364,46 @@ local function Necrosis_SetMenuFramesAlpha(menuState, alpha)
 	end
 end
 
+local function Necrosis_AddMenuFrame(menuState, frameName, anchorButton, menuPos)
+	local frame = getglobal(frameName)
+	if not frame then
+		return nil
+	end
+	frame:ClearAllPoints()
+	local previousIndex = table.getn(menuState.frames)
+	local previous = nil
+	if previousIndex > 0 then
+		previous = menuState.frames[previousIndex]
+	end
+	if previous then
+		local spacing = 0
+		if menuPos and menuPos ~= 0 then
+			spacing = (36 / menuPos) * 31
+		end
+		frame:SetPoint("CENTER", previous, "CENTER", spacing, 0)
+	else
+		frame:SetPoint("CENTER", anchorButton, "CENTER", 3000, 3000)
+	end
+	frame:Hide()
+	table.insert(menuState.frames, frame)
+	return frame
+end
+
+local function Necrosis_HideMenuFrames(prefix, count)
+	for index = 1, count, 1 do
+		local frame = getglobal(prefix .. index)
+		if frame then
+			frame:Hide()
+		end
+	end
+end
+
+local function Necrosis_ShowMenuFrames(menuState)
+	for index = 1, table.getn(menuState.frames), 1 do
+		ShowUIPanel(menuState.frames[index])
+	end
+end
+
 local function Necrosis_ToggleMenu(state, button, options)
 	state.open = not state.open
 	if not state.open then
@@ -3042,513 +3082,197 @@ function Necrosis_CreateMenu()
 	MenuState.Curse.frames = {}
 	MenuState.Buff.frames = {}
 	MenuState.Stone.frames = {}
-	local menuVariable = nil
-	local PetButtonPosition = 0
-	local BuffButtonPosition = 0
-	local CurseButtonPosition = 0
-	local StoneButtonPosition = 0
 
-	-- Hide every demon icon
-	for i = 1, 9, 1 do
-		menuVariable = getglobal("NecrosisPetMenu" .. i)
-		menuVariable:Hide()
-	end
-	-- On cache toutes les icones des sorts
-	for i = 1, 9, 1 do
-		menuVariable = getglobal("NecrosisBuffMenu" .. i)
-		menuVariable:Hide()
-	end
-	-- On cache toutes les icones des curses
-	for i = 1, 9, 1 do
-		menuVariable = getglobal("NecrosisCurseMenu" .. i)
-		menuVariable:Hide()
-	end
+	Necrosis_HideMenuFrames("NecrosisPetMenu", 9)
+	Necrosis_HideMenuFrames("NecrosisBuffMenu", 9)
+	Necrosis_HideMenuFrames("NecrosisCurseMenu", 9)
+	Necrosis_HideMenuFrames("NecrosisStoneMenu", 4)
 
-	-- If Fel Domination exists, show its button in the pet menu
+	-- Pet menu
 	if NECROSIS_SPELL_TABLE[15].ID then
-		menuVariable = getglobal("NecrosisPetMenu1")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint("CENTER", "NecrosisPetMenuButton", "CENTER", 3000, 3000)
-		PetButtonPosition = 1
-		table.insert(MenuState.Pet.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu1", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
 	end
-	-- Si l'invocation du Diablotin existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[3].ID then
-		menuVariable = getglobal("NecrosisPetMenu2")
-		menuVariable:ClearAllPoints()
-		if PetButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisPetMenuButton", "CENTER", 3000, 3000)
-		else
-			menuVariable:SetPoint(
-				"CENTER",
-				"NecrosisPetMenu" .. PetButtonPosition,
-				"CENTER",
-				((36 / NecrosisConfig.PetMenuPos) * 31),
-				0
-			)
-		end
-		PetButtonPosition = 2
-		table.insert(MenuState.Pet.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu2", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
 	end
-	-- Si l'invocation du Marcheur existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[4].ID then
-		menuVariable = getglobal("NecrosisPetMenu3")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisPetMenu" .. PetButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.PetMenuPos) * 31),
-			0
-		)
-		PetButtonPosition = 3
-		table.insert(MenuState.Pet.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu3", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
 	end
-	-- Si l'invocation du Succube existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[5].ID then
-		menuVariable = getglobal("NecrosisPetMenu4")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisPetMenu" .. PetButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.PetMenuPos) * 31),
-			0
-		)
-		PetButtonPosition = 4
-		table.insert(MenuState.Pet.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu4", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
 	end
-	-- Si l'invocation du Felhunter existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[6].ID then
-		menuVariable = getglobal("NecrosisPetMenu5")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisPetMenu" .. PetButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.PetMenuPos) * 31),
-			0
-		)
-		PetButtonPosition = 5
-		table.insert(MenuState.Pet.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu5", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
 	end
-	-- Si l'invocation de l'Infernal existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[8].ID then
-		menuVariable = getglobal("NecrosisPetMenu6")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisPetMenu" .. PetButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.PetMenuPos) * 31),
-			0
-		)
-		PetButtonPosition = 6
-		table.insert(MenuState.Pet.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu6", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
 	end
-	-- Si l'invocation du Doomguard existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[30].ID then
-		menuVariable = getglobal("NecrosisPetMenu7")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisPetMenu" .. PetButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.PetMenuPos) * 31),
-			0
-		)
-		PetButtonPosition = 7
-		table.insert(MenuState.Pet.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu7", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
 	end
-	-- Si l'asservissement existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[35].ID then
-		menuVariable = getglobal("NecrosisPetMenu8")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisPetMenu" .. PetButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.PetMenuPos) * 31),
-			0
-		)
-		PetButtonPosition = 8
-		table.insert(MenuState.Pet.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu8", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
 	end
-	-- If Demonic Sacrifice exists, show its button in the pet menu
 	if NECROSIS_SPELL_TABLE[44].ID then
-		menuVariable = getglobal("NecrosisPetMenu9")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisPetMenu" .. PetButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.PetMenuPos) * 31),
-			0
-		)
-		PetButtonPosition = 9
-		table.insert(MenuState.Pet.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Pet, "NecrosisPetMenu9", "NecrosisPetMenuButton", NecrosisConfig.PetMenuPos)
 	end
 
-	-- With all pet buttons lined up off-screen, reveal the ones that are available
-	for i = 1, table.getn(MenuState.Pet.frames), 1 do
-		ShowUIPanel(MenuState.Pet.frames[i])
-	end
+	Necrosis_ShowMenuFrames(MenuState.Pet)
 
-	-- If Demon Armor exists, show its button in the buff menu
+	-- Buff menu
 	if NECROSIS_SPELL_TABLE[31].ID or NECROSIS_SPELL_TABLE[36].ID then
-		menuVariable = getglobal("NecrosisBuffMenu1")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint("CENTER", "NecrosisBuffMenuButton", "CENTER", 3000, 3000)
-		BuffButtonPosition = 1
-		table.insert(MenuState.Buff.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu1", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
 	end
-	-- If Unending Breath exists, show its button in the buff menu
 	if NECROSIS_SPELL_TABLE[32].ID then
-		menuVariable = getglobal("NecrosisBuffMenu2")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisBuffMenu" .. BuffButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.BuffMenuPos) * 31),
-			0
-		)
-		BuffButtonPosition = 2
-		table.insert(MenuState.Buff.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu2", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
 	end
-	-- If Detect Invisibility is known, show its highest-rank button in the buff menu
 	if NECROSIS_SPELL_TABLE[33].ID then
-		menuVariable = getglobal("NecrosisBuffMenu3")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisBuffMenu" .. BuffButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.BuffMenuPos) * 31),
-			0
-		)
-		BuffButtonPosition = 3
-		table.insert(MenuState.Buff.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu3", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
 	end
-	-- If Unending Breath exists, show its button in the buff menu
 	if NECROSIS_SPELL_TABLE[34].ID then
-		menuVariable = getglobal("NecrosisBuffMenu4")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisBuffMenu" .. BuffButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.BuffMenuPos) * 31),
-			0
-		)
-		BuffButtonPosition = 4
-		table.insert(MenuState.Buff.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu4", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
 	end
-	-- Si l'invocation de joueur existe, on affiche le bouton dans le menu des buffs
 	if NECROSIS_SPELL_TABLE[37].ID then
-		menuVariable = getglobal("NecrosisBuffMenu5")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisBuffMenu" .. BuffButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.BuffMenuPos) * 31),
-			0
-		)
-		BuffButtonPosition = 5
-		table.insert(MenuState.Buff.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu5", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
 	end
-	-- If Sense Demons exists, show its button in the buff menu
 	if NECROSIS_SPELL_TABLE[39].ID then
-		menuVariable = getglobal("NecrosisBuffMenu6")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisBuffMenu" .. BuffButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.BuffMenuPos) * 31),
-			0
-		)
-		BuffButtonPosition = 6
-		table.insert(MenuState.Buff.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu6", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
 	end
-	-- If Soul Link exists, show its button in the buff menu
 	if NECROSIS_SPELL_TABLE[38].ID then
-		menuVariable = getglobal("NecrosisBuffMenu7")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisBuffMenu" .. BuffButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.BuffMenuPos) * 31),
-			0
-		)
-		BuffButtonPosition = 7
-		table.insert(MenuState.Buff.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu7", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
 	end
-	-- If Shadow Ward exists, show its button in the buff menu
 	if NECROSIS_SPELL_TABLE[43].ID then
-		menuVariable = getglobal("NecrosisBuffMenu8")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisBuffMenu" .. BuffButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.BuffMenuPos) * 31),
-			0
-		)
-		BuffButtonPosition = 8
-		table.insert(MenuState.Buff.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu8", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
 	end
-	-- If Banish exists, show its button in the buff menu
 	if NECROSIS_SPELL_TABLE[9].ID then
-		menuVariable = getglobal("NecrosisBuffMenu9")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint(
-			"CENTER",
-			"NecrosisBuffMenu" .. BuffButtonPosition,
-			"CENTER",
-			((36 / NecrosisConfig.BuffMenuPos) * 31),
-			0
-		)
-		BuffButtonPosition = 9
-		table.insert(MenuState.Buff.frames, menuVariable)
+		Necrosis_AddMenuFrame(MenuState.Buff, "NecrosisBuffMenu9", "NecrosisBuffMenuButton", NecrosisConfig.BuffMenuPos)
 	end
 
-	-- With all buff buttons lined up off-screen, reveal the ones that are available
-	for i = 1, table.getn(MenuState.Buff.frames), 1 do
-		ShowUIPanel(MenuState.Buff.frames[i])
-	end
+	Necrosis_ShowMenuFrames(MenuState.Buff)
 
-	-- If Amplify Curse exists, show its button in the curse menu
+	-- Curse menu
 	if NECROSIS_SPELL_TABLE[42].ID then
-		menuVariable = getglobal("NecrosisCurseMenu1")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000)
-		CurseButtonPosition = 1
-		table.insert(MenuState.Curse.frames, menuVariable)
+		Necrosis_AddMenuFrame(
+			MenuState.Curse,
+			"NecrosisCurseMenu1",
+			"NecrosisCurseMenuButton",
+			NecrosisConfig.CurseMenuPos
+		)
 	end
-	-- If Curse of Weakness exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[23].ID then
-		menuVariable = getglobal("NecrosisCurseMenu2")
-		menuVariable:ClearAllPoints()
-		if CurseButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000)
-		else
-			menuVariable:SetPoint(
-				"CENTER",
-				"NecrosisCurseMenu" .. CurseButtonPosition,
-				"CENTER",
-				((36 / NecrosisConfig.CurseMenuPos) * 31),
-				0
-			)
-		end
-		CurseButtonPosition = 2
-		table.insert(MenuState.Curse.frames, menuVariable)
+		Necrosis_AddMenuFrame(
+			MenuState.Curse,
+			"NecrosisCurseMenu2",
+			"NecrosisCurseMenuButton",
+			NecrosisConfig.CurseMenuPos
+		)
 	end
-	-- If Curse of Agony exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[22].ID then
-		menuVariable = getglobal("NecrosisCurseMenu3")
-		menuVariable:ClearAllPoints()
-		if CurseButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000)
-		else
-			menuVariable:SetPoint(
-				"CENTER",
-				"NecrosisCurseMenu" .. CurseButtonPosition,
-				"CENTER",
-				((36 / NecrosisConfig.CurseMenuPos) * 31),
-				0
-			)
-		end
-		CurseButtonPosition = 3
-		table.insert(MenuState.Curse.frames, menuVariable)
+		Necrosis_AddMenuFrame(
+			MenuState.Curse,
+			"NecrosisCurseMenu3",
+			"NecrosisCurseMenuButton",
+			NecrosisConfig.CurseMenuPos
+		)
 	end
-	-- If Curse of Recklessness exists, show its highest rank in the curse menu
 	if NECROSIS_SPELL_TABLE[24].ID then
-		menuVariable = getglobal("NecrosisCurseMenu4")
-		menuVariable:ClearAllPoints()
-		if CurseButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000)
-		else
-			menuVariable:SetPoint(
-				"CENTER",
-				"NecrosisCurseMenu" .. CurseButtonPosition,
-				"CENTER",
-				((36 / NecrosisConfig.CurseMenuPos) * 31),
-				0
-			)
-		end
-		CurseButtonPosition = 4
-		table.insert(MenuState.Curse.frames, menuVariable)
+		Necrosis_AddMenuFrame(
+			MenuState.Curse,
+			"NecrosisCurseMenu4",
+			"NecrosisCurseMenuButton",
+			NecrosisConfig.CurseMenuPos
+		)
 	end
-	-- If Curse of Tongues exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[25].ID then
-		menuVariable = getglobal("NecrosisCurseMenu5")
-		menuVariable:ClearAllPoints()
-		if CurseButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000)
-		else
-			menuVariable:SetPoint(
-				"CENTER",
-				"NecrosisCurseMenu" .. CurseButtonPosition,
-				"CENTER",
-				((36 / NecrosisConfig.CurseMenuPos) * 31),
-				0
-			)
-		end
-		CurseButtonPosition = 5
-		table.insert(MenuState.Curse.frames, menuVariable)
+		Necrosis_AddMenuFrame(
+			MenuState.Curse,
+			"NecrosisCurseMenu5",
+			"NecrosisCurseMenuButton",
+			NecrosisConfig.CurseMenuPos
+		)
 	end
-	-- If Curse of Exhaustion exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[40].ID then
-		menuVariable = getglobal("NecrosisCurseMenu6")
-		menuVariable:ClearAllPoints()
-		if CurseButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000)
-		else
-			menuVariable:SetPoint(
-				"CENTER",
-				"NecrosisCurseMenu" .. CurseButtonPosition,
-				"CENTER",
-				((36 / NecrosisConfig.CurseMenuPos) * 31),
-				0
-			)
-		end
-		CurseButtonPosition = 6
-		table.insert(MenuState.Curse.frames, menuVariable)
+		Necrosis_AddMenuFrame(
+			MenuState.Curse,
+			"NecrosisCurseMenu6",
+			"NecrosisCurseMenuButton",
+			NecrosisConfig.CurseMenuPos
+		)
 	end
-	-- If Curse of the Elements exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[26].ID then
-		menuVariable = getglobal("NecrosisCurseMenu7")
-		menuVariable:ClearAllPoints()
-		if CurseButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000)
-		else
-			menuVariable:SetPoint(
-				"CENTER",
-				"NecrosisCurseMenu" .. CurseButtonPosition,
-				"CENTER",
-				((36 / NecrosisConfig.CurseMenuPos) * 31),
-				0
-			)
-		end
-		CurseButtonPosition = 7
-		table.insert(MenuState.Curse.frames, menuVariable)
+		Necrosis_AddMenuFrame(
+			MenuState.Curse,
+			"NecrosisCurseMenu7",
+			"NecrosisCurseMenuButton",
+			NecrosisConfig.CurseMenuPos
+		)
 	end
-	-- If Curse of Shadow exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[27].ID then
-		menuVariable = getglobal("NecrosisCurseMenu8")
-		menuVariable:ClearAllPoints()
-		if CurseButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000)
-		else
-			menuVariable:SetPoint(
-				"CENTER",
-				"NecrosisCurseMenu" .. CurseButtonPosition,
-				"CENTER",
-				((36 / NecrosisConfig.CurseMenuPos) * 31),
-				0
-			)
-		end
-		CurseButtonPosition = 8
-		table.insert(MenuState.Curse.frames, menuVariable)
+		Necrosis_AddMenuFrame(
+			MenuState.Curse,
+			"NecrosisCurseMenu8",
+			"NecrosisCurseMenuButton",
+			NecrosisConfig.CurseMenuPos
+		)
 	end
-	-- If Curse of Doom exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[16].ID then
-		menuVariable = getglobal("NecrosisCurseMenu9")
-		menuVariable:ClearAllPoints()
-		if CurseButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000)
-		else
-			menuVariable:SetPoint(
-				"CENTER",
-				"NecrosisCurseMenu" .. CurseButtonPosition,
-				"CENTER",
-				((36 / NecrosisConfig.CurseMenuPos) * 31),
-				0
-			)
-		end
-		CurseButtonPosition = 9
-		table.insert(MenuState.Curse.frames, menuVariable)
+		Necrosis_AddMenuFrame(
+			MenuState.Curse,
+			"NecrosisCurseMenu9",
+			"NecrosisCurseMenuButton",
+			NecrosisConfig.CurseMenuPos
+		)
 	end
 
-	-- With all curse buttons lined up off-screen, reveal the ones that are available
-	for i = 1, table.getn(MenuState.Curse.frames), 1 do
-		ShowUIPanel(MenuState.Curse.frames[i])
-	end
+	Necrosis_ShowMenuFrames(MenuState.Curse)
 
-	-- Si la Felstone existe, on affiche le bouton dans le menu des stones
+	-- Stone menu
 	if NECROSIS_SPELL_TABLE[45].ID then
-		menuVariable = getglobal("NecrosisStoneMenu1")
-		menuVariable:ClearAllPoints()
-		menuVariable:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", 3000, 3000)
-		Necrosis_SetButtonTexture(menuVariable, "Felstone", 2)
-		StoneButtonPosition = 1
-		table.insert(MenuState.Stone.frames, menuVariable)
+		local frame = Necrosis_AddMenuFrame(
+			MenuState.Stone,
+			"NecrosisStoneMenu1",
+			"NecrosisStoneMenuButton",
+			NecrosisConfig.StoneMenuPos
+		)
+		if frame then
+			Necrosis_SetButtonTexture(frame, "Felstone", 2)
+		end
 	end
-	-- If the Wrathstone exists, show its button in the stone menu
 	if NECROSIS_SPELL_TABLE[46].ID then
-		menuVariable = getglobal("NecrosisStoneMenu2")
-		menuVariable:ClearAllPoints()
-		if StoneButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", 3000, 3000)
-		else
-			menuVariable:SetPoint(
-				"CENTER",
-				"NecrosisStoneMenu" .. StoneButtonPosition,
-				"CENTER",
-				((36 / NecrosisConfig.StoneMenuPos) * 31),
-				0
-			)
+		local frame = Necrosis_AddMenuFrame(
+			MenuState.Stone,
+			"NecrosisStoneMenu2",
+			"NecrosisStoneMenuButton",
+			NecrosisConfig.StoneMenuPos
+		)
+		if frame then
+			Necrosis_SetButtonTexture(frame, "Wrathstone", 2)
 		end
-		Necrosis_SetButtonTexture(menuVariable, "Wrathstone", 2)
-		StoneButtonPosition = 2
-		table.insert(MenuState.Stone.frames, menuVariable)
 	end
-	-- Si la Voidstone existe, on affiche le bouton dans le menu des stones
 	if NECROSIS_SPELL_TABLE[47].ID then
-		menuVariable = getglobal("NecrosisStoneMenu3")
-		menuVariable:ClearAllPoints()
-		if StoneButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", 3000, 3000)
-		else
-			menuVariable:SetPoint(
-				"CENTER",
-				"NecrosisStoneMenu" .. StoneButtonPosition,
-				"CENTER",
-				((36 / NecrosisConfig.StoneMenuPos) * 31),
-				0
-			)
+		local frame = Necrosis_AddMenuFrame(
+			MenuState.Stone,
+			"NecrosisStoneMenu3",
+			"NecrosisStoneMenuButton",
+			NecrosisConfig.StoneMenuPos
+		)
+		if frame then
+			Necrosis_SetButtonTexture(frame, "Voidstone", 2)
 		end
-		Necrosis_SetButtonTexture(menuVariable, "Voidstone", 2)
-		StoneButtonPosition = 3
-		table.insert(MenuState.Stone.frames, menuVariable)
 	end
-	-- Si la Firestone existe, on affiche le bouton dans le menu des stones
 	if StoneIDInSpellTable[4] ~= 0 then
-		menuVariable = getglobal("NecrosisStoneMenu4")
-		menuVariable:ClearAllPoints()
-		if StoneButtonPosition == 0 then
-			menuVariable:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", 3000, 3000)
-		else
-			menuVariable:SetPoint(
-				"CENTER",
-				"NecrosisStoneMenu" .. StoneButtonPosition,
-				"CENTER",
-				((36 / NecrosisConfig.StoneMenuPos) * 31),
-				0
-			)
+		local frame = Necrosis_AddMenuFrame(
+			MenuState.Stone,
+			"NecrosisStoneMenu4",
+			"NecrosisStoneMenuButton",
+			NecrosisConfig.StoneMenuPos
+		)
+		if frame then
+			Necrosis_SetButtonTexture(frame, "FirestoneButton", 2)
 		end
-		Necrosis_SetButtonTexture(menuVariable, "FirestoneButton", 2)
-		StoneButtonPosition = 4
-		table.insert(MenuState.Stone.frames, menuVariable)
 	end
 
-	-- With all stone buttons lined up off-screen, reveal the ones that are available
-	for i = 1, table.getn(MenuState.Stone.frames), 1 do
-		ShowUIPanel(MenuState.Stone.frames[i])
-	end
+	Necrosis_ShowMenuFrames(MenuState.Stone)
 end
 
 -- Handle casts triggered from the buff menu
