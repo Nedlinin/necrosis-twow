@@ -343,35 +343,12 @@ local function Necrosis_RegisterSpecialFrame(frameName)
 	table.insert(UISpecialFrames, frameName);
 end
 
--- Menus: Enables display of the buff and pet menus
-local PetShow = false;
-local PetMenuShow = false;
-local BuffShow = false;
-local BuffMenuShow = false;
-local CurseShow = false;
-local CurseMenuShow = false;
-local StoneShow = false;
-local StoneMenuShow = false;
-
--- Menus: Handles fading out the pet menu (transparency)
-local AlphaPetMenu = 1;
-local AlphaPetVar = 0;
-local PetVisible = false;
-
--- Menus: Handles fading out the buff menu (transparency)
-local AlphaBuffMenu = 1;
-local AlphaBuffVar = 0;
-local BuffVisible = false;
-
--- Menus: Handles fading out the curse menu (transparency)
-local AlphaCurseMenu = 1;
-local AlphaCurseVar = 0;
-local CurseVisible = false;
-
--- Menus: Handles fading out the stone menu (transparency)
-local AlphaStoneMenu = 1;
-local AlphaStoneVar = 0;
-local StoneVisible = false;
+local MenuState = {
+	Pet = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
+	Buff = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
+	Curse = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
+	Stone = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
+};
 
 -- Menus: Allows recasting the last menu spell with a middle click
 local LastDemon = 0;
@@ -380,12 +357,6 @@ local LastCurse = 0;
 local LastCurseClick = "LeftButton";
 local LastStone = 0;
 local LastStoneClick = "LeftButton";
-
--- List of buttons available to the Warlock in each menu
-local PetMenuCreate = {};
-local BuffMenuCreate = {};
-local CurseMenuCreate = {};
-local StoneMenuCreate = {};
 
 -- Variables used to manage mounts
 local MountAvailable = false;
@@ -416,14 +387,16 @@ local DemoniacStone = 0;
 -- Variables used to manage stone summon and usage buttons
 local StoneIDInSpellTable = {0, 0, 0, 0, 0, 0, 0}
 -- Indices used for NecrosisConfig.StonePosition
-StonePosHealthstone = 1;
-StonePosSpellstone = 2;
-StonePosSoulstone = 3;
-StonePosBuffMenu = 4;
-StonePosMount = 5;
-StonePosPetMenu = 6;
-StonePosCurseMenu = 7;
-StonePosStoneMenu = 8;
+StonePos = {
+	Healthstone = 1,
+	Spellstone = 2,
+	Soulstone = 3,
+	BuffMenu = 4,
+	Mount = 5,
+	PetMenu = 6,
+	CurseMenu = 7,
+	StoneMenu = 8,
+};
 local SoulstoneUsedOnTarget = false;
 local StoneInventory = {
 	Soulstone = { onHand = false, location = { nil, nil }, mode = 1 },
@@ -473,7 +446,7 @@ local Necrosis_In = true;
 
 local DEBUG_TIMER_EVENTS = false;
 
-local function Necrosis_DebugPrint(...)
+function Necrosis_DebugPrint(...)
 	if not DEBUG_TIMER_EVENTS or not DEFAULT_CHAT_FRAME then
 		return;
 	end
@@ -491,8 +464,6 @@ local function Necrosis_DebugPrint(...)
 	end
 	DEFAULT_CHAT_FRAME:AddMessage(message);
 end
-
-_G.Necrosis_DebugPrint = Necrosis_DebugPrint;
 
 function Necrosis_SetTimerDebug(enabled)
 	if enabled then
@@ -580,37 +551,40 @@ function Necrosis_OnUpdate()
 	----------------------------------------------------------
 	
 	-- Manage the demon summon menu
-	if PetShow then
-		if curTime >= AlphaPetVar and AlphaPetMenu > 0 and (not PetVisible) then
-			AlphaPetVar = curTime + 0.1;
-			Necrosis_SetMenuAlpha("NecrosisPetMenu", AlphaPetMenu);
-			AlphaPetMenu = AlphaPetMenu - 0.1;
+	local petMenu = MenuState.Pet;
+	if petMenu.fading then
+		if curTime >= petMenu.fadeAt and petMenu.alpha > 0 and (not petMenu.sticky) then
+			petMenu.fadeAt = curTime + 0.1;
+			Necrosis_SetMenuAlpha("NecrosisPetMenu", petMenu.alpha);
+			petMenu.alpha = petMenu.alpha - 0.1;
 		end
-		if AlphaPetMenu <= 0 then
+		if petMenu.alpha <= 0 then
 			Necrosis_PetMenu();
 		end
 	end
 
 	-- Gestion du menu des Buffs
-	if BuffShow then
-		if curTime >= AlphaBuffVar and AlphaBuffMenu > 0 and (not BuffVisible) then
-			AlphaBuffVar = curTime + 0.1;
-			Necrosis_SetMenuAlpha("NecrosisBuffMenu", AlphaBuffMenu);
-			AlphaBuffMenu = AlphaBuffMenu - 0.1;
+	local buffMenu = MenuState.Buff;
+	if buffMenu.fading then
+		if curTime >= buffMenu.fadeAt and buffMenu.alpha > 0 and (not buffMenu.sticky) then
+			buffMenu.fadeAt = curTime + 0.1;
+			Necrosis_SetMenuAlpha("NecrosisBuffMenu", buffMenu.alpha);
+			buffMenu.alpha = buffMenu.alpha - 0.1;
 		end
-		if AlphaBuffMenu <= 0 then
+		if buffMenu.alpha <= 0 then
 			Necrosis_BuffMenu();
 		end
 	end
 
 	-- Gestion du menu des Curses
-	if CurseShow then
-		if curTime >= AlphaCurseVar and AlphaCurseMenu > 0 and (not CurseVisible) then
-			AlphaCurseVar = curTime + 0.1;
-			Necrosis_SetMenuAlpha("NecrosisCurseMenu", AlphaCurseMenu);
-			AlphaCurseMenu = AlphaCurseMenu - 0.1;
+	local curseMenu = MenuState.Curse;
+	if curseMenu.fading then
+		if curTime >= curseMenu.fadeAt and curseMenu.alpha > 0 and (not curseMenu.sticky) then
+			curseMenu.fadeAt = curTime + 0.1;
+			Necrosis_SetMenuAlpha("NecrosisCurseMenu", curseMenu.alpha);
+			curseMenu.alpha = curseMenu.alpha - 0.1;
 		end
-		if AlphaCurseMenu <= 0 then
+		if curseMenu.alpha <= 0 then
 			Necrosis_CurseMenu();
 		end
 	end
@@ -2141,28 +2115,28 @@ function Necrosis_ButtonSetup()
 		HideUIPanel(NecrosisSpellstoneButton);
 		HideUIPanel(NecrosisHealthstoneButton);
 		HideUIPanel(NecrosisSoulstoneButton);
-		if (NecrosisConfig.StonePosition[StonePosHealthstone]) and StoneIDInSpellTable[2] ~= 0 then
+		if (NecrosisConfig.StonePosition[StonePos.Healthstone]) and StoneIDInSpellTable[2] ~= 0 then
 			ShowUIPanel(NecrosisHealthstoneButton);
 		end
-		if (NecrosisConfig.StonePosition[StonePosSpellstone]) and StoneIDInSpellTable[3] ~= 0 then
+		if (NecrosisConfig.StonePosition[StonePos.Spellstone]) and StoneIDInSpellTable[3] ~= 0 then
 			ShowUIPanel(NecrosisSpellstoneButton);
 		end
-		if (NecrosisConfig.StonePosition[StonePosSoulstone]) and StoneIDInSpellTable[1] ~= 0 then
+		if (NecrosisConfig.StonePosition[StonePos.Soulstone]) and StoneIDInSpellTable[1] ~= 0 then
 			ShowUIPanel(NecrosisSoulstoneButton);
 		end
-		if (NecrosisConfig.StonePosition[StonePosBuffMenu]) and BuffMenuCreate ~= {} then
+		if (NecrosisConfig.StonePosition[StonePos.BuffMenu]) and next(MenuState.Buff.frames) then
 			ShowUIPanel(NecrosisBuffMenuButton);
 		end
-		if (NecrosisConfig.StonePosition[StonePosMount]) and MountAvailable then
+		if (NecrosisConfig.StonePosition[StonePos.Mount]) and MountAvailable then
 			ShowUIPanel(NecrosisMountButton);
 		end
-		if (NecrosisConfig.StonePosition[StonePosPetMenu]) and PetMenuCreate ~= {} then
+		if (NecrosisConfig.StonePosition[StonePos.PetMenu]) and next(MenuState.Pet.frames) then
 			ShowUIPanel(NecrosisPetMenuButton);
 		end
-		if (NecrosisConfig.StonePosition[StonePosCurseMenu]) and CurseMenuCreate ~= {} then
+		if (NecrosisConfig.StonePosition[StonePos.CurseMenu]) and next(MenuState.Curse.frames) then
 			ShowUIPanel(NecrosisCurseMenuButton);
 		end
-		if (NecrosisConfig.StonePosition[StonePosStoneMenu]) and StoneMenuCreate ~= {} then
+		if (NecrosisConfig.StonePosition[StonePos.StoneMenu]) and next(MenuState.Stone.frames) then
 			ShowUIPanel(NecrosisStoneMenuButton);
 		end
 	end
@@ -2638,42 +2612,42 @@ function Necrosis_UpdateButtonsScale()
 		local indexScale = -36;
 		for index=1, 8, 1 do
 			if NecrosisConfig.StonePosition[index] then
-				if index == StonePosHealthstone and StoneIDInSpellTable[2] ~= 0 then
+				if index == StonePos.Healthstone and StoneIDInSpellTable[2] ~= 0 then
 					NecrosisHealthstoneButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisHealthstoneButton);
 					indexScale = indexScale + 36;
 				end
-				if index == StonePosSpellstone and StoneIDInSpellTable[3] ~= 0 then
+				if index == StonePos.Spellstone and StoneIDInSpellTable[3] ~= 0 then
 					NecrosisSpellstoneButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisSpellstoneButton);
 					indexScale = indexScale + 36;
 				end
-				if index == StonePosSoulstone and StoneIDInSpellTable[1] ~= 0 then
+				if index == StonePos.Soulstone and StoneIDInSpellTable[1] ~= 0 then
 					NecrosisSoulstoneButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisSoulstoneButton);
 					indexScale = indexScale + 36;
 				end
-				if index == StonePosBuffMenu and BuffMenuCreate ~= {} then
+				if index == StonePos.BuffMenu and next(MenuState.Buff.frames) then
 					NecrosisBuffMenuButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisBuffMenuButton);
 					indexScale = indexScale + 36;
 				end
-				if index == StonePosMount and MountAvailable then
+				if index == StonePos.Mount and MountAvailable then
 					NecrosisMountButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisMountButton);
 					indexScale = indexScale + 36;
 				end
-				if index == StonePosPetMenu and PetMenuCreate ~= {} then
+				if index == StonePos.PetMenu and next(MenuState.Pet.frames) then
 					NecrosisPetMenuButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisPetMenuButton);
 					indexScale = indexScale + 36;
 				end
-				if index == StonePosCurseMenu and CurseMenuCreate ~= {} then
+				if index == StonePos.CurseMenu and next(MenuState.Curse.frames) then
 					NecrosisCurseMenuButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisCurseMenuButton);
 					indexScale = indexScale + 36;
 				end
-				if index == StonePosStoneMenu and StoneMenuCreate ~= {} then
+				if index == StonePos.StoneMenu and next(MenuState.Stone.frames) then
 					NecrosisStoneMenuButton:SetPoint("CENTER", "NecrosisButton", "CENTER", ((40 * NBRScale) * cos(NecrosisConfig.NecrosisAngle-indexScale)), ((40 * NBRScale) * sin(NecrosisConfig.NecrosisAngle-indexScale)));
 					ShowUIPanel(NecrosisStoneMenuButton);
 					indexScale = indexScale + 36;
@@ -2727,23 +2701,26 @@ function Necrosis_BuffMenu(button)
 		Necrosis_BuffCast(LastBuff);
 		return;
 	end
-	BuffMenuShow = not BuffMenuShow;
-	if not BuffMenuShow then
-		BuffShow = false;
-		BuffVisible = false;
+	local buffMenu = MenuState.Buff;
+	buffMenu.open = not buffMenu.open;
+	if not buffMenu.open then
+		buffMenu.fading = false;
+		buffMenu.sticky = false;
 		NecrosisBuffMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\BuffMenuButton-01");
-		BuffMenuCreate[1]:ClearAllPoints();
-		BuffMenuCreate[1]:SetPoint("CENTER", "NecrosisBuffMenuButton", "CENTER", 3000, 3000);
-		AlphaBuffMenu = 1;
+		if buffMenu.frames[1] then
+			buffMenu.frames[1]:ClearAllPoints();
+			buffMenu.frames[1]:SetPoint("CENTER", "NecrosisBuffMenuButton", "CENTER", 3000, 3000);
+		end
+		buffMenu.alpha = 1;
 	else
-		BuffShow = true;
+		buffMenu.fading = true;
 		NecrosisBuffMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\BuffMenuButton-02");
 		-- Si clic droit, le menu de buff reste ouvert
 		if button == "RightButton" then
-			BuffVisible = true;
+			buffMenu.sticky = true;
 		end
 		-- S'il n'existe aucun buff on ne fait rien
-		if BuffMenuCreate == nil then
+		if not buffMenu.frames[1] then
 			return;
 		end
 		-- Otherwise display the icons
@@ -2756,11 +2733,11 @@ function Necrosis_BuffMenu(button)
 		NecrosisBuffMenu7:SetAlpha(1);
 		NecrosisBuffMenu8:SetAlpha(1);
 		NecrosisBuffMenu9:SetAlpha(1);
-		BuffMenuCreate[1]:ClearAllPoints();		
-		BuffMenuCreate[1]:SetPoint("CENTER", "NecrosisBuffMenuButton", "CENTER", ((36 / NecrosisConfig.BuffMenuPos) * 31) , 26);
-		AlphaPetVar = GetTime() + 3;
-		AlphaBuffVar = GetTime() + 6;
-		AlphaCurseVar = GetTime() + 6;
+		buffMenu.frames[1]:ClearAllPoints();		
+		buffMenu.frames[1]:SetPoint("CENTER", "NecrosisBuffMenuButton", "CENTER", ((36 / NecrosisConfig.BuffMenuPos) * 31) , 26);
+		MenuState.Pet.fadeAt = GetTime() + 3;
+		buffMenu.fadeAt = GetTime() + 6;
+		MenuState.Curse.fadeAt = GetTime() + 6;
 	end
 end
 
@@ -2771,23 +2748,26 @@ function Necrosis_CurseMenu(button)
 		return;
 	end
 	-- S'il n'existe aucune curse on ne fait rien
-	if CurseMenuCreate[1] == nil then
+	local curseMenu = MenuState.Curse;
+	if not curseMenu.frames[1] then
 		return;
 	end
-	CurseMenuShow = not CurseMenuShow;
-	if not CurseMenuShow then
-		CurseShow = false;
-		CurseVisible = false;
+	curseMenu.open = not curseMenu.open;
+	if not curseMenu.open then
+		curseMenu.fading = false;
+		curseMenu.sticky = false;
 		NecrosisCurseMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\CurseMenuButton-01");
-		CurseMenuCreate[1]:ClearAllPoints();
-		CurseMenuCreate[1]:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000);
-		AlphaCurseMenu = 1;
+		if curseMenu.frames[1] then
+			curseMenu.frames[1]:ClearAllPoints();
+			curseMenu.frames[1]:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000);
+		end
+		curseMenu.alpha = 1;
 	else
-		CurseShow = true;
+		curseMenu.fading = true;
 		NecrosisCurseMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\CurseMenuButton-02");
 		-- Si clic droit, le menu de curse reste ouvert
 		if button == "RightButton" then
-			CurseVisible = true;
+			curseMenu.sticky = true;
 		end
 		-- Otherwise display the icons
 		NecrosisCurseMenu1:SetAlpha(1);
@@ -2799,11 +2779,11 @@ function Necrosis_CurseMenu(button)
 		NecrosisCurseMenu7:SetAlpha(1);
 		NecrosisCurseMenu8:SetAlpha(1);
 		NecrosisCurseMenu9:SetAlpha(1);
-		CurseMenuCreate[1]:ClearAllPoints();		
-		CurseMenuCreate[1]:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", ((36 / NecrosisConfig.CurseMenuPos) * 31) , -26);
-		AlphaPetVar = GetTime() + 3;
-		AlphaBuffVar = GetTime() + 6;
-		AlphaCurseVar = GetTime() + 6;
+		curseMenu.frames[1]:ClearAllPoints();		
+		curseMenu.frames[1]:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", ((36 / NecrosisConfig.CurseMenuPos) * 31) , -26);
+		MenuState.Pet.fadeAt = GetTime() + 3;
+		MenuState.Buff.fadeAt = GetTime() + 6;
+		curseMenu.fadeAt = GetTime() + 6;
 	end
 end
 
@@ -2814,23 +2794,26 @@ function Necrosis_PetMenu(button)
 		return;
 	end
 	-- S'il n'existe aucun sort d'invocation on ne fait rien
-	if PetMenuCreate[1] == nil then
+	local petMenu = MenuState.Pet;
+	if not petMenu.frames[1] then
 		return;
 	end
-	PetMenuShow = not PetMenuShow;
-	if not PetMenuShow then
-		PetShow = false;
-		PetVisible = false;
+	petMenu.open = not petMenu.open;
+	if not petMenu.open then
+		petMenu.fading = false;
+		petMenu.sticky = false;
 		NecrosisPetMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\PetMenuButton-01");
-		PetMenuCreate[1]:ClearAllPoints();
-		PetMenuCreate[1]:SetPoint("CENTER", "NecrosisPetMenuButton", "CENTER", 3000, 3000);
-		AlphaPetMenu = 1;
+		if petMenu.frames[1] then
+			petMenu.frames[1]:ClearAllPoints();
+			petMenu.frames[1]:SetPoint("CENTER", "NecrosisPetMenuButton", "CENTER", 3000, 3000);
+		end
+		petMenu.alpha = 1;
 	else
-		PetShow = true;
+		petMenu.fading = true;
 		NecrosisPetMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\PetMenuButton-02");
 		-- Si clic droit, le menu de pet reste ouvert
 		if button == "RightButton" then
-			PetVisible = true;
+			petMenu.sticky = true;
 		end
 		-- Otherwise display the icons (move them onto the screen)
 		NecrosisPetMenu1:SetAlpha(1);
@@ -2842,9 +2825,9 @@ function Necrosis_PetMenu(button)
 		NecrosisPetMenu7:SetAlpha(1);
 		NecrosisPetMenu8:SetAlpha(1);
 		NecrosisPetMenu9:SetAlpha(1);
-		PetMenuCreate[1]:ClearAllPoints();		
-		PetMenuCreate[1]:SetPoint("CENTER", "NecrosisPetMenuButton", "CENTER", ((36 / NecrosisConfig.PetMenuPos) * 31) , 26);
-		AlphaPetVar = GetTime() + 3;
+		petMenu.frames[1]:ClearAllPoints();		
+		petMenu.frames[1]:SetPoint("CENTER", "NecrosisPetMenuButton", "CENTER", ((36 / NecrosisConfig.PetMenuPos) * 31) , 26);
+		petMenu.fadeAt = GetTime() + 3;
 	end
 end
 
@@ -2855,40 +2838,41 @@ function Necrosis_StoneMenu(button)
 		return;
 	end
 	-- S'il n'existe aucune stone on ne fait rien
-	if StoneMenuCreate[1] == nil then
+	local stoneMenu = MenuState.Stone;
+	if not stoneMenu.frames[1] then
 		return;
 	end
-	StoneMenuShow = not StoneMenuShow;
-	if not StoneMenuShow then
-		StoneShow = false;
-		StoneVisible = false;
+	stoneMenu.open = not stoneMenu.open;
+	if not stoneMenu.open then
+		stoneMenu.fading = false;
+		stoneMenu.sticky = false;
 		Necrosis_UpdateIcons();
-		StoneMenuCreate[1]:ClearAllPoints();
-		StoneMenuCreate[1]:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", 3000, 3000);
-		AlphaStoneMenu = 1;
+		stoneMenu.frames[1]:ClearAllPoints();
+		stoneMenu.frames[1]:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", 3000, 3000);
+		stoneMenu.alpha = 1;
 	else
-		StoneShow = true;
+		stoneMenu.fading = true;
 		Necrosis_UpdateIcons();
 		-- Si clic droit, le menu de stone reste ouvert
 		if button == "RightButton" then
-			StoneVisible = true;
+			stoneMenu.sticky = true;
 		end
 		-- Otherwise display the icons
 		NecrosisStoneMenu1:SetAlpha(1);
 		NecrosisStoneMenu2:SetAlpha(1);
 		NecrosisStoneMenu3:SetAlpha(1);
-		StoneMenuCreate[1]:ClearAllPoints();
-		StoneMenuCreate[1]:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", ((36 / NecrosisConfig.StoneMenuPos) * 31) , -26);
-		AlphaStoneVar = GetTime() + 6;
+		stoneMenu.frames[1]:ClearAllPoints();
+		stoneMenu.frames[1]:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", ((36 / NecrosisConfig.StoneMenuPos) * 31) , -26);
+		stoneMenu.fadeAt = GetTime() + 6;
 	end
 end
 
 -- Each time the spellbook changes, at mod startup, or when the menu direction flips, rebuild the spell menus
 function Necrosis_CreateMenu()
-	PetMenuCreate = {};
-	CurseMenuCreate = {};
-	BuffMenuCreate = {};
-	StoneMenuCreate = {};
+	MenuState.Pet.frames = {};
+	MenuState.Curse.frames = {};
+	MenuState.Buff.frames = {};
+	MenuState.Stone.frames = {};
 	local menuVariable = nil;
 	local PetButtonPosition = 0;
 	local BuffButtonPosition = 0;
@@ -2918,7 +2902,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisPetMenuButton", "CENTER", 3000, 3000);
 		PetButtonPosition = 1;
-		table.insert(PetMenuCreate, menuVariable);
+		table.insert(MenuState.Pet.frames, menuVariable);
 	end
 	-- Si l'invocation du Diablotin existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[3].ID then
@@ -2930,7 +2914,7 @@ function Necrosis_CreateMenu()
 			menuVariable:SetPoint("CENTER", "NecrosisPetMenu"..PetButtonPosition, "CENTER", ((36 / NecrosisConfig.PetMenuPos) * 31), 0);
 		end
 		PetButtonPosition = 2;
-		table.insert(PetMenuCreate, menuVariable);
+		table.insert(MenuState.Pet.frames, menuVariable);
 	end
 	-- Si l'invocation du Marcheur existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[4].ID then
@@ -2938,7 +2922,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisPetMenu"..PetButtonPosition, "CENTER", ((36 / NecrosisConfig.PetMenuPos) * 31), 0);
 		PetButtonPosition = 3;
-		table.insert(PetMenuCreate, menuVariable);
+		table.insert(MenuState.Pet.frames, menuVariable);
 	end
 	-- Si l'invocation du Succube existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[5].ID then
@@ -2946,7 +2930,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisPetMenu"..PetButtonPosition, "CENTER", ((36 / NecrosisConfig.PetMenuPos) * 31), 0);
 		PetButtonPosition = 4;
-		table.insert(PetMenuCreate, menuVariable);
+		table.insert(MenuState.Pet.frames, menuVariable);
 	end
 	-- Si l'invocation du Felhunter existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[6].ID then
@@ -2954,7 +2938,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisPetMenu"..PetButtonPosition, "CENTER", ((36 / NecrosisConfig.PetMenuPos) * 31), 0);
 		PetButtonPosition = 5;
-		table.insert(PetMenuCreate, menuVariable);
+		table.insert(MenuState.Pet.frames, menuVariable);
 	end
 	-- Si l'invocation de l'Infernal existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[8].ID then
@@ -2962,7 +2946,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisPetMenu"..PetButtonPosition, "CENTER", ((36 / NecrosisConfig.PetMenuPos) * 31), 0);
 		PetButtonPosition = 6;
-		table.insert(PetMenuCreate, menuVariable);
+		table.insert(MenuState.Pet.frames, menuVariable);
 	end
 	-- Si l'invocation du Doomguard existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[30].ID then
@@ -2970,7 +2954,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisPetMenu"..PetButtonPosition, "CENTER", ((36 / NecrosisConfig.PetMenuPos) * 31), 0);
 		PetButtonPosition = 7;
-		table.insert(PetMenuCreate, menuVariable);
+		table.insert(MenuState.Pet.frames, menuVariable);
 	end
 	-- Si l'asservissement existe, on affiche le bouton dans le menu des pets
 	if NECROSIS_SPELL_TABLE[35].ID then
@@ -2978,7 +2962,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisPetMenu"..PetButtonPosition, "CENTER", ((36 / NecrosisConfig.PetMenuPos) * 31), 0);
 		PetButtonPosition = 8;
-		table.insert(PetMenuCreate, menuVariable);
+		table.insert(MenuState.Pet.frames, menuVariable);
 	end
 	-- If Demonic Sacrifice exists, show its button in the pet menu
 	if NECROSIS_SPELL_TABLE[44].ID then
@@ -2986,13 +2970,13 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisPetMenu"..PetButtonPosition, "CENTER", ((36 / NecrosisConfig.PetMenuPos) * 31), 0);
 		PetButtonPosition = 9;
-		table.insert(PetMenuCreate, menuVariable);
+		table.insert(MenuState.Pet.frames, menuVariable);
 	end
 
 	
 	-- With all pet buttons lined up off-screen, reveal the ones that are available
-	for i = 1, table.getn(PetMenuCreate), 1 do
-		ShowUIPanel(PetMenuCreate[i]);
+	for i = 1, table.getn(MenuState.Pet.frames), 1 do
+		ShowUIPanel(MenuState.Pet.frames[i]);
 	end
 
 	-- If Demon Armor exists, show its button in the buff menu
@@ -3001,7 +2985,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisBuffMenuButton", "CENTER", 3000, 3000);
 		BuffButtonPosition = 1;
-		table.insert(BuffMenuCreate, menuVariable);
+		table.insert(MenuState.Buff.frames, menuVariable);
 	end
 	-- If Unending Breath exists, show its button in the buff menu
 	if NECROSIS_SPELL_TABLE[32].ID then
@@ -3009,7 +2993,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisBuffMenu"..BuffButtonPosition, "CENTER", ((36 / NecrosisConfig.BuffMenuPos) * 31), 0);
 		BuffButtonPosition = 2;
-		table.insert(BuffMenuCreate, menuVariable);
+		table.insert(MenuState.Buff.frames, menuVariable);
 	end
 	-- If Detect Invisibility is known, show its highest-rank button in the buff menu
 	if NECROSIS_SPELL_TABLE[33].ID then
@@ -3017,7 +3001,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisBuffMenu"..BuffButtonPosition, "CENTER", ((36 / NecrosisConfig.BuffMenuPos) * 31), 0);
 		BuffButtonPosition = 3;
-		table.insert(BuffMenuCreate, menuVariable);
+		table.insert(MenuState.Buff.frames, menuVariable);
 	end
 	-- If Unending Breath exists, show its button in the buff menu
 	if NECROSIS_SPELL_TABLE[34].ID then
@@ -3025,7 +3009,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisBuffMenu"..BuffButtonPosition, "CENTER", ((36 / NecrosisConfig.BuffMenuPos) * 31), 0);
 		BuffButtonPosition = 4;
-		table.insert(BuffMenuCreate, menuVariable);
+		table.insert(MenuState.Buff.frames, menuVariable);
 	end
 	-- Si l'invocation de joueur existe, on affiche le bouton dans le menu des buffs
 	if NECROSIS_SPELL_TABLE[37].ID then
@@ -3033,7 +3017,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisBuffMenu"..BuffButtonPosition, "CENTER", ((36 / NecrosisConfig.BuffMenuPos) * 31), 0);
 		BuffButtonPosition = 5;
-		table.insert(BuffMenuCreate, menuVariable);
+		table.insert(MenuState.Buff.frames, menuVariable);
 	end
 	-- If Sense Demons exists, show its button in the buff menu
 	if NECROSIS_SPELL_TABLE[39].ID then
@@ -3041,7 +3025,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisBuffMenu"..BuffButtonPosition, "CENTER", ((36 / NecrosisConfig.BuffMenuPos) * 31), 0);
 		BuffButtonPosition = 6;
-		table.insert(BuffMenuCreate, menuVariable);
+		table.insert(MenuState.Buff.frames, menuVariable);
 	end
 	-- If Soul Link exists, show its button in the buff menu
 	if NECROSIS_SPELL_TABLE[38].ID then
@@ -3049,7 +3033,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisBuffMenu"..BuffButtonPosition, "CENTER", ((36 / NecrosisConfig.BuffMenuPos) * 31), 0);
 		BuffButtonPosition = 7;
-		table.insert(BuffMenuCreate, menuVariable);
+		table.insert(MenuState.Buff.frames, menuVariable);
 	end
 	-- If Shadow Ward exists, show its button in the buff menu
 	if NECROSIS_SPELL_TABLE[43].ID then
@@ -3057,7 +3041,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisBuffMenu"..BuffButtonPosition, "CENTER", ((36 / NecrosisConfig.BuffMenuPos) * 31), 0);
 		BuffButtonPosition = 8;
-		table.insert(BuffMenuCreate, menuVariable);
+		table.insert(MenuState.Buff.frames, menuVariable);
 	end
 	-- If Banish exists, show its button in the buff menu
 	if NECROSIS_SPELL_TABLE[9].ID then
@@ -3065,12 +3049,12 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisBuffMenu"..BuffButtonPosition, "CENTER", ((36 / NecrosisConfig.BuffMenuPos) * 31), 0);
 		BuffButtonPosition = 9;
-		table.insert(BuffMenuCreate, menuVariable);
+		table.insert(MenuState.Buff.frames, menuVariable);
 	end
 
 	-- With all buff buttons lined up off-screen, reveal the ones that are available
-	for i = 1, table.getn(BuffMenuCreate), 1 do
-		ShowUIPanel(BuffMenuCreate[i]);
+	for i = 1, table.getn(MenuState.Buff.frames), 1 do
+		ShowUIPanel(MenuState.Buff.frames[i]);
 	end
 
 	-- If Amplify Curse exists, show its button in the curse menu
@@ -3079,7 +3063,7 @@ function Necrosis_CreateMenu()
 		menuVariable:ClearAllPoints();
 		menuVariable:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000);
 		CurseButtonPosition = 1;
-		table.insert(CurseMenuCreate, menuVariable);
+		table.insert(MenuState.Curse.frames, menuVariable);
 	end
 	-- If Curse of Weakness exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[23].ID then
@@ -3091,7 +3075,7 @@ function Necrosis_CreateMenu()
 			menuVariable:SetPoint("CENTER", "NecrosisCurseMenu"..CurseButtonPosition, "CENTER", ((36 / NecrosisConfig.CurseMenuPos) * 31), 0);
 		end
 		CurseButtonPosition = 2;
-		table.insert(CurseMenuCreate, menuVariable);
+		table.insert(MenuState.Curse.frames, menuVariable);
 	end
 	-- If Curse of Agony exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[22].ID then
@@ -3103,7 +3087,7 @@ function Necrosis_CreateMenu()
 			menuVariable:SetPoint("CENTER", "NecrosisCurseMenu"..CurseButtonPosition, "CENTER", ((36 / NecrosisConfig.CurseMenuPos) * 31), 0);
 		end
 		CurseButtonPosition = 3;
-		table.insert(CurseMenuCreate, menuVariable);
+		table.insert(MenuState.Curse.frames, menuVariable);
 	end
 	-- If Curse of Recklessness exists, show its highest rank in the curse menu
 	if NECROSIS_SPELL_TABLE[24].ID then
@@ -3115,7 +3099,7 @@ function Necrosis_CreateMenu()
 			menuVariable:SetPoint("CENTER", "NecrosisCurseMenu"..CurseButtonPosition, "CENTER", ((36 / NecrosisConfig.CurseMenuPos) * 31), 0);
 		end
 		CurseButtonPosition = 4;
-		table.insert(CurseMenuCreate, menuVariable);
+		table.insert(MenuState.Curse.frames, menuVariable);
 	end
 	-- If Curse of Tongues exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[25].ID then
@@ -3127,7 +3111,7 @@ function Necrosis_CreateMenu()
 			menuVariable:SetPoint("CENTER", "NecrosisCurseMenu"..CurseButtonPosition, "CENTER", ((36 / NecrosisConfig.CurseMenuPos) * 31), 0);
 		end
 		CurseButtonPosition = 5;
-		table.insert(CurseMenuCreate, menuVariable);
+		table.insert(MenuState.Curse.frames, menuVariable);
 	end
 	-- If Curse of Exhaustion exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[40].ID then
@@ -3139,7 +3123,7 @@ function Necrosis_CreateMenu()
 			menuVariable:SetPoint("CENTER", "NecrosisCurseMenu"..CurseButtonPosition, "CENTER", ((36 / NecrosisConfig.CurseMenuPos) * 31), 0);
 		end
 		CurseButtonPosition = 6;
-		table.insert(CurseMenuCreate, menuVariable);
+		table.insert(MenuState.Curse.frames, menuVariable);
 	end
 	-- If Curse of the Elements exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[26].ID then
@@ -3151,7 +3135,7 @@ function Necrosis_CreateMenu()
 			menuVariable:SetPoint("CENTER", "NecrosisCurseMenu"..CurseButtonPosition, "CENTER", ((36 / NecrosisConfig.CurseMenuPos) * 31), 0);
 		end
 		CurseButtonPosition = 7;
-		table.insert(CurseMenuCreate, menuVariable);
+		table.insert(MenuState.Curse.frames, menuVariable);
 	end
 	-- If Curse of Shadow exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[27].ID then
@@ -3163,7 +3147,7 @@ function Necrosis_CreateMenu()
 			menuVariable:SetPoint("CENTER", "NecrosisCurseMenu"..CurseButtonPosition, "CENTER", ((36 / NecrosisConfig.CurseMenuPos) * 31), 0);
 		end
 		CurseButtonPosition = 8;
-		table.insert(CurseMenuCreate, menuVariable);
+		table.insert(MenuState.Curse.frames, menuVariable);
 	end
 	-- If Curse of Doom exists, show its button in the curse menu
 	if NECROSIS_SPELL_TABLE[16].ID then
@@ -3175,12 +3159,12 @@ function Necrosis_CreateMenu()
 			menuVariable:SetPoint("CENTER", "NecrosisCurseMenu"..CurseButtonPosition, "CENTER", ((36 / NecrosisConfig.CurseMenuPos) * 31), 0);
 		end
 		CurseButtonPosition = 9;
-		table.insert(CurseMenuCreate, menuVariable);
+		table.insert(MenuState.Curse.frames, menuVariable);
 	end
 
 	-- With all curse buttons lined up off-screen, reveal the ones that are available
-	for i = 1, table.getn(CurseMenuCreate), 1 do
-		ShowUIPanel(CurseMenuCreate[i]);
+	for i = 1, table.getn(MenuState.Curse.frames), 1 do
+		ShowUIPanel(MenuState.Curse.frames[i]);
 	end
 
 	-- Si la Felstone existe, on affiche le bouton dans le menu des stones
@@ -3190,7 +3174,7 @@ function Necrosis_CreateMenu()
 		menuVariable:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", 3000, 3000);
 		Necrosis_SetButtonTexture(menuVariable, "Felstone", 2);
 		StoneButtonPosition = 1;
-		table.insert(StoneMenuCreate, menuVariable);
+		table.insert(MenuState.Stone.frames, menuVariable);
 	end
 	-- If the Wrathstone exists, show its button in the stone menu
 	if NECROSIS_SPELL_TABLE[46].ID then
@@ -3203,7 +3187,7 @@ function Necrosis_CreateMenu()
 		end
 		Necrosis_SetButtonTexture(menuVariable, "Wrathstone", 2);
 		StoneButtonPosition = 2;
-		table.insert(StoneMenuCreate, menuVariable);
+		table.insert(MenuState.Stone.frames, menuVariable);
 	end
 	-- Si la Voidstone existe, on affiche le bouton dans le menu des stones
 	if NECROSIS_SPELL_TABLE[47].ID then
@@ -3216,7 +3200,7 @@ function Necrosis_CreateMenu()
 		end
 		Necrosis_SetButtonTexture(menuVariable, "Voidstone", 2);
 		StoneButtonPosition = 3;
-		table.insert(StoneMenuCreate, menuVariable);
+		table.insert(MenuState.Stone.frames, menuVariable);
 	end
 	-- Si la Firestone existe, on affiche le bouton dans le menu des stones
 	if StoneIDInSpellTable[4] ~= 0 then
@@ -3229,12 +3213,12 @@ function Necrosis_CreateMenu()
 		end
 		Necrosis_SetButtonTexture(menuVariable, "FirestoneButton", 2);
 		StoneButtonPosition = 4;
-		table.insert(StoneMenuCreate, menuVariable);
+		table.insert(MenuState.Stone.frames, menuVariable);
 	end
 
 	-- With all stone buttons lined up off-screen, reveal the ones that are available
-	for i = 1, table.getn(StoneMenuCreate), 1 do
-		ShowUIPanel(StoneMenuCreate[i]);
+	for i = 1, table.getn(MenuState.Stone.frames), 1 do
+		ShowUIPanel(MenuState.Stone.frames[i]);
 	end
 end
 
@@ -3255,8 +3239,8 @@ function Necrosis_BuffCast(type)
 	end
 	LastBuff = type;
 	if TargetEnemy then TargetLastTarget(); end
-	AlphaBuffMenu = 1;
-	AlphaBuffVar = GetTime() + 3;
+	MenuState.Buff.alpha = 1;
+	MenuState.Buff.fadeAt = GetTime() + 3;
 end
 
 -- Handle casts triggered from the curse menu
@@ -3281,8 +3265,8 @@ function Necrosis_CurseCast(type, click)
 			PetAttack();
 		end
 	end
-	AlphaCurseMenu = 1;
-	AlphaCurseVar = GetTime() + 3;
+	MenuState.Curse.alpha = 1;
+	MenuState.Curse.fadeAt = GetTime() + 3;
 end
 
 -- Handle casts triggered from the stone menu
@@ -3340,8 +3324,8 @@ function Necrosis_StoneCast(type, click)
 			end
 		end
 	end
-	AlphaStoneMenu = 1;
-	AlphaStoneVar = GetTime() + 3;
+	MenuState.Stone.alpha = 1;
+	MenuState.Stone.fadeAt = GetTime() + 3;
 end
 
 -- Handle casts triggered from the demon menu
@@ -3404,8 +3388,8 @@ function Necrosis_PetCast(type, click)
 		end
 	end
 	CastSpell(NECROSIS_SPELL_TABLE[type].ID, "spell");
-	AlphaPetMenu = 1;
-	AlphaPetVar = GetTime() + 3;
+	MenuState.Pet.alpha = 1;
+	MenuState.Pet.fadeAt = GetTime() + 3;
 end
 
 -- Function that shows the different configuration pages

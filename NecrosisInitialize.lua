@@ -108,14 +108,14 @@ function Necrosis_Initialize()
 		if (NecrosisConfig.ShowSpellTimers) then NecrosisShowSpellTimers_Button:SetChecked(1); end
 		if (NecrosisConfig.AntiFearAlert) then NecrosisAntiFearAlert_Button:SetChecked(1); end
 		if (NecrosisConfig.NecrosisLockServ) then NecrosisIconsLock_Button:SetChecked(1); end
-		if (NecrosisConfig.StonePosition[StonePosHealthstone]) then NecrosisShowHealthStone_Button:SetChecked(1); end
-		if (NecrosisConfig.StonePosition[StonePosSpellstone]) then NecrosisShowSpellstone_Button:SetChecked(1); end
-		if (NecrosisConfig.StonePosition[StonePosSoulstone]) then NecrosisShowSoulstone_Button:SetChecked(1); end
-		if (NecrosisConfig.StonePosition[StonePosBuffMenu]) then NecrosisShowBuffMenu_Button:SetChecked(1); end
-		if (NecrosisConfig.StonePosition[StonePosMount]) then NecrosisShowMount_Button:SetChecked(1); end
-		if (NecrosisConfig.StonePosition[StonePosPetMenu]) then NecrosisShowPetMenu_Button:SetChecked(1); end
-		if (NecrosisConfig.StonePosition[StonePosCurseMenu]) then NecrosisShowCurseMenu_Button:SetChecked(1); end
-		if (NecrosisConfig.StonePosition[StonePosStoneMenu]) then NecrosisShowStoneMenu_Button:SetChecked(1); end
+		if (NecrosisConfig.StonePosition[StonePos.Healthstone]) then NecrosisShowHealthStone_Button:SetChecked(1); end
+		if (NecrosisConfig.StonePosition[StonePos.Spellstone]) then NecrosisShowSpellstone_Button:SetChecked(1); end
+		if (NecrosisConfig.StonePosition[StonePos.Soulstone]) then NecrosisShowSoulstone_Button:SetChecked(1); end
+		if (NecrosisConfig.StonePosition[StonePos.BuffMenu]) then NecrosisShowBuffMenu_Button:SetChecked(1); end
+		if (NecrosisConfig.StonePosition[StonePos.Mount]) then NecrosisShowMount_Button:SetChecked(1); end
+		if (NecrosisConfig.StonePosition[StonePos.PetMenu]) then NecrosisShowPetMenu_Button:SetChecked(1); end
+		if (NecrosisConfig.StonePosition[StonePos.CurseMenu]) then NecrosisShowCurseMenu_Button:SetChecked(1); end
+		if (NecrosisConfig.StonePosition[StonePos.StoneMenu]) then NecrosisShowStoneMenu_Button:SetChecked(1); end
 		if (NecrosisConfig.NecrosisToolTip) then NecrosisShowTooltips_Button:SetChecked(1); end
 		if (NecrosisConfig.Sound) then NecrosisSound_Button:SetChecked(1); end
 		if (NecrosisConfig.ShowCount) then NecrosisShowCount_Button:SetChecked(1); end
