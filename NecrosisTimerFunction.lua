@@ -17,6 +17,13 @@
 
 SpellTimer = {}
 
+local function Necrosis_FinalizeTimerInsert(spellGroup, spellTimer, timerTable)
+	spellTimer, timerTable = Necrosis_AddTimerFrame(spellTimer, timerTable)
+	Necrosis_SortTimers(spellTimer, "Type")
+	spellGroup, spellTimer = Necrosis_AssignTimerGroups(spellGroup, spellTimer)
+	return spellGroup, spellTimer, timerTable
+end
+
 -- That's what the timer table is for!
 function Necrosis_InsertTimerEntry(IndexTable, Target, LevelTarget, SpellGroup, SpellTimer, TimerTable)
 	if type(Necrosis_DebugPrint) == "function" then
@@ -43,21 +50,13 @@ function Necrosis_InsertTimerEntry(IndexTable, Target, LevelTarget, SpellGroup, 
 		Gtimer = nil,
 	})
 
-	-- Associate a graphical timer with the entry
-	SpellTimer, TimerTable = Necrosis_AddTimerFrame(SpellTimer, TimerTable)
-
-	-- Sort entries by spell type
-	Necrosis_SortTimers(SpellTimer, "Type")
-
-	-- Create timer groups (mob names)
-	SpellGroup, SpellTimer = Necrosis_AssignTimerGroups(SpellGroup, SpellTimer)
-
-	return SpellGroup, SpellTimer, TimerTable
+	return Necrosis_FinalizeTimerInsert(SpellGroup, SpellTimer, TimerTable)
 end
 
 -- And to insert the stone timer
 function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTimer, TimerTable)
 	-- Insert the entry into the table
+	local inserted = false
 	if Stone == "Healthstone" then
 		if type(Necrosis_DebugPrint) == "function" then
 			Necrosis_DebugPrint("InsertTimerStone", Stone, "duration=", 120)
@@ -72,9 +71,7 @@ function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTime
 			Group = 2,
 			Gtimer = nil,
 		})
-
-		-- Associate a graphical timer with the entry
-		SpellTimer, TimerTable = Necrosis_AddTimerFrame(SpellTimer, TimerTable)
+		inserted = true
 	elseif Stone == "Spellstone" then
 		if type(Necrosis_DebugPrint) == "function" then
 			Necrosis_DebugPrint("InsertTimerStone", Stone, "duration=", 120)
@@ -89,9 +86,7 @@ function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTime
 			Group = 2,
 			Gtimer = nil,
 		})
-
-		-- Associate a graphical timer with the entry
-		SpellTimer, TimerTable = Necrosis_AddTimerFrame(SpellTimer, TimerTable)
+		inserted = true
 	elseif Stone == "Soulstone" then
 		if type(Necrosis_DebugPrint) == "function" then
 			Necrosis_DebugPrint("InsertTimerStone", Stone, "duration=", duration or "nil")
@@ -106,18 +101,14 @@ function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTime
 			Group = 1,
 			Gtimer = nil,
 		})
-
-		-- Associate a graphical timer with the entry
-		SpellTimer, TimerTable = Necrosis_AddTimerFrame(SpellTimer, TimerTable)
+		inserted = true
 	end
 
-	-- Sort entries by spell type
-	Necrosis_SortTimers(SpellTimer, "Type")
+	if not inserted then
+		return SpellGroup, SpellTimer, TimerTable
+	end
 
-	-- Create timer groups (mob names)
-	SpellGroup, SpellTimer = Necrosis_AssignTimerGroups(SpellGroup, SpellTimer)
-
-	return SpellGroup, SpellTimer, TimerTable
+	return Necrosis_FinalizeTimerInsert(SpellGroup, SpellTimer, TimerTable)
 end
 
 -- For creating custom timers
@@ -133,16 +124,7 @@ function Necrosis_InsertCustomTimer(nom, duree, truc, Target, LevelTarget, Spell
 		Gtimer = nil,
 	})
 
-	-- Associate a graphical timer with the entry
-	SpellTimer, TimerTable = Necrosis_AddTimerFrame(SpellTimer, TimerTable)
-
-	-- Sort entries by spell type
-	Necrosis_SortTimers(SpellTimer, "Type")
-
-	-- Create timer groups (mob names)
-	SpellGroup, SpellTimer = Necrosis_AssignTimerGroups(SpellGroup, SpellTimer)
-
-	return SpellGroup, SpellTimer, TimerTable
+	return Necrosis_FinalizeTimerInsert(SpellGroup, SpellTimer, TimerTable)
 end
 
 ------------------------------------------------------------------------------------------------------

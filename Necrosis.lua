@@ -3396,56 +3396,75 @@ function Necrosis_PetCast(type, click)
 end
 
 -- Function that shows the different configuration pages
+local NecrosisGeneralTabs = {
+	{
+		button = "NecrosisGeneralTab1",
+		panelName = "NecrosisShardMenu",
+		icon = "Interface\\QuestFrame\\UI-QuestLog-BookIcon",
+		labelKey = "Menu1",
+	},
+	{
+		button = "NecrosisGeneralTab2",
+		panelName = "NecrosisMessageMenu",
+		icon = "Interface\\QuestFrame\\UI-QuestLog-BookIcon",
+		labelKey = "Menu2",
+	},
+	{
+		button = "NecrosisGeneralTab3",
+		panelName = "NecrosisButtonMenu",
+		icon = "Interface\\QuestFrame\\UI-QuestLog-BookIcon",
+		labelKey = "Menu3",
+	},
+	{
+		button = "NecrosisGeneralTab4",
+		panelName = "NecrosisTimerMenu",
+		icon = "Interface\\QuestFrame\\UI-QuestLog-BookIcon",
+		labelKey = "Menu4",
+	},
+	{
+		button = "NecrosisGeneralTab5",
+		panelName = "NecrosisGraphOptionMenu",
+		icon = "Interface\\QuestFrame\\UI-QuestLog-BookIcon",
+		labelKey = "Menu5",
+	},
+}
+
 function NecrosisGeneralTab_OnClick(id)
-	local TabName
-	for index = 1, 5, 1 do
-		TabName = getglobal("NecrosisGeneralTab" .. index)
-		if index == id then
-			TabName:SetChecked(1)
-		else
-			TabName:SetChecked(nil)
+	for index = 1, table.getn(NecrosisGeneralTabs), 1 do
+		local tabDefinition = NecrosisGeneralTabs[index]
+		local tabButton = getglobal(tabDefinition.button)
+		if tabButton then
+			tabButton:SetChecked(index == id and 1 or nil)
+		end
+		if tabDefinition.panelName then
+			local panel = getglobal(tabDefinition.panelName)
+			if panel then
+				HideUIPanel(panel)
+			end
 		end
 	end
-	if id == 1 then
-		ShowUIPanel(NecrosisShardMenu)
-		HideUIPanel(NecrosisMessageMenu)
-		HideUIPanel(NecrosisButtonMenu)
-		HideUIPanel(NecrosisTimerMenu)
-		HideUIPanel(NecrosisGraphOptionMenu)
-		NecrosisGeneralIcon:SetTexture("Interface\\QuestFrame\\UI-QuestLog-BookIcon")
-		NecrosisGeneralPageText:SetText(NECROSIS_CONFIGURATION.Menu1)
-	elseif id == 2 then
-		HideUIPanel(NecrosisShardMenu)
-		ShowUIPanel(NecrosisMessageMenu)
-		HideUIPanel(NecrosisButtonMenu)
-		HideUIPanel(NecrosisTimerMenu)
-		HideUIPanel(NecrosisGraphOptionMenu)
-		NecrosisGeneralIcon:SetTexture("Interface\\QuestFrame\\UI-QuestLog-BookIcon")
-		NecrosisGeneralPageText:SetText(NECROSIS_CONFIGURATION.Menu2)
-	elseif id == 3 then
-		HideUIPanel(NecrosisShardMenu)
-		HideUIPanel(NecrosisMessageMenu)
-		ShowUIPanel(NecrosisButtonMenu)
-		HideUIPanel(NecrosisTimerMenu)
-		HideUIPanel(NecrosisGraphOptionMenu)
-		NecrosisGeneralIcon:SetTexture("Interface\\QuestFrame\\UI-QuestLog-BookIcon")
-		NecrosisGeneralPageText:SetText(NECROSIS_CONFIGURATION.Menu3)
-	elseif id == 4 then
-		HideUIPanel(NecrosisShardMenu)
-		HideUIPanel(NecrosisMessageMenu)
-		HideUIPanel(NecrosisButtonMenu)
-		ShowUIPanel(NecrosisTimerMenu)
-		HideUIPanel(NecrosisGraphOptionMenu)
-		NecrosisGeneralIcon:SetTexture("Interface\\QuestFrame\\UI-QuestLog-BookIcon")
-		NecrosisGeneralPageText:SetText(NECROSIS_CONFIGURATION.Menu4)
-	elseif id == 5 then
-		HideUIPanel(NecrosisShardMenu)
-		HideUIPanel(NecrosisMessageMenu)
-		HideUIPanel(NecrosisButtonMenu)
-		HideUIPanel(NecrosisTimerMenu)
-		ShowUIPanel(NecrosisGraphOptionMenu)
-		NecrosisGeneralIcon:SetTexture("Interface\\QuestFrame\\UI-QuestLog-BookIcon")
-		NecrosisGeneralPageText:SetText(NECROSIS_CONFIGURATION.Menu5)
+
+	local config = NecrosisGeneralTabs[id]
+	if not config then
+		return
+	end
+
+	if config.panelName then
+		local panel = getglobal(config.panelName)
+		if panel then
+			ShowUIPanel(panel)
+		end
+	end
+
+	if config.icon then
+		NecrosisGeneralIcon:SetTexture(config.icon)
+	end
+
+	if config.labelKey and NECROSIS_CONFIGURATION then
+		local label = NECROSIS_CONFIGURATION[config.labelKey]
+		if label then
+			NecrosisGeneralPageText:SetText(label)
+		end
 	end
 end
 
