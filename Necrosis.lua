@@ -351,6 +351,34 @@ local LastCast = {
 	Stone = { id = 0, click = "LeftButton" },
 }
 
+local function Necrosis_ToggleMenu(state, button, options)
+	state.open = not state.open
+	if not state.open then
+		state.fading = false
+		state.sticky = false
+		button:SetNormalTexture(options.closedTexture)
+		if state.frames[1] then
+			state.frames[1]:ClearAllPoints()
+			state.frames[1]:SetPoint("CENTER", button, "CENTER", 3000, 3000)
+		end
+		state.alpha = 1
+		if options.onClose then
+			options.onClose()
+		end
+		return false
+	end
+
+	state.fading = true
+	button:SetNormalTexture(options.openTexture)
+	if options.rightSticky and options.rightSticky() then
+		state.sticky = true
+	end
+	if options.onOpen then
+		options.onOpen()
+	end
+	return true
+end
+
 -- Variables used to manage mounts
 local MountAvailable = false
 local NecrosisMounted = false
@@ -2852,49 +2880,39 @@ function Necrosis_BuffMenu(button)
 		return
 	end
 	local buffMenu = MenuState.Buff
-	buffMenu.open = not buffMenu.open
-	if not buffMenu.open then
-		buffMenu.fading = false
-		buffMenu.sticky = false
-		NecrosisBuffMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\BuffMenuButton-01")
-		if buffMenu.frames[1] then
-			buffMenu.frames[1]:ClearAllPoints()
-			buffMenu.frames[1]:SetPoint("CENTER", "NecrosisBuffMenuButton", "CENTER", 3000, 3000)
-		end
-		buffMenu.alpha = 1
-	else
-		buffMenu.fading = true
-		NecrosisBuffMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\BuffMenuButton-02")
-		-- Si clic droit, le menu de buff reste ouvert
-		if button == "RightButton" then
-			buffMenu.sticky = true
-		end
-		-- S'il n'existe aucun buff on ne fait rien
-		if not buffMenu.frames[1] then
-			return
-		end
-		-- Otherwise display the icons
-		NecrosisBuffMenu1:SetAlpha(1)
-		NecrosisBuffMenu2:SetAlpha(1)
-		NecrosisBuffMenu3:SetAlpha(1)
-		NecrosisBuffMenu4:SetAlpha(1)
-		NecrosisBuffMenu5:SetAlpha(1)
-		NecrosisBuffMenu6:SetAlpha(1)
-		NecrosisBuffMenu7:SetAlpha(1)
-		NecrosisBuffMenu8:SetAlpha(1)
-		NecrosisBuffMenu9:SetAlpha(1)
-		buffMenu.frames[1]:ClearAllPoints()
-		buffMenu.frames[1]:SetPoint(
-			"CENTER",
-			"NecrosisBuffMenuButton",
-			"CENTER",
-			((36 / NecrosisConfig.BuffMenuPos) * 31),
-			26
-		)
-		MenuState.Pet.fadeAt = GetTime() + 3
-		buffMenu.fadeAt = GetTime() + 6
-		MenuState.Curse.fadeAt = GetTime() + 6
+	local opened = Necrosis_ToggleMenu(buffMenu, NecrosisBuffMenuButton, {
+		closedTexture = "Interface\\AddOns\\Necrosis\\UI\\BuffMenuButton-01",
+		openTexture = "Interface\\AddOns\\Necrosis\\UI\\BuffMenuButton-02",
+		rightSticky = function()
+			return button == "RightButton"
+		end,
+	})
+	if not opened then
+		return
 	end
+	if not buffMenu.frames[1] then
+		return
+	end
+	NecrosisBuffMenu1:SetAlpha(1)
+	NecrosisBuffMenu2:SetAlpha(1)
+	NecrosisBuffMenu3:SetAlpha(1)
+	NecrosisBuffMenu4:SetAlpha(1)
+	NecrosisBuffMenu5:SetAlpha(1)
+	NecrosisBuffMenu6:SetAlpha(1)
+	NecrosisBuffMenu7:SetAlpha(1)
+	NecrosisBuffMenu8:SetAlpha(1)
+	NecrosisBuffMenu9:SetAlpha(1)
+	buffMenu.frames[1]:ClearAllPoints()
+	buffMenu.frames[1]:SetPoint(
+		"CENTER",
+		"NecrosisBuffMenuButton",
+		"CENTER",
+		((36 / NecrosisConfig.BuffMenuPos) * 31),
+		26
+	)
+	MenuState.Pet.fadeAt = GetTime() + 3
+	buffMenu.fadeAt = GetTime() + 6
+	MenuState.Curse.fadeAt = GetTime() + 6
 end
 
 -- Opening the curse menu
@@ -2908,45 +2926,36 @@ function Necrosis_CurseMenu(button)
 	if not curseMenu.frames[1] then
 		return
 	end
-	curseMenu.open = not curseMenu.open
-	if not curseMenu.open then
-		curseMenu.fading = false
-		curseMenu.sticky = false
-		NecrosisCurseMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\CurseMenuButton-01")
-		if curseMenu.frames[1] then
-			curseMenu.frames[1]:ClearAllPoints()
-			curseMenu.frames[1]:SetPoint("CENTER", "NecrosisCurseMenuButton", "CENTER", 3000, 3000)
-		end
-		curseMenu.alpha = 1
-	else
-		curseMenu.fading = true
-		NecrosisCurseMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\CurseMenuButton-02")
-		-- Si clic droit, le menu de curse reste ouvert
-		if button == "RightButton" then
-			curseMenu.sticky = true
-		end
-		-- Otherwise display the icons
-		NecrosisCurseMenu1:SetAlpha(1)
-		NecrosisCurseMenu2:SetAlpha(1)
-		NecrosisCurseMenu3:SetAlpha(1)
-		NecrosisCurseMenu4:SetAlpha(1)
-		NecrosisCurseMenu5:SetAlpha(1)
-		NecrosisCurseMenu6:SetAlpha(1)
-		NecrosisCurseMenu7:SetAlpha(1)
-		NecrosisCurseMenu8:SetAlpha(1)
-		NecrosisCurseMenu9:SetAlpha(1)
-		curseMenu.frames[1]:ClearAllPoints()
-		curseMenu.frames[1]:SetPoint(
-			"CENTER",
-			"NecrosisCurseMenuButton",
-			"CENTER",
-			((36 / NecrosisConfig.CurseMenuPos) * 31),
-			-26
-		)
-		MenuState.Pet.fadeAt = GetTime() + 3
-		MenuState.Buff.fadeAt = GetTime() + 6
-		curseMenu.fadeAt = GetTime() + 6
+	local opened = Necrosis_ToggleMenu(curseMenu, NecrosisCurseMenuButton, {
+		closedTexture = "Interface\\AddOns\\Necrosis\\UI\\CurseMenuButton-01",
+		openTexture = "Interface\\AddOns\\Necrosis\\UI\\CurseMenuButton-02",
+		rightSticky = function()
+			return button == "RightButton"
+		end,
+	})
+	if not opened then
+		return
 	end
+	NecrosisCurseMenu1:SetAlpha(1)
+	NecrosisCurseMenu2:SetAlpha(1)
+	NecrosisCurseMenu3:SetAlpha(1)
+	NecrosisCurseMenu4:SetAlpha(1)
+	NecrosisCurseMenu5:SetAlpha(1)
+	NecrosisCurseMenu6:SetAlpha(1)
+	NecrosisCurseMenu7:SetAlpha(1)
+	NecrosisCurseMenu8:SetAlpha(1)
+	NecrosisCurseMenu9:SetAlpha(1)
+	curseMenu.frames[1]:ClearAllPoints()
+	curseMenu.frames[1]:SetPoint(
+		"CENTER",
+		"NecrosisCurseMenuButton",
+		"CENTER",
+		((36 / NecrosisConfig.CurseMenuPos) * 31),
+		-26
+	)
+	MenuState.Pet.fadeAt = GetTime() + 3
+	MenuState.Buff.fadeAt = GetTime() + 6
+	curseMenu.fadeAt = GetTime() + 6
 end
 
 -- Opening the demon menu
@@ -2960,43 +2969,28 @@ function Necrosis_PetMenu(button)
 	if not petMenu.frames[1] then
 		return
 	end
-	petMenu.open = not petMenu.open
-	if not petMenu.open then
-		petMenu.fading = false
-		petMenu.sticky = false
-		NecrosisPetMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\PetMenuButton-01")
-		if petMenu.frames[1] then
-			petMenu.frames[1]:ClearAllPoints()
-			petMenu.frames[1]:SetPoint("CENTER", "NecrosisPetMenuButton", "CENTER", 3000, 3000)
-		end
-		petMenu.alpha = 1
-	else
-		petMenu.fading = true
-		NecrosisPetMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\PetMenuButton-02")
-		-- Si clic droit, le menu de pet reste ouvert
-		if button == "RightButton" then
-			petMenu.sticky = true
-		end
-		-- Otherwise display the icons (move them onto the screen)
-		NecrosisPetMenu1:SetAlpha(1)
-		NecrosisPetMenu2:SetAlpha(1)
-		NecrosisPetMenu3:SetAlpha(1)
-		NecrosisPetMenu4:SetAlpha(1)
-		NecrosisPetMenu5:SetAlpha(1)
-		NecrosisPetMenu6:SetAlpha(1)
-		NecrosisPetMenu7:SetAlpha(1)
-		NecrosisPetMenu8:SetAlpha(1)
-		NecrosisPetMenu9:SetAlpha(1)
-		petMenu.frames[1]:ClearAllPoints()
-		petMenu.frames[1]:SetPoint(
-			"CENTER",
-			"NecrosisPetMenuButton",
-			"CENTER",
-			((36 / NecrosisConfig.PetMenuPos) * 31),
-			26
-		)
-		petMenu.fadeAt = GetTime() + 3
+	local opened = Necrosis_ToggleMenu(petMenu, NecrosisPetMenuButton, {
+		closedTexture = "Interface\\AddOns\\Necrosis\\UI\\PetMenuButton-01",
+		openTexture = "Interface\\AddOns\\Necrosis\\UI\\PetMenuButton-02",
+		rightSticky = function()
+			return button == "RightButton"
+		end,
+	})
+	if not opened then
+		return
 	end
+	NecrosisPetMenu1:SetAlpha(1)
+	NecrosisPetMenu2:SetAlpha(1)
+	NecrosisPetMenu3:SetAlpha(1)
+	NecrosisPetMenu4:SetAlpha(1)
+	NecrosisPetMenu5:SetAlpha(1)
+	NecrosisPetMenu6:SetAlpha(1)
+	NecrosisPetMenu7:SetAlpha(1)
+	NecrosisPetMenu8:SetAlpha(1)
+	NecrosisPetMenu9:SetAlpha(1)
+	petMenu.frames[1]:ClearAllPoints()
+	petMenu.frames[1]:SetPoint("CENTER", "NecrosisPetMenuButton", "CENTER", ((36 / NecrosisConfig.PetMenuPos) * 31), 26)
+	petMenu.fadeAt = GetTime() + 3
 end
 
 -- Opening the stone menu
@@ -3010,35 +3004,30 @@ function Necrosis_StoneMenu(button)
 	if not stoneMenu.frames[1] then
 		return
 	end
-	stoneMenu.open = not stoneMenu.open
-	if not stoneMenu.open then
-		stoneMenu.fading = false
-		stoneMenu.sticky = false
-		Necrosis_UpdateIcons()
-		stoneMenu.frames[1]:ClearAllPoints()
-		stoneMenu.frames[1]:SetPoint("CENTER", "NecrosisStoneMenuButton", "CENTER", 3000, 3000)
-		stoneMenu.alpha = 1
-	else
-		stoneMenu.fading = true
-		Necrosis_UpdateIcons()
-		-- Si clic droit, le menu de stone reste ouvert
-		if button == "RightButton" then
-			stoneMenu.sticky = true
-		end
-		-- Otherwise display the icons
-		NecrosisStoneMenu1:SetAlpha(1)
-		NecrosisStoneMenu2:SetAlpha(1)
-		NecrosisStoneMenu3:SetAlpha(1)
-		stoneMenu.frames[1]:ClearAllPoints()
-		stoneMenu.frames[1]:SetPoint(
-			"CENTER",
-			"NecrosisStoneMenuButton",
-			"CENTER",
-			((36 / NecrosisConfig.StoneMenuPos) * 31),
-			-26
-		)
-		stoneMenu.fadeAt = GetTime() + 6
+	local opened = Necrosis_ToggleMenu(stoneMenu, NecrosisStoneMenuButton, {
+		closedTexture = "Interface\\AddOns\\Necrosis\\UI\\StoneMenuButton-01",
+		openTexture = "Interface\\AddOns\\Necrosis\\UI\\StoneMenuButton-02",
+		rightSticky = function()
+			return button == "RightButton"
+		end,
+		onOpen = Necrosis_UpdateIcons,
+		onClose = Necrosis_UpdateIcons,
+	})
+	if not opened then
+		return
 	end
+	NecrosisStoneMenu1:SetAlpha(1)
+	NecrosisStoneMenu2:SetAlpha(1)
+	NecrosisStoneMenu3:SetAlpha(1)
+	stoneMenu.frames[1]:ClearAllPoints()
+	stoneMenu.frames[1]:SetPoint(
+		"CENTER",
+		"NecrosisStoneMenuButton",
+		"CENTER",
+		((36 / NecrosisConfig.StoneMenuPos) * 31),
+		-26
+	)
+	stoneMenu.fadeAt = GetTime() + 6
 end
 
 -- Each time the spellbook changes, at mod startup, or when the menu direction flips, rebuild the spell menus
