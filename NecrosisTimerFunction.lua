@@ -15,6 +15,8 @@
 -- INSERTION FUNCTIONS
 ------------------------------------------------------------------------------------------------------
 
+SpellTimer = {}
+
 -- That's what the timer table is for!
 function Necrosis_InsertTimerParTable(IndexTable, Target, LevelTarget, SpellGroup, SpellTimer, TimerTable)
 	if type(Necrosis_DebugPrint) == "function" then
@@ -200,9 +202,9 @@ end
 -- BOOLEAN FUNCTIONS
 ------------------------------------------------------------------------------------------------------
 
-function Necrosis_TimerExisteDeja(Nom, SpellTimer)
+function Necrosis_TimerExists(Name)
 	for index = 1, table.getn(SpellTimer), 1 do
-		if SpellTimer[index].Name == Nom then
+		if SpellTimer[index].Name == Name then
 			return true
 		end
 	end

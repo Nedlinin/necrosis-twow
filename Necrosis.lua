@@ -74,10 +74,6 @@ local SpellTargetName = nil
 local SpellTargetLevel = nil
 local SpellCastTime = 0
 
--- Initialize the tables that manage timers
--- One stores timed spells, the other stores mob groups
--- The last one links a timer to a graphical frame
-SpellTimer = {}
 local SpellGroup = {
 	Name = { "Rez", "Main", "Cooldown" },
 	SubName = { " ", " ", " " },
@@ -2568,7 +2564,7 @@ function Necrosis_UseItem(type, button)
 
 				-- Inserts a timer for the Healthstone if not already present
 				local HealthstoneInUse = false
-				if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Healthstone, SpellTimer) then
+				if Necrosis_TimerExists(NECROSIS_COOLDOWN.Healthstone) then
 					HealthstoneInUse = true
 				end
 				if not HealthstoneInUse then
@@ -2578,7 +2574,7 @@ function Necrosis_UseItem(type, button)
 
 				-- Healthstone shares its cooldown with Spellstone, so we add both timers at the same time, but only if Spellstone is known
 				local SpellstoneInUse = false
-				if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Spellstone, SpellTimer) then
+				if Necrosis_TimerExists(NECROSIS_COOLDOWN.Spellstone) then
 					SpellstoneInUse = true
 				end
 				if not SpellstoneInUse and StoneIDInSpellTable[3] ~= 0 then
@@ -2606,7 +2602,7 @@ function Necrosis_UseItem(type, button)
 				UseContainerItem(StoneInventory.Spellstone.location[1], StoneInventory.Spellstone.location[2])
 
 				local SpellstoneInUse = false
-				if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Spellstone, SpellTimer) then
+				if Necrosis_TimerExists(NECROSIS_COOLDOWN.Spellstone) then
 					SpellstoneInUse = true
 				end
 				if not SpellstoneInUse then
@@ -2615,7 +2611,7 @@ function Necrosis_UseItem(type, button)
 				end
 
 				local HealthstoneInUse = false
-				if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Healthstone, SpellTimer) then
+				if Necrosis_TimerExists(NECROSIS_COOLDOWN.Healthstone) then
 					HealthstoneInUse = true
 				end
 				if not HealthstoneInUse and StoneIDInSpellTable[2] ~= 0 then
@@ -2670,7 +2666,7 @@ function Necrosis_SwitchOffHand(type)
 		else
 			PickupContainerItem(StoneInventory.Spellstone.location[1], StoneInventory.Spellstone.location[2])
 			PickupInventoryItem(17)
-			if Necrosis_TimerExisteDeja(NECROSIS_COOLDOWN.Spellstone, SpellTimer) then
+			if Necrosis_TimerExists(NECROSIS_COOLDOWN.Spellstone) then
 				SpellTimer, TimerTable =
 					Necrosis_RetraitTimerParNom(NECROSIS_COOLDOWN.Spellstone, SpellTimer, TimerTable)
 			end
