@@ -433,19 +433,15 @@ local HealthstoneLocation = {nil,nil};
 local HealthstoneMode = 1;
 local FirestoneOnHand = false;
 local FirestoneLocation = {nil,nil};
-local FirestoneMode = 1;
 local SpellstoneOnHand = false;
 local SpellstoneLocation = {nil,nil};
 local SpellstoneMode = 1;
 local FelstoneOnHand = false;
 local FelstoneLocation = {nil,nil};
-local FelstoneMode = 1;
 local WrathstoneOnHand = false;
 local WrathstoneLocation = {nil,nil};
-local WrathstoneMode = 1;
 local VoidstoneOnHand = false;
 local VoidstoneLocation = {nil,nil};
-local VoidstoneMode = 1;
 local HearthstoneOnHand = false;
 local HearthstoneLocation = {nil,nil};
 local ItemswitchLocation = {nil,nil};
@@ -1255,35 +1251,47 @@ function Necrosis_BuildTooltip(button, type, anchor)
 				GameTooltip:AddLine(itemName);
 			end
 		-- Pierre de feu
-		elseif (type == "Firestone") then
-			if FirestoneMode == 1 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]] then
-				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]].Mana.." Mana");
-			end
-			Necrosis_MoneyToggle();
-			NecrosisTooltip:SetBagItem(FirestoneLocation[1], FirestoneLocation[2]);
-			GameTooltip:AddLine(NecrosisTooltipData[type].Text[FirestoneMode]);
-		elseif (type == "Felstone") then
-			if FelstoneMode == 1 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[5]] then
-				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[5]].Mana.." Mana");
-			end
-			Necrosis_MoneyToggle();
-			NecrosisTooltip:SetBagItem(FelstoneLocation[1], FelstoneLocation[2]);
-			GameTooltip:AddLine(NecrosisTooltipData[type].Text[FelstoneMode]);
-		elseif (type == "Wrathstone") then
-			if WrathstoneMode == 1 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[6]] then
-				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[6]].Mana.." Mana");
-			end
-			Necrosis_MoneyToggle();
-			NecrosisTooltip:SetBagItem(WrathstoneLocation[1], WrathstoneLocation[2]);
-			GameTooltip:AddLine(NecrosisTooltipData[type].Text[WrathstoneMode]);
-		elseif (type == "Voidstone") then
-			if VoidstoneMode == 1 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[7]] then
-				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[7]].Mana.." Mana");
-			end
-			Necrosis_MoneyToggle();
-			NecrosisTooltip:SetBagItem(VoidstoneLocation[1], VoidstoneLocation[2]);
-			GameTooltip:AddLine(NecrosisTooltipData[type].Text[VoidstoneMode]);
+	elseif (type == "Firestone") then
+		local stoneMode = FirestoneOnHand and 2 or 1;
+		if stoneMode == 1 and StoneIDInSpellTable[4] ~= 0 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]] then
+			GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]].Mana.." Mana");
 		end
+		Necrosis_MoneyToggle();
+		if FirestoneOnHand and FirestoneLocation[1] then
+			NecrosisTooltip:SetBagItem(FirestoneLocation[1], FirestoneLocation[2]);
+		end
+		GameTooltip:AddLine(NecrosisTooltipData[type].Text[stoneMode]);
+	elseif (type == "Felstone") then
+		local stoneMode = FelstoneOnHand and 2 or 1;
+		if stoneMode == 1 and StoneIDInSpellTable[5] ~= 0 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[5]] then
+			GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[5]].Mana.." Mana");
+		end
+		Necrosis_MoneyToggle();
+		if FelstoneOnHand and FelstoneLocation[1] then
+			NecrosisTooltip:SetBagItem(FelstoneLocation[1], FelstoneLocation[2]);
+		end
+		GameTooltip:AddLine(NecrosisTooltipData[type].Text[stoneMode]);
+	elseif (type == "Wrathstone") then
+		local stoneMode = WrathstoneOnHand and 2 or 1;
+		if stoneMode == 1 and StoneIDInSpellTable[6] ~= 0 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[6]] then
+			GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[6]].Mana.." Mana");
+		end
+		Necrosis_MoneyToggle();
+		if WrathstoneOnHand and WrathstoneLocation[1] then
+			NecrosisTooltip:SetBagItem(WrathstoneLocation[1], WrathstoneLocation[2]);
+		end
+		GameTooltip:AddLine(NecrosisTooltipData[type].Text[stoneMode]);
+	elseif (type == "Voidstone") then
+		local stoneMode = VoidstoneOnHand and 2 or 1;
+		if stoneMode == 1 and StoneIDInSpellTable[7] ~= 0 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[7]] then
+			GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[7]].Mana.." Mana");
+		end
+		Necrosis_MoneyToggle();
+		if VoidstoneOnHand and VoidstoneLocation[1] then
+			NecrosisTooltip:SetBagItem(VoidstoneLocation[1], VoidstoneLocation[2]);
+		end
+		GameTooltip:AddLine(NecrosisTooltipData[type].Text[stoneMode]);
+	end
 	-- ..... for the timer button
 	elseif (type == "SpellTimer") then
 		Necrosis_MoneyToggle();
