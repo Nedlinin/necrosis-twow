@@ -18,7 +18,7 @@
 SpellTimer = {}
 
 -- That's what the timer table is for!
-function Necrosis_InsertTimerParTable(IndexTable, Target, LevelTarget, SpellGroup, SpellTimer, TimerTable)
+function Necrosis_InsertTimerEntry(IndexTable, Target, LevelTarget, SpellGroup, SpellTimer, TimerTable)
 	if type(Necrosis_DebugPrint) == "function" then
 		Necrosis_DebugPrint(
 			"InsertTimer",
@@ -47,16 +47,16 @@ function Necrosis_InsertTimerParTable(IndexTable, Target, LevelTarget, SpellGrou
 	SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable)
 
 	-- Sort entries by spell type
-	Necrosis_Tri(SpellTimer, "Type")
+	Necrosis_SortTimers(SpellTimer, "Type")
 
 	-- Create timer groups (mob names)
-	SpellGroup, SpellTimer = Necrosis_Parsing(SpellGroup, SpellTimer)
+	SpellGroup, SpellTimer = Necrosis_AssignTimerGroups(SpellGroup, SpellTimer)
 
 	return SpellGroup, SpellTimer, TimerTable
 end
 
 -- And to insert the stone timer
-function Necrosis_InsertTimerStone(Stone, start, duration, SpellGroup, SpellTimer, TimerTable)
+function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTimer, TimerTable)
 	-- Insert the entry into the table
 	if Stone == "Healthstone" then
 		if type(Necrosis_DebugPrint) == "function" then
@@ -112,16 +112,16 @@ function Necrosis_InsertTimerStone(Stone, start, duration, SpellGroup, SpellTime
 	end
 
 	-- Sort entries by spell type
-	Necrosis_Tri(SpellTimer, "Type")
+	Necrosis_SortTimers(SpellTimer, "Type")
 
 	-- Create timer groups (mob names)
-	SpellGroup, SpellTimer = Necrosis_Parsing(SpellGroup, SpellTimer)
+	SpellGroup, SpellTimer = Necrosis_AssignTimerGroups(SpellGroup, SpellTimer)
 
 	return SpellGroup, SpellTimer, TimerTable
 end
 
 -- For creating custom timers
-function NecrosisTimerX(nom, duree, truc, Target, LevelTarget, SpellGroup, SpellTimer, TimerTable)
+function Necrosis_InsertCustomTimer(nom, duree, truc, Target, LevelTarget, SpellGroup, SpellTimer, TimerTable)
 	table.insert(SpellTimer, {
 		Name = nom,
 		Time = duree,
@@ -137,10 +137,10 @@ function NecrosisTimerX(nom, duree, truc, Target, LevelTarget, SpellGroup, Spell
 	SpellTimer, TimerTable = Necrosis_AddFrame(SpellTimer, TimerTable)
 
 	-- Sort entries by spell type
-	Necrosis_Tri(SpellTimer, "Type")
+	Necrosis_SortTimers(SpellTimer, "Type")
 
 	-- Create timer groups (mob names)
-	SpellGroup, SpellTimer = Necrosis_Parsing(SpellGroup, SpellTimer)
+	SpellGroup, SpellTimer = Necrosis_AssignTimerGroups(SpellGroup, SpellTimer)
 
 	return SpellGroup, SpellTimer, TimerTable
 end
@@ -150,7 +150,7 @@ end
 ------------------------------------------------------------------------------------------------------
 
 -- Remove the timer once its index is known
-function Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable)
+function Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
 	-- Remove the graphical timer
 	local Gtime = SpellTimer[index].Gtimer
 	TimerTable = Necrosis_RemoveFrame(Gtime, TimerTable)
@@ -162,10 +162,10 @@ function Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable)
 end
 
 -- When a specific timer must be removed...
-function Necrosis_RetraitTimerParNom(name, SpellTimer, TimerTable)
+function Necrosis_RemoveTimerByName(name, SpellTimer, TimerTable)
 	for index = 1, table.getn(SpellTimer), 1 do
 		if SpellTimer[index].Name == name then
-			SpellTimer = Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable)
+			SpellTimer = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
 			break
 		end
 	end
@@ -173,7 +173,7 @@ function Necrosis_RetraitTimerParNom(name, SpellTimer, TimerTable)
 end
 
 -- Remove combat timers when regeneration starts
-function Necrosis_RetraitTimerCombat(SpellGroup, SpellTimer, TimerTable)
+function Necrosis_RemoveCombatTimers(SpellGroup, SpellTimer, TimerTable)
 	for index = 1, table.getn(SpellTimer), 1 do
 		if SpellTimer[index] then
 			-- Remove the target name when cooldowns are per-character
@@ -183,7 +183,7 @@ function Necrosis_RetraitTimerCombat(SpellGroup, SpellTimer, TimerTable)
 			end
 			-- Remove combat timers
 			if (SpellTimer[index].Type == 4) or (SpellTimer[index].Type == 5) then
-				SpellTimer = Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable)
+				SpellTimer = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
 			end
 		end
 	end
@@ -216,7 +216,7 @@ end
 ------------------------------------------------------------------------------------------------------
 
 -- Assign each timer to its group
-function Necrosis_Parsing(SpellGroup, SpellTimer)
+function Necrosis_AssignTimerGroups(SpellGroup, SpellTimer)
 	local GroupeOK = false
 	for index = 1, table.getn(SpellTimer), 1 do
 		local GroupeOK = false
@@ -242,14 +242,14 @@ function Necrosis_Parsing(SpellGroup, SpellTimer)
 		end
 	end
 
-	Necrosis_Tri(SpellTimer, "Group")
+	Necrosis_SortTimers(SpellTimer, "Group")
 	return SpellGroup, SpellTimer
 end
 
 -- Sort timers by group
-function Necrosis_Tri(SpellTimer, clef)
+function Necrosis_SortTimers(SpellTimer, key)
 	return table.sort(SpellTimer, function(SubTab1, SubTab2)
-		return SubTab1[clef] < SubTab2[clef]
+		return SubTab1[key] < SubTab2[key]
 	end)
 end
 

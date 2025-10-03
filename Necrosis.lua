@@ -260,7 +260,7 @@ end
 
 local function Necrosis_OnCombatEnd()
 	PlayerCombat = false
-	SpellGroup, SpellTimer, TimerTable = Necrosis_RetraitTimerCombat(SpellGroup, SpellTimer, TimerTable)
+	SpellGroup, SpellTimer, TimerTable = Necrosis_RemoveCombatTimers(SpellGroup, SpellTimer, TimerTable)
 	for i = 1, 10, 1 do
 		local frameName = "NecrosisTarget" .. i .. "Text"
 		local frameItem = getglobal(frameName)
@@ -760,7 +760,7 @@ function Necrosis_OnUpdate()
 							Necrosis_UpdateIcons()
 						-- Otherwise remove the timer quietly (except for Enslave)
 						elseif SpellTimer[index].Name ~= NECROSIS_SPELL_TABLE[10].Name then
-							SpellTimer, TimerTable = Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable)
+							SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
 							index = 0
 							break
 						end
@@ -771,7 +771,7 @@ function Necrosis_OnUpdate()
 							not Necrosis_UnitHasEffect("player", SpellTimer[index].Name)
 							and SpellTimer[index].TimeMax ~= nil
 						then
-							SpellTimer, TimerTable = Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable)
+							SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
 							index = 0
 							break
 						end
@@ -788,7 +788,7 @@ function Necrosis_OnUpdate()
 							and SpellTimer[index] ~= 6
 						then
 							if not Necrosis_UnitHasEffect("target", SpellTimer[index].Name) then
-								SpellTimer, TimerTable = Necrosis_RetraitTimerParIndex(index, SpellTimer, TimerTable)
+								SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
 								index = 0
 								break
 							end
@@ -858,13 +858,13 @@ function Necrosis_ChangeDemon()
 		if not DemonEnslaved then
 			DemonEnslaved = true
 			SpellGroup, SpellTimer, TimerTable =
-				Necrosis_InsertTimerParTable(10, "", "", SpellGroup, SpellTimer, TimerTable)
+				Necrosis_InsertTimerEntry(10, "", "", SpellGroup, SpellTimer, TimerTable)
 		end
 	else
 		-- When the enslaved demon breaks free, remove the timer and warn the Warlock
 		if DemonEnslaved then
 			DemonEnslaved = false
-			SpellTimer, TimerTable = Necrosis_RetraitTimerParNom(NECROSIS_SPELL_TABLE[10].Name, SpellTimer, TimerTable)
+			SpellTimer, TimerTable = Necrosis_RemoveTimerByName(NECROSIS_SPELL_TABLE[10].Name, SpellTimer, TimerTable)
 			if NecrosisConfig.Sound then
 				PlaySoundFile(NECROSIS_SOUND.EnslaveEnd)
 			end
@@ -898,7 +898,7 @@ function Necrosis_SelfEffect(action)
 		-- Insert a timer when the Warlock gains Demon Sacrifice
 		if arg1 == NECROSIS_TRANSLATION.SacrificeGain then
 			SpellGroup, SpellTimer, TimerTable =
-				Necrosis_InsertTimerParTable(17, "", "", SpellGroup, SpellTimer, TimerTable)
+				Necrosis_InsertTimerEntry(17, "", "", SpellGroup, SpellTimer, TimerTable)
 		end
 		-- Update the mount button when the Warlock mounts
 		if string.find(arg1, NECROSIS_SPELL_TABLE[1].Name) or string.find(arg1, NECROSIS_SPELL_TABLE[2].Name) then
@@ -942,8 +942,8 @@ function Necrosis_SelfEffect(action)
 		end
 		-- Track Demon Armor/Skin on the player
 		if NECROSIS_SPELL_TABLE[31].Name and string.find(arg1, NECROSIS_SPELL_TABLE[31].Name) then
-			SpellTimer, TimerTable = Necrosis_RetraitTimerParNom(NECROSIS_SPELL_TABLE[31].Name, SpellTimer, TimerTable)
-			SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerParTable(
+			SpellTimer, TimerTable = Necrosis_RemoveTimerByName(NECROSIS_SPELL_TABLE[31].Name, SpellTimer, TimerTable)
+			SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerEntry(
 				31,
 				UnitName("player"),
 				UnitLevel("player"),
@@ -952,8 +952,8 @@ function Necrosis_SelfEffect(action)
 				TimerTable
 			)
 		elseif NECROSIS_SPELL_TABLE[36].Name and string.find(arg1, NECROSIS_SPELL_TABLE[36].Name) then
-			SpellTimer, TimerTable = Necrosis_RetraitTimerParNom(NECROSIS_SPELL_TABLE[36].Name, SpellTimer, TimerTable)
-			SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerParTable(
+			SpellTimer, TimerTable = Necrosis_RemoveTimerByName(NECROSIS_SPELL_TABLE[36].Name, SpellTimer, TimerTable)
+			SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerEntry(
 				36,
 				UnitName("player"),
 				UnitLevel("player"),
@@ -981,9 +981,9 @@ function Necrosis_SelfEffect(action)
 		end
 		-- Remove the Demon Armor/Skin timer when it fades
 		if NECROSIS_SPELL_TABLE[31].Name and string.find(arg1, NECROSIS_SPELL_TABLE[31].Name) then
-			SpellTimer, TimerTable = Necrosis_RetraitTimerParNom(NECROSIS_SPELL_TABLE[31].Name, SpellTimer, TimerTable)
+			SpellTimer, TimerTable = Necrosis_RemoveTimerByName(NECROSIS_SPELL_TABLE[31].Name, SpellTimer, TimerTable)
 		elseif NECROSIS_SPELL_TABLE[36].Name and string.find(arg1, NECROSIS_SPELL_TABLE[36].Name) then
-			SpellTimer, TimerTable = Necrosis_RetraitTimerParNom(NECROSIS_SPELL_TABLE[36].Name, SpellTimer, TimerTable)
+			SpellTimer, TimerTable = Necrosis_RemoveTimerByName(NECROSIS_SPELL_TABLE[36].Name, SpellTimer, TimerTable)
 		end
 	end
 	return
@@ -1012,7 +1012,7 @@ function Necrosis_SpellManagement()
 				SoulstoneAdvice = true
 			end
 			SpellGroup, SpellTimer, TimerTable =
-				Necrosis_InsertTimerParTable(11, SpellTargetName, "", SpellGroup, SpellTimer, TimerTable)
+				Necrosis_InsertTimerEntry(11, SpellTargetName, "", SpellGroup, SpellTimer, TimerTable)
 		-- If the spell was Ritual of Summoning, send an informational message to players
 		elseif
 			(SpellCastName == NECROSIS_TRANSLATION.SummoningRitual)
@@ -1082,14 +1082,14 @@ function Necrosis_SpellManagement()
 								or SpellTimer[thisspell].TargetLevel ~= SpellTargetLevel
 							)
 						then
-							SpellTimer, TimerTable = Necrosis_RetraitTimerParIndex(thisspell, SpellTimer, TimerTable)
+							SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(thisspell, SpellTimer, TimerTable)
 							SortActif = false
 							break
 						end
 
 						-- If it is a fear, remove the previous fear timer
 						if SpellTimer[thisspell].Name == SpellCastName and spell == 13 then
-							SpellTimer, TimerTable = Necrosis_RetraitTimerParIndex(thisspell, SpellTimer, TimerTable)
+							SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(thisspell, SpellTimer, TimerTable)
 							SortActif = false
 							break
 						end
@@ -1110,8 +1110,7 @@ function Necrosis_SpellManagement()
 								and SpellTimer[thisspell].Target == SpellTargetName
 								and SpellTimer[thisspell].TargetLevel == SpellTargetLevel
 							then
-								SpellTimer, TimerTable =
-									Necrosis_RetraitTimerParIndex(thisspell, SpellTimer, TimerTable)
+								SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(thisspell, SpellTimer, TimerTable)
 								break
 							end
 						end
@@ -1126,7 +1125,7 @@ function Necrosis_SpellManagement()
 							end
 						end
 
-						SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerParTable(
+						SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerEntry(
 							spell,
 							SpellTargetName,
 							SpellTargetLevel,
@@ -1584,7 +1583,7 @@ function Necrosis_UpdateIcons()
 			GetContainerItemCooldown(StoneInventory.Soulstone.location[1], StoneInventory.Soulstone.location[2])
 		if NecrosisRL and start > 0 and duration > 0 then
 			SpellGroup, SpellTimer, TimerTable =
-				Necrosis_InsertTimerStone("Soulstone", start, duration, SpellGroup, SpellTimer, TimerTable)
+				Necrosis_InsertStoneTimer("Soulstone", start, duration, SpellGroup, SpellTimer, TimerTable)
 			StoneInventory.Soulstone.mode = 4
 			NecrosisRL = false
 			SoulstoneWaiting = false
@@ -1628,7 +1627,7 @@ function Necrosis_UpdateIcons()
 	if StoneInventory.Soulstone.onHand and SoulstoneInUse then
 		SoulstoneAdvice = false
 		if not (SoulstoneWaiting or SoulstoneCooldown) then
-			SpellTimer, TimerTable = Necrosis_RetraitTimerParNom(NECROSIS_SPELL_TABLE[11].Name, SpellTimer, TimerTable)
+			SpellTimer, TimerTable = Necrosis_RemoveTimerByName(NECROSIS_SPELL_TABLE[11].Name, SpellTimer, TimerTable)
 			StoneInventory.Soulstone.mode = 2
 		else
 			SoulstoneWaiting = false
@@ -2569,7 +2568,7 @@ function Necrosis_UseItem(type, button)
 				end
 				if not HealthstoneInUse then
 					SpellGroup, SpellTimer, TimerTable =
-						Necrosis_InsertTimerStone(type, nil, nil, SpellGroup, SpellTimer, TimerTable)
+						Necrosis_InsertStoneTimer(type, nil, nil, SpellGroup, SpellTimer, TimerTable)
 				end
 
 				-- Healthstone shares its cooldown with Spellstone, so we add both timers at the same time, but only if Spellstone is known
@@ -2579,7 +2578,7 @@ function Necrosis_UseItem(type, button)
 				end
 				if not SpellstoneInUse and StoneIDInSpellTable[3] ~= 0 then
 					SpellGroup, SpellTimer, TimerTable =
-						Necrosis_InsertTimerStone("Spellstone", nil, nil, SpellGroup, SpellTimer, TimerTable)
+						Necrosis_InsertStoneTimer("Spellstone", nil, nil, SpellGroup, SpellTimer, TimerTable)
 				end
 			end
 		-- or, if none are in the inventory, create the highest rank stone
@@ -2607,7 +2606,7 @@ function Necrosis_UseItem(type, button)
 				end
 				if not SpellstoneInUse then
 					SpellGroup, SpellTimer, TimerTable =
-						Necrosis_InsertTimerStone(type, nil, nil, SpellGroup, SpellTimer, TimerTable)
+						Necrosis_InsertStoneTimer(type, nil, nil, SpellGroup, SpellTimer, TimerTable)
 				end
 
 				local HealthstoneInUse = false
@@ -2616,7 +2615,7 @@ function Necrosis_UseItem(type, button)
 				end
 				if not HealthstoneInUse and StoneIDInSpellTable[2] ~= 0 then
 					SpellGroup, SpellTimer, TimerTable =
-						Necrosis_InsertTimerStone("Healthstone", nil, nil, SpellGroup, SpellTimer, TimerTable)
+						Necrosis_InsertStoneTimer("Healthstone", nil, nil, SpellGroup, SpellTimer, TimerTable)
 				end
 			end
 		else
@@ -2668,10 +2667,10 @@ function Necrosis_SwitchOffHand(type)
 			PickupInventoryItem(17)
 			if Necrosis_TimerExists(NECROSIS_COOLDOWN.Spellstone) then
 				SpellTimer, TimerTable =
-					Necrosis_RetraitTimerParNom(NECROSIS_COOLDOWN.Spellstone, SpellTimer, TimerTable)
+					Necrosis_RemoveTimerByName(NECROSIS_COOLDOWN.Spellstone, SpellTimer, TimerTable)
 			end
 			SpellGroup, SpellTimer, TimerTable =
-				Necrosis_InsertTimerStone(type, nil, nil, SpellGroup, SpellTimer, TimerTable)
+				Necrosis_InsertStoneTimer(type, nil, nil, SpellGroup, SpellTimer, TimerTable)
 			return
 		end
 	end
@@ -3958,7 +3957,7 @@ function NecrosisTimer(nom, duree)
 	end
 
 	SpellGroup, SpellTimer, TimerTable =
-		NecrosisTimerX(nom, duree, truc, Cible, Niveau, SpellGroup, SpellTimer, TimerTable)
+		Necrosis_InsertCustomTimer(nom, duree, truc, Cible, Niveau, SpellGroup, SpellTimer, TimerTable)
 end
 
 function NecrosisSpellCast(name)
