@@ -370,13 +370,14 @@ local AntiFearInUse = false;
 local ShadowTranceID = -1;
 
 -- Variables used to manage soul shards
--- (primarily counting)
-local Soulshards = 0;
-local SoulshardContainer = 4;
-local SoulshardSlot = {};
-local SoulshardSlotID = 1;
-local SoulshardMP = 0;
-local SoulshardTime = 0;
+local SoulshardState = {
+	count = 0,
+	container = 4,
+	slots = {},
+	nextSlotIndex = 1,
+	pendingMoves = 0,
+	nextTidyTime = 0,
+};
 
 -- Variables used to manage summoning components
 -- (primarily counting)
@@ -539,9 +540,9 @@ function Necrosis_OnUpdate()
 	
 	-- Soul shard handling: sort shards once per second
 	local curTime = GetTime();
-	if ((curTime-SoulshardTime) >= 1) then
-		SoulshardTime = curTime;
-		if (SoulshardMP > 0) then
+	if (curTime - SoulshardState.nextTidyTime) >= 1 then
+		SoulshardState.nextTidyTime = curTime;
+		if SoulshardState.pendingMoves > 0 then
 			Necrosis_SoulshardSwitch("MOVE");
 		end
 	end
@@ -1160,7 +1161,7 @@ function Necrosis_BuildTooltip(button, type, anchor)
 	GameTooltip:SetText(NecrosisTooltipData[type].Label);
 	-- ..... for the main button
 	if (type == "Main") then
-		GameTooltip:AddLine(NecrosisTooltipData.Main.Soulshard..Soulshards);
+		GameTooltip:AddLine(NecrosisTooltipData.Main.Soulshard..SoulshardState.count);
 		GameTooltip:AddLine(NecrosisTooltipData.Main.InfernalStone..InfernalStone);
 		GameTooltip:AddLine(NecrosisTooltipData.Main.DemoniacStone..DemoniacStone);
 		GameTooltip:AddLine(NecrosisTooltipData.Main.Soulstone..NecrosisTooltipData[type].Stone[StoneInventory.Soulstone.onHand]);
@@ -1275,8 +1276,8 @@ function Necrosis_BuildTooltip(button, type, anchor)
 	-- ..... for the other buffs and demons, the mana cost...
 	elseif (type == "Enslave") then
 		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[35].Mana.." Mana");
-		if Soulshards == 0 then
-			GameTooltip:AddLine("|c00FF4444"..NecrosisTooltipData.Main.Soulshard..Soulshards.."|r");
+		if SoulshardState.count == 0 then
+			GameTooltip:AddLine("|c00FF4444"..NecrosisTooltipData.Main.Soulshard..SoulshardState.count.."|r");
 		end
 	elseif (type == "Mount") then
 		if NECROSIS_SPELL_TABLE[2].ID then
@@ -1343,8 +1344,8 @@ function Necrosis_BuildTooltip(button, type, anchor)
 		end
 	elseif (type == "TP") then
 		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[37].Mana.." Mana");
-		if Soulshards == 0 then
-			GameTooltip:AddLine("|c00FF4444"..NecrosisTooltipData.Main.Soulshard..Soulshards.."|r");
+		if SoulshardState.count == 0 then
+			GameTooltip:AddLine("|c00FF4444"..NecrosisTooltipData.Main.Soulshard..SoulshardState.count.."|r");
 		end
 	elseif (type == "SoulLink") then
 		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[38].Mana.." Mana");
@@ -1382,22 +1383,22 @@ function Necrosis_BuildTooltip(button, type, anchor)
 			
 	elseif (type == "Void") then
 		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[4].Mana.." Mana");
-		if Soulshards == 0 then
-			GameTooltip:AddLine("|c00FF4444"..NecrosisTooltipData.Main.Soulshard..Soulshards.."|r");
+		if SoulshardState.count == 0 then
+			GameTooltip:AddLine("|c00FF4444"..NecrosisTooltipData.Main.Soulshard..SoulshardState.count.."|r");
 		elseif not (start > 0 and duration > 0) then
 			GameTooltip:AddLine(NecrosisTooltipData.DominationCooldown);
 		end
 	elseif (type == "Succubus") then
 		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[5].Mana.." Mana");
-		if Soulshards == 0 then
-			GameTooltip:AddLine("|c00FF4444"..NecrosisTooltipData.Main.Soulshard..Soulshards.."|r");
+		if SoulshardState.count == 0 then
+			GameTooltip:AddLine("|c00FF4444"..NecrosisTooltipData.Main.Soulshard..SoulshardState.count.."|r");
 		elseif not (start > 0 and duration > 0) then
 			GameTooltip:AddLine(NecrosisTooltipData.DominationCooldown);
 		end
 	elseif (type == "Fel") then
 		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[6].Mana.." Mana");
-		if Soulshards == 0 then
-			GameTooltip:AddLine("|c00FF4444"..NecrosisTooltipData.Main.Soulshard..Soulshards.."|r");
+		if SoulshardState.count == 0 then
+			GameTooltip:AddLine("|c00FF4444"..NecrosisTooltipData.Main.Soulshard..SoulshardState.count.."|r");
 		elseif not (start > 0 and duration > 0) then
 			GameTooltip:AddLine(NecrosisTooltipData.DominationCooldown);
 		end
@@ -1641,7 +1642,7 @@ function Necrosis_UpdateIcons()
 	end
 
 	-- Grey out the button when no stone is available for the summon
-	if Soulshards == 0 then
+	if SoulshardState.count == 0 then
 		for i = 2, 4, 1 do
 			ManaPet[i] = "3";
 		end
@@ -1727,7 +1728,7 @@ function Necrosis_UpdateIcons()
 			end
 		end
 		if NECROSIS_SPELL_TABLE[35].ID then
-			if NECROSIS_SPELL_TABLE[35].Mana > mana or Soulshards == 0 then
+			if NECROSIS_SPELL_TABLE[35].Mana > mana or SoulshardState.count == 0 then
 				Necrosis_SetButtonTexture(NecrosisPetMenu8, "Enslave", 3);
 			else
 				Necrosis_SetButtonTexture(NecrosisPetMenu8, "Enslave", 1);
@@ -1768,7 +1769,7 @@ function Necrosis_UpdateIcons()
 			end
 		end
 		if NECROSIS_SPELL_TABLE[37].ID then
-			if NECROSIS_SPELL_TABLE[37].Mana > mana or Soulshards == 0 then
+			if NECROSIS_SPELL_TABLE[37].Mana > mana or SoulshardState.count == 0 then
 				NecrosisBuffMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\TPButton-05");
 			else
 				NecrosisBuffMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\TPButton-01");
@@ -1888,20 +1889,22 @@ end
 
 -- T'AS QU'A SAVOIR OU T'AS MIS TES AFFAIRES !
 function Necrosis_SoulshardSetup()
-	SoulshardSlotID = 1;
-	for slot=1, table.getn(SoulshardSlot), 1 do
-		table.remove(SoulshardSlot, slot);
+	SoulshardState.nextSlotIndex = 1;
+	for key in pairs(SoulshardState.slots) do
+		SoulshardState.slots[key] = nil;
 	end
-	for slot=1, GetContainerNumSlots(NecrosisConfig.SoulshardContainer), 1 do
-		table.insert(SoulshardSlot, nil);
+	local slotCount = GetContainerNumSlots(NecrosisConfig.SoulshardContainer);
+	for slot = 1, slotCount, 1 do
+		SoulshardState.slots[slot] = nil;
 	end
 end
 
 
 -- Function that inventories demonology items: stones, shards, summoning reagents
+
 function Necrosis_BagExplore()
-	local soulshards = Soulshards;
-	Soulshards = 0;
+	local soulshards = SoulshardState.count;
+	SoulshardState.count = 0;
 	InfernalStone = 0;
 	DemoniacStone = 0;
 	StoneInventory.Soulstone.onHand = false;
@@ -1914,6 +1917,7 @@ function Necrosis_BagExplore()
 	StoneInventory.Hearthstone.onHand = false;
 	StoneInventory.Itemswitch.onHand = false;
 	-- Parcours des sacs
+	SoulshardState.container = NecrosisConfig.SoulshardContainer;
 	for container=0, 4, 1 do
 		-- Parcours des emplacements des sacs
 		for slot=1, GetContainerNumSlots(container), 1 do
@@ -1926,7 +1930,7 @@ function Necrosis_BagExplore()
 			-- set the bag slot table entry to nil (no shard present)
 			if (container == NecrosisConfig.SoulshardContainer) then
 				if itemName ~= NECROSIS_ITEM.Soulshard then
-					SoulshardSlot[slot] = nil;
+					SoulshardState.slots[slot] = nil;
 				end
 			end
 			-- When the slot is not empty
@@ -1934,7 +1938,7 @@ function Necrosis_BagExplore()
 				-- On prend le nombre d'item en stack sur le slot
 				local _, ItemCount = GetContainerItemInfo(container, slot);
 				-- If it's a shard or infernal stone, add its quantity to the stone count
-				if itemName == NECROSIS_ITEM.Soulshard then Soulshards = Soulshards + ItemCount; end
+				if itemName == NECROSIS_ITEM.Soulshard then SoulshardState.count = SoulshardState.count + ItemCount; end
 				if itemName == NECROSIS_ITEM.InfernalStone then InfernalStone = InfernalStone + ItemCount; end
 				if itemName == NECROSIS_ITEM.DemoniacStone then DemoniacStone = DemoniacStone + ItemCount; end
 				-- If it's a Soulstone, record its presence and location
@@ -1990,14 +1994,14 @@ function Necrosis_BagExplore()
 	
 	-- Affichage du bouton principal de Necrosis
 	if NecrosisConfig.Circle == 1 then
-		if (Soulshards <= 32) then
-			NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\"..NecrosisConfig.NecrosisColor.."\\Shard"..Soulshards);
+		if (SoulshardState.count <= 32) then
+			NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\"..NecrosisConfig.NecrosisColor.."\\Shard"..SoulshardState.count);
 		else
 			NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\"..NecrosisConfig.NecrosisColor.."\\Shard32");
 		end
 	elseif StoneInventory.Soulstone.mode ==1 or StoneInventory.Soulstone.mode == 2 then
-		if (Soulshards <= 32) then
-			NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Bleu\\Shard"..Soulshards);
+		if (SoulshardState.count <= 32) then
+			NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Bleu\\Shard"..SoulshardState.count);
 		else
 			NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Bleu\\Shard32");
 		end
@@ -2006,10 +2010,10 @@ function Necrosis_BagExplore()
 		if NecrosisConfig.CountType == 2 then
 			NecrosisShardCount:SetText(InfernalStone.." / "..DemoniacStone);
 		elseif NecrosisConfig.CountType == 1 then
-			if Soulshards < 10 then
-				NecrosisShardCount:SetText("0"..Soulshards);
+			if SoulshardState.count < 10 then
+				NecrosisShardCount:SetText("0"..SoulshardState.count);
 			else
-				NecrosisShardCount:SetText(Soulshards);
+				NecrosisShardCount:SetText(SoulshardState.count);
 			end
 		end
 	else
@@ -2019,7 +2023,7 @@ function Necrosis_BagExplore()
 	Necrosis_UpdateIcons();
 
 	-- If the shard bag is full, display a warning
-	if (Soulshards > soulshards and Soulshards == GetContainerNumSlots(NecrosisConfig.SoulshardContainer)) then
+	if (SoulshardState.count > soulshards and SoulshardState.count == GetContainerNumSlots(NecrosisConfig.SoulshardContainer)) then
 		if (SoulshardDestroy) then
 			Necrosis_Msg(NECROSIS_MESSAGE.Bag.FullPrefix..GetBagName(NecrosisConfig.SoulshardContainer)..NECROSIS_MESSAGE.Bag.FullDestroySuffix);
 		else
@@ -2031,7 +2035,7 @@ end
 -- Function that locates and tidies shards inside bags
 function Necrosis_SoulshardSwitch(type)
 	if (type == "CHECK") then
-		SoulshardMP = 0;
+		SoulshardState.pendingMoves = 0;
 		for container = 0, 4, 1 do
 			for i = 1, 3, 1 do
 				if GetBagName(container) == NECROSIS_ITEM.SoulPouch[i] then
@@ -2052,10 +2056,10 @@ function Necrosis_SoulshardSwitch(type)
 				local itemInfo = tostring(NecrosisTooltipTextLeft1:GetText());
 				if itemInfo == NECROSIS_ITEM.Soulshard then
 					if (type == "CHECK") then
-						SoulshardMP = SoulshardMP + 1;
+						SoulshardState.pendingMoves = SoulshardState.pendingMoves + 1;
 					elseif (type == "MOVE") then
 						Necrosis_FindSlot(container, slot);
-						SoulshardMP = SoulshardMP - 1;
+						SoulshardState.pendingMoves = SoulshardState.pendingMoves - 1;
 					end
 				end
 			end
@@ -2075,8 +2079,8 @@ function Necrosis_FindSlot(shardIndex, shardSlot)
 		if string.find(itemInfo, NECROSIS_ITEM.Soulshard) == nil then
 			PickupContainerItem(shardIndex, shardSlot);
 			PickupContainerItem(NecrosisConfig.SoulshardContainer, slot);
-			SoulshardSlot[SoulshardSlotID] = slot;
-			SoulshardSlotID = SoulshardSlotID + 1
+			SoulshardState.slots[SoulshardState.nextSlotIndex] = slot;
+			SoulshardState.nextSlotIndex = SoulshardState.nextSlotIndex + 1;
 			if (CursorHasItem()) then
 				if shardIndex == 0 then 
 					PutItemInBackpack();
@@ -3336,7 +3340,7 @@ function Necrosis_PetCast(type, click)
 	elseif type == 30 and DemoniacStone == 0 then
 		Necrosis_Msg(NECROSIS_MESSAGE.Error.DemoniacStoneNotPresent, "USER");
 		return;
-	elseif type ~= 15 and type ~= 3 and type ~= 8 and type ~= 30 and Soulshards == 0 then
+	elseif type ~= 15 and type ~= 3 and type ~= 8 and type ~= 30 and SoulshardState.count == 0 then
 		Necrosis_Msg(NECROSIS_MESSAGE.Error.SoulShardNotPresent, "USER");
 		return;
 	end
