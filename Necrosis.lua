@@ -825,7 +825,7 @@ function Necrosis_Debug(state)
 end
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS NECROSIS APPLIQUEES A L'ENTREE DANS LE JEU
+-- NECROSIS FUNCTIONS APPLIED WHEN ENTERING THE GAME
 ------------------------------------------------------------------------------------------------------
 
 -- Function executed during load
@@ -869,7 +869,7 @@ function Necrosis_LoadVariables()
 end
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS NECROSIS
+-- NECROSIS FUNCTIONS
 ------------------------------------------------------------------------------------------------------
 
 local textTimersDisplay = ""
@@ -1288,7 +1288,7 @@ function Necrosis_OnEvent(event)
 end
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS NECROSIS "ON EVENT"
+-- NECROSIS FUNCTIONS "ON EVENT"
 ------------------------------------------------------------------------------------------------------
 
 function Necrosis_ChangeDemon()
@@ -1622,7 +1622,7 @@ function Necrosis_SpellManagement()
 end
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS DE L'INTERFACE -- LIENS XML
+-- INTERFACE FUNCTIONS -- XML LINKS
 ------------------------------------------------------------------------------------------------------
 
 -- Right-clicking Necrosis toggles both configuration panels
@@ -2441,10 +2441,10 @@ function Necrosis_UpdateIcons()
 end
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS DES PIERRES ET DES FRAGMENTS
+-- STONE AND SHARD FUNCTIONS
 ------------------------------------------------------------------------------------------------------
 
--- T'AS QU'A SAVOIR OU T'AS MIS TES AFFAIRES !
+-- Remember where you stored your belongings!
 function Necrosis_SoulshardSetup()
 	SoulshardState.nextSlotIndex = 1
 	for key in pairs(SoulshardState.slots) do
@@ -2655,7 +2655,7 @@ function Necrosis_FindSlot(shardIndex, shardSlot)
 end
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS DES SORTS
+-- SPELL FUNCTIONS
 ------------------------------------------------------------------------------------------------------
 
 -- Show or hide spell buttons each time a new spell is learned
@@ -2913,7 +2913,7 @@ function Necrosis_CastShadowBolt()
 end
 
 ------------------------------------------------------------------------------------------------------
--- FONCTIONS DIVERSES
+-- MISCELLANEOUS FUNCTIONS
 ------------------------------------------------------------------------------------------------------
 
 -- Function that determines whether a unit is affected by an effect
@@ -3405,7 +3405,7 @@ function Necrosis_PetMenu(button)
 		Necrosis_PetCast(LastCast.Demon)
 		return
 	end
-	-- S'il n'existe aucun sort d'invocation on ne fait rien
+	-- If no summoning spell exists, do nothing
 	local petMenu = MenuState.Pet
 	if not petMenu.frames[1] then
 		return
