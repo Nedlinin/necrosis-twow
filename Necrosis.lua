@@ -644,6 +644,18 @@ function Necrosis_OnUpdate()
 		end
 	end
 
+	local stoneMenu = MenuState.Stone
+	if stoneMenu.fading then
+		if curTime >= stoneMenu.fadeAt and stoneMenu.alpha > 0 and not stoneMenu.sticky then
+			stoneMenu.fadeAt = curTime + 0.1
+			Necrosis_SetMenuAlpha("NecrosisStoneMenu", stoneMenu.alpha)
+			stoneMenu.alpha = stoneMenu.alpha - 0.1
+		end
+		if stoneMenu.alpha <= 0 then
+			Necrosis_StoneMenu()
+		end
+	end
+
 	-- Manage the Nightfall talent
 	if NecrosisConfig.ShadowTranceAlert then
 		local Actif = false
