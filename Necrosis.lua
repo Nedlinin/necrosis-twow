@@ -348,13 +348,12 @@ local MenuState = {
 	Stone = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
 }
 
--- Menus: Allows recasting the last menu spell with a middle click
-local LastDemon = 0
-local LastBuff = 0
-local LastCurse = 0
-local LastCurseClick = "LeftButton"
-local LastStone = 0
-local LastStoneClick = "LeftButton"
+local LastCast = {
+	Demon = 0,
+	Buff = 0,
+	Curse = { id = 0, click = "LeftButton" },
+	Stone = { id = 0, click = "LeftButton" },
+}
 
 -- Variables used to manage mounts
 local MountAvailable = false
@@ -1042,17 +1041,17 @@ function Necrosis_SpellManagement()
 				end
 			end
 		elseif StoneIDInSpellTable[5] ~= 0 and SpellCastName == NECROSIS_SPELL_TABLE[StoneIDInSpellTable[5]].Name then -- Create Felstone
-			LastStone = 1
-			LastStoneClick = "LeftButton"
+			LastCast.Stone.id = 1
+			LastCast.Stone.click = "LeftButton"
 		elseif StoneIDInSpellTable[6] ~= 0 and SpellCastName == NECROSIS_SPELL_TABLE[StoneIDInSpellTable[6]].Name then -- Create Wrathstone
-			LastStone = 2
-			LastStoneClick = "LeftButton"
+			LastCast.Stone.id = 2
+			LastCast.Stone.click = "LeftButton"
 		elseif StoneIDInSpellTable[7] ~= 0 and SpellCastName == NECROSIS_SPELL_TABLE[StoneIDInSpellTable[7]].Name then -- Create Voidstone
-			LastStone = 3
-			LastStoneClick = "LeftButton"
+			LastCast.Stone.id = 3
+			LastCast.Stone.click = "LeftButton"
 		elseif StoneIDInSpellTable[4] ~= 0 and SpellCastName == NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]].Name then -- Create Firestone
-			LastStone = 4
-			LastStoneClick = "LeftButton"
+			LastCast.Stone.id = 4
+			LastCast.Stone.click = "LeftButton"
 		-- For other spells, attempt to create a timer if applicable
 		else
 			for spell = 1, table.getn(NECROSIS_SPELL_TABLE), 1 do
@@ -1503,25 +1502,25 @@ function Necrosis_BuildTooltip(button, type, anchor)
 		else
 			GameTooltip:AddLine(NecrosisTooltipData.Main.DemoniacStone .. DemoniacStone)
 		end
-	elseif (type == "Buff") and LastBuff ~= 0 then
-		GameTooltip:AddLine(NecrosisTooltipData.LastSpell .. NECROSIS_SPELL_TABLE[LastBuff].Name)
-	elseif (type == "Curse") and LastCurse ~= 0 then
-		GameTooltip:AddLine(NecrosisTooltipData.LastSpell .. NECROSIS_SPELL_TABLE[LastCurse].Name)
-	elseif (type == "Pet") and LastDemon ~= 0 then
-		GameTooltip:AddLine(NecrosisTooltipData.LastSpell .. NECROSIS_PET_LOCAL_NAME[(LastDemon - 2)])
-	elseif (type == "Stone") and LastStone ~= 0 then
+	elseif (type == "Buff") and LastCast.Buff ~= 0 then
+		GameTooltip:AddLine(NecrosisTooltipData.LastSpell .. NECROSIS_SPELL_TABLE[LastCast.Buff].Name)
+	elseif (type == "Curse") and LastCast.Curse.id ~= 0 then
+		GameTooltip:AddLine(NecrosisTooltipData.LastSpell .. NECROSIS_SPELL_TABLE[LastCast.Curse.id].Name)
+	elseif (type == "Pet") and LastCast.Demon ~= 0 then
+		GameTooltip:AddLine(NecrosisTooltipData.LastSpell .. NECROSIS_PET_LOCAL_NAME[(LastCast.Demon - 2)])
+	elseif (type == "Stone") and LastCast.Stone.id ~= 0 then
 		local stoneName = ""
 		local stoneOnHand = false
-		if LastStone == 1 and StoneInventory.Felstone.onHand then
+		if LastCast.Stone.id == 1 and StoneInventory.Felstone.onHand then
 			stoneName = NECROSIS_ITEM.Felstone
 			stoneOnHand = true
-		elseif LastStone == 2 and StoneInventory.Wrathstone.onHand then
+		elseif LastCast.Stone.id == 2 and StoneInventory.Wrathstone.onHand then
 			stoneName = NECROSIS_ITEM.Wrathstone
 			stoneOnHand = true
-		elseif LastStone == 3 and StoneInventory.Voidstone.onHand then
+		elseif LastCast.Stone.id == 3 and StoneInventory.Voidstone.onHand then
 			stoneName = NECROSIS_ITEM.Voidstone
 			stoneOnHand = true
-		elseif LastStone == 4 and StoneInventory.Firestone.onHand then
+		elseif LastCast.Stone.id == 4 and StoneInventory.Firestone.onHand then
 			stoneName = NECROSIS_ITEM.Firestone
 			stoneOnHand = true
 		end
@@ -1537,25 +1536,25 @@ end
 function Necrosis_UpdateIcons()
 	local mana = UnitMana("player")
 
-	if LastStone == 0 then
+	if LastCast.Stone.id == 0 then
 		if StoneInventory.Felstone.onHand then
-			LastStone = 1
+			LastCast.Stone.id = 1
 		elseif StoneInventory.Wrathstone.onHand then
-			LastStone = 2
+			LastCast.Stone.id = 2
 		elseif StoneInventory.Voidstone.onHand then
-			LastStone = 3
+			LastCast.Stone.id = 3
 		elseif StoneInventory.Firestone.onHand then
-			LastStone = 4
+			LastCast.Stone.id = 4
 		end
 	end
 
-	if LastStone == 1 and StoneInventory.Felstone.onHand then
+	if LastCast.Stone.id == 1 and StoneInventory.Felstone.onHand then
 		Necrosis_SetButtonTexture(NecrosisStoneMenuButton, "Felstone", 2)
-	elseif LastStone == 2 and StoneInventory.Wrathstone.onHand then
+	elseif LastCast.Stone.id == 2 and StoneInventory.Wrathstone.onHand then
 		Necrosis_SetButtonTexture(NecrosisStoneMenuButton, "Wrathstone", 2)
-	elseif LastStone == 3 and StoneInventory.Voidstone.onHand then
+	elseif LastCast.Stone.id == 3 and StoneInventory.Voidstone.onHand then
 		Necrosis_SetButtonTexture(NecrosisStoneMenuButton, "Voidstone", 2)
-	elseif LastStone == 4 and StoneInventory.Firestone.onHand then
+	elseif LastCast.Stone.id == 4 and StoneInventory.Firestone.onHand then
 		Necrosis_SetButtonTexture(NecrosisStoneMenuButton, "FirestoneButton", 2)
 	else
 		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\StoneMenuButton-01")
@@ -2034,7 +2033,7 @@ function Necrosis_BagExplore()
 				end
 				for _, stoneKey in ipairs(STONE_ITEM_KEYS) do
 					local pattern = NECROSIS_ITEM[stoneKey]
-					if pattern and string.find(itemName, pattern, 1, true) then
+					if pattern and itemName == pattern then
 						Necrosis_RecordStoneInventory(stoneKey, container, slot)
 						break
 					end
@@ -2853,8 +2852,8 @@ end
 
 -- Opening the buff menu
 function Necrosis_BuffMenu(button)
-	if button == "MiddleButton" and LastBuff ~= 0 then
-		Necrosis_BuffCast(LastBuff)
+	if button == "MiddleButton" and LastCast.Buff ~= 0 then
+		Necrosis_BuffCast(LastCast.Buff)
 		return
 	end
 	local buffMenu = MenuState.Buff
@@ -2905,8 +2904,8 @@ end
 
 -- Opening the curse menu
 function Necrosis_CurseMenu(button)
-	if button == "MiddleButton" and LastCurse ~= 0 then
-		Necrosis_CurseCast(LastCurse, LastCurseClick)
+	if button == "MiddleButton" and LastCast.Curse.id ~= 0 then
+		Necrosis_CurseCast(LastCast.Curse.id, LastCast.Curse.click)
 		return
 	end
 	-- S'il n'existe aucune curse on ne fait rien
@@ -2957,8 +2956,8 @@ end
 
 -- Opening the demon menu
 function Necrosis_PetMenu(button)
-	if button == "MiddleButton" and LastDemon ~= 0 then
-		Necrosis_PetCast(LastDemon)
+	if button == "MiddleButton" and LastCast.Demon ~= 0 then
+		Necrosis_PetCast(LastCast.Demon)
 		return
 	end
 	-- S'il n'existe aucun sort d'invocation on ne fait rien
@@ -3007,8 +3006,8 @@ end
 
 -- Opening the stone menu
 function Necrosis_StoneMenu(button)
-	if button == "MiddleButton" and LastStone ~= 0 then
-		Necrosis_StoneCast(LastStone, LastStoneClick)
+	if button == "MiddleButton" and LastCast.Stone.id ~= 0 then
+		Necrosis_StoneCast(LastCast.Stone.id, LastCast.Stone.click)
 		return
 	end
 	-- S'il n'existe aucune stone on ne fait rien
@@ -3577,7 +3576,7 @@ function Necrosis_BuffCast(type)
 			CastSpell(NECROSIS_SPELL_TABLE[type].ID, "spell")
 		end
 	end
-	LastBuff = type
+	LastCast.Buff = type
 	if TargetEnemy then
 		TargetLastTarget()
 	end
@@ -3601,8 +3600,8 @@ function Necrosis_CurseCast(type, click)
 			end
 		end
 		CastSpell(NECROSIS_SPELL_TABLE[type].ID, "spell")
-		LastCurse = type
-		LastCurseClick = click
+		LastCast.Curse.id = type
+		LastCast.Curse.click = click
 		if (click == "MiddleButton") and (UnitExists("Pet")) then
 			PetAttack()
 		end
@@ -3626,8 +3625,8 @@ function Necrosis_StoneCast(type, click)
 					return
 				end
 				CastSpell(NECROSIS_SPELL_TABLE[spellID].ID, "spell")
-				LastStone = type
-				LastStoneClick = click
+				LastCast.Stone.id = type
+				LastCast.Stone.click = click
 			end
 		end
 	elseif type == 2 then -- Wrathstone
@@ -3643,8 +3642,8 @@ function Necrosis_StoneCast(type, click)
 					return
 				end
 				CastSpell(NECROSIS_SPELL_TABLE[spellID].ID, "spell")
-				LastStone = type
-				LastStoneClick = click
+				LastCast.Stone.id = type
+				LastCast.Stone.click = click
 			end
 		end
 	elseif type == 3 then -- Voidstone
@@ -3660,8 +3659,8 @@ function Necrosis_StoneCast(type, click)
 					return
 				end
 				CastSpell(NECROSIS_SPELL_TABLE[spellID].ID, "spell")
-				LastStone = type
-				LastStoneClick = click
+				LastCast.Stone.id = type
+				LastCast.Stone.click = click
 			end
 		end
 	elseif type == 4 then -- Firestone
@@ -3672,8 +3671,8 @@ function Necrosis_StoneCast(type, click)
 		else
 			if StoneIDInSpellTable[4] ~= 0 then
 				CastSpell(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]].ID, "spell")
-				LastStone = type
-				LastStoneClick = click
+				LastCast.Stone.id = type
+				LastCast.Stone.click = click
 			else
 				Necrosis_Msg(NECROSIS_MESSAGE.Error.NoFireStoneSpell, "USER")
 			end
@@ -3696,7 +3695,7 @@ function Necrosis_PetCast(type, click)
 		return
 	end
 	if type == 3 or type == 4 or type == 5 or type == 6 then
-		LastDemon = type
+		LastCast.Demon = type
 		if (click == "RightButton") and (NECROSIS_SPELL_TABLE[15].ID ~= nil) then
 			local start, duration = GetSpellCooldown(NECROSIS_SPELL_TABLE[15].ID, "spell")
 			if not (start > 0 and duration > 0) then
