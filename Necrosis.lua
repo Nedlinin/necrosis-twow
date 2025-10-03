@@ -53,7 +53,7 @@ Default_NecrosisConfig = {
 	},
 	DominationUp = false,
 	AmplifyUp = false,
-	SM = false,
+	SM = false, -- short messages
 	SteedSummon = false,
 	DemonSummon = true,
 	RitualMessage = true,
@@ -104,12 +104,12 @@ end
 local TextTimerSegments = {}
 local GraphicalTimer = {
 	activeCount = 0,
-	texte = {},
-	TimeMax = {},
-	Time = {},
-	titre = {},
-	temps = {},
-	Gtimer = {},
+	names = {},
+	expiryTimes = {},
+	initialDurations = {},
+	isTitle = {},
+	displayLines = {},
+	slotIds = {},
 }
 
 local TimerTable = {}
@@ -267,8 +267,6 @@ local function Necrosis_OnSpellcastStart(spellName)
 				Necrosis_DebugPrint("Buff timer", data.Name, "no existing entry; inserting")
 			end
 			SpellTimer, TimerTable = Necrosis_RemoveTimerByName(data.Name, SpellTimer, TimerTable)
-			SpellGroup, SpellTimer, TimerTable =
-				Necrosis_InsertTimerEntry(spellIndex, playerName, playerLevel, SpellGroup, SpellTimer, TimerTable)
 		end
 		LastRefreshedBuffName = data.Name
 		LastRefreshedBuffTime = GetTime()
@@ -1212,12 +1210,12 @@ function Necrosis_OnUpdate()
 			-- Clear leftover graphical timer slots when the active count shrinks
 			if previousActive > graphCount then
 				for slotIndex = graphCount + 1, previousActive, 1 do
-					GraphicalTimer.texte[slotIndex] = nil
-					GraphicalTimer.TimeMax[slotIndex] = nil
-					GraphicalTimer.Time[slotIndex] = nil
-					GraphicalTimer.titre[slotIndex] = nil
-					GraphicalTimer.temps[slotIndex] = nil
-					GraphicalTimer.Gtimer[slotIndex] = nil
+					GraphicalTimer.names[slotIndex] = nil
+					GraphicalTimer.expiryTimes[slotIndex] = nil
+					GraphicalTimer.initialDurations[slotIndex] = nil
+					GraphicalTimer.isTitle[slotIndex] = nil
+					GraphicalTimer.displayLines[slotIndex] = nil
+					GraphicalTimer.slotIds[slotIndex] = nil
 				end
 			end
 			GraphicalTimer.activeCount = graphCount
@@ -3928,20 +3926,28 @@ function Necrosis_CastSpellByName(Spell)
 	end
 end
 
-function NecrosisTimer(nom, duree)
-	local Cible = UnitName("target")
-	local Niveau = UnitLevel("target")
-	local truc = 6
-	if not Cible then
-		Cible = ""
-		truc = 2
+function NecrosisTimer(timerName, durationSeconds)
+	local targetName = UnitName("target")
+	local targetLevel = UnitLevel("target")
+	local timerType = 6
+	if not targetName then
+		targetName = ""
+		timerType = 2
 	end
-	if not Niveau then
-		Niveau = ""
+	if not targetLevel then
+		targetLevel = ""
 	end
 
-	SpellGroup, SpellTimer, TimerTable =
-		Necrosis_InsertCustomTimer(nom, duree, truc, Cible, Niveau, SpellGroup, SpellTimer, TimerTable)
+	SpellGroup, SpellTimer, TimerTable = Necrosis_InsertCustomTimer(
+		timerName,
+		durationSeconds,
+		timerType,
+		targetName,
+		targetLevel,
+		SpellGroup,
+		SpellTimer,
+		TimerTable
+	)
 end
 
 function NecrosisSpellCast(name)

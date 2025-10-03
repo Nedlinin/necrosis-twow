@@ -487,12 +487,12 @@ function Necrosis_DisplayTimer(
 			.. header
 			.. "\n-------------------------------<close>\n"
 		graphCount = graphCount + 1
-		GraphicalTimer.texte[graphCount] = header
-		GraphicalTimer.TimeMax[graphCount] = 0
-		GraphicalTimer.Time[graphCount] = 0
-		GraphicalTimer.titre[graphCount] = true
-		GraphicalTimer.temps[graphCount] = ""
-		GraphicalTimer.Gtimer[graphCount] = 0
+		GraphicalTimer.names[graphCount] = header
+		GraphicalTimer.expiryTimes[graphCount] = 0
+		GraphicalTimer.initialDurations[graphCount] = 0
+		GraphicalTimer.isTitle[graphCount] = true
+		GraphicalTimer.displayLines[graphCount] = ""
+		GraphicalTimer.slotIds[graphCount] = 0
 		SpellGroup.Visible[groupIndex] = true
 	end
 
@@ -566,12 +566,12 @@ function Necrosis_DisplayTimer(
 	end
 
 	graphCount = graphCount + 1
-	GraphicalTimer.texte[graphCount] = timer.Name
-	GraphicalTimer.TimeMax[graphCount] = timer.TimeMax
-	GraphicalTimer.Time[graphCount] = timer.Time
-	GraphicalTimer.titre[graphCount] = false
-	GraphicalTimer.temps[graphCount] = timerLabel
-	GraphicalTimer.Gtimer[graphCount] = timer.Gtimer
+	GraphicalTimer.names[graphCount] = timer.Name
+	GraphicalTimer.expiryTimes[graphCount] = timer.TimeMax
+	GraphicalTimer.initialDurations[graphCount] = timer.Time
+	GraphicalTimer.isTitle[graphCount] = false
+	GraphicalTimer.displayLines[graphCount] = timerLabel
+	GraphicalTimer.slotIds[graphCount] = timer.Gtimer
 
 	if NecrosisConfig.CountType == 3 then
 		if timer.Name == NECROSIS_SPELL_TABLE[11].Name then

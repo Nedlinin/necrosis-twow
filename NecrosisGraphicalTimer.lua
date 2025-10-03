@@ -14,12 +14,12 @@
 -- Timer display function
 -- Table layout:
 -- table {
--- texte = "Mob or spell name",
--- TimeMax = "Total duration of the spell",
--- Time = "Remaining time for the spell",
--- titre = "true if it is a title, false otherwise",
--- temps = "numeric timer",
--- Gtimer = "Index of the associated timer (between 1 and 65)"
+-- names = "Mob or spell name",
+-- expiryTimes = "Total duration of the spell",
+-- initialDurations = "Remaining time for the spell",
+-- isTitle = "true if it is a title, false otherwise",
+-- displayLines = "numeric timer text",
+-- slotIds = "Index of the associated timer (between 1 and 65)"
 -- }
 function Necrosis_DisplayTimerFrames(timerData, pointer)
 	-- Define the position where the first frame appears
@@ -37,9 +37,9 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 			PositionTitre = { -13, -11 }
 		end
 
-		for index = 1, table.getn(timerData.texte), 1 do
+		for index = 1, table.getn(timerData.names), 1 do
 			-- If the entry is a mob title
-			if timerData.titre[index] then
+			if timerData.isTitle[index] then
 				-- Switch to the next mob group
 				TimerTarget = TimerTarget + 1
 				if TimerTarget ~= 1 then
@@ -62,7 +62,7 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 				)
 				yPosition = yPosition - PositionTitre[2]
 				-- Name the frame and display it! :)
-				frameItem:SetText(timerData.texte[index])
+				frameItem:SetText(timerData.names[index])
 				if not frameItem:IsShown() then
 					frameItem:Show()
 				end
@@ -73,16 +73,18 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 					JustifInverse = "RIGHT"
 				end
 
-				if(timerData.Gtimer[index] == nil) then return end
-				local frameName1 = "NecrosisTimer" .. timerData.Gtimer[index] .. "Text"
+				if timerData.slotIds[index] == nil then
+					return
+				end
+				local frameName1 = "NecrosisTimer" .. timerData.slotIds[index] .. "Text"
 				local frameItem1 = getglobal(frameName1)
-				local frameName2 = "NecrosisTimer" .. timerData.Gtimer[index] .. "Bar"
+				local frameName2 = "NecrosisTimer" .. timerData.slotIds[index] .. "Bar"
 				local frameItem2 = getglobal(frameName2)
-				local frameName3 = "NecrosisTimer" .. timerData.Gtimer[index] .. "Texture"
+				local frameName3 = "NecrosisTimer" .. timerData.slotIds[index] .. "Texture"
 				local frameItem3 = getglobal(frameName3)
-				local frameName4 = "NecrosisTimer" .. timerData.Gtimer[index] .. "Spark"
+				local frameName4 = "NecrosisTimer" .. timerData.slotIds[index] .. "Spark"
 				local frameItem4 = getglobal(frameName4)
-				local frameName5 = "NecrosisTimer" .. timerData.Gtimer[index] .. "OutText"
+				local frameName5 = "NecrosisTimer" .. timerData.slotIds[index] .. "OutText"
 				local frameItem5 = getglobal(frameName5)
 
 				frameItem1:ClearAllPoints()
@@ -99,7 +101,7 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 					frameItem1:SetTextColor(1, 1, 1)
 				end
 				frameItem1:SetJustifyH("LEFT")
-				frameItem1:SetText(timerData.texte[index])
+				frameItem1:SetText(timerData.names[index])
 				frameItem2:ClearAllPoints()
 				frameItem2:SetPoint(
 					NecrosisConfig.SpellTimerJust,
@@ -108,11 +110,17 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 					NecrosisConfig.SpellTimerPos * 23,
 					yPosition
 				)
-				frameItem2:SetMinMaxValues(timerData.TimeMax[index] - timerData.Time[index], timerData.TimeMax[index])
-				frameItem2:SetValue(2 * timerData.TimeMax[index] - (timerData.Time[index] + floor(GetTime())))
+				frameItem2:SetMinMaxValues(
+					timerData.expiryTimes[index] - timerData.initialDurations[index],
+					timerData.expiryTimes[index]
+				)
+				frameItem2:SetValue(
+					2 * timerData.expiryTimes[index] - (timerData.initialDurations[index] + floor(GetTime()))
+				)
 				local r, g
 				local b = 37 / 255
-				local PercentColor = (timerData.TimeMax[index] - floor(GetTime())) / timerData.Time[index]
+				local PercentColor = (timerData.expiryTimes[index] - floor(GetTime()))
+					/ timerData.initialDurations[index]
 				if PercentColor > 0.5 then
 					r = (49 / 255) + (((1 - PercentColor) * 2) * (1 - (49 / 255)))
 					g = 207 / 255
@@ -139,12 +147,12 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 					NecrosisConfig.SpellTimerPos * 5,
 					1
 				)
-				frameItem5:SetText(timerData.temps[index])
+				frameItem5:SetText(timerData.displayLines[index])
 
 				local sparkPosition = 150
 					- (
-							(floor(GetTime()) - (timerData.TimeMax[index] - timerData.Time[index]))
-							/ timerData.Time[index]
+							(floor(GetTime()) - (timerData.expiryTimes[index] - timerData.initialDurations[index]))
+							/ timerData.initialDurations[index]
 						)
 						* 150
 				if sparkPosition < 1 then
