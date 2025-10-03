@@ -408,6 +408,26 @@ local StoneInventory = {
 	Itemswitch = { onHand = false, location = { nil, nil } },
 }
 
+local STONE_ITEM_KEYS = {
+	"Soulstone",
+	"Healthstone",
+	"Spellstone",
+	"Firestone",
+	"Felstone",
+	"Wrathstone",
+	"Voidstone",
+	"Hearthstone",
+}
+
+local function Necrosis_RecordStoneInventory(stoneKey, container, slot)
+	local data = StoneInventory[stoneKey]
+	if not data then
+		return
+	end
+	data.onHand = true
+	data.location = { container, slot }
+end
+
 -- Variables controlling whether a resurrection timer can be used
 local SoulstoneWaiting = false
 local SoulstoneCooldown = false
@@ -2012,52 +2032,18 @@ function Necrosis_BagExplore()
 				if itemName == NECROSIS_ITEM.DemoniacStone then
 					DemoniacStone = DemoniacStone + ItemCount
 				end
-				-- If it's a Soulstone, record its presence and location
-				if string.find(itemName, NECROSIS_ITEM.Soulstone) then
-					StoneInventory.Soulstone.onHand = true
-					StoneInventory.Soulstone.location = { container, slot }
-				end
-				-- Do the same for a healthstone
-				if string.find(itemName, NECROSIS_ITEM.Healthstone) then
-					StoneInventory.Healthstone.onHand = true
-					StoneInventory.Healthstone.location = { container, slot }
-				end
-				-- And again for the spellstone
-				if string.find(itemName, NECROSIS_ITEM.Spellstone) then
-					StoneInventory.Spellstone.onHand = true
-					StoneInventory.Spellstone.location = { container, slot }
-				end
-				-- Now handle the firestone
-				if string.find(itemName, NECROSIS_ITEM.Firestone) then
-					StoneInventory.Firestone.onHand = true
-					StoneInventory.Firestone.location = { container, slot }
-				end
-				-- Felstone
-				if string.find(itemName, NECROSIS_ITEM.Felstone) then
-					StoneInventory.Felstone.onHand = true
-					StoneInventory.Felstone.location = { container, slot }
-				end
-				-- Wrathstone
-				if string.find(itemName, NECROSIS_ITEM.Wrathstone) then
-					StoneInventory.Wrathstone.onHand = true
-					StoneInventory.Wrathstone.location = { container, slot }
-				end
-				-- Voidstone
-				if string.find(itemName, NECROSIS_ITEM.Voidstone) then
-					StoneInventory.Voidstone.onHand = true
-					StoneInventory.Voidstone.location = { container, slot }
-				end
-				-- and finally the hearthstone
-				if string.find(itemName, NECROSIS_ITEM.Hearthstone) then
-					StoneInventory.Hearthstone.onHand = true
-					StoneInventory.Hearthstone.location = { container, slot }
+				for _, stoneKey in ipairs(STONE_ITEM_KEYS) do
+					local pattern = NECROSIS_ITEM[stoneKey]
+					if pattern and string.find(itemName, pattern, 1, true) then
+						Necrosis_RecordStoneInventory(stoneKey, container, slot)
+						break
+					end
 				end
 
 				-- Also track whether off-hand items are present
 				-- Later this will be used to automatically replace a missing stone
 				if itemSwitch == NECROSIS_ITEM.Offhand or itemSwitch2 == NECROSIS_ITEM.Offhand then
-					StoneInventory.Itemswitch.onHand = true
-					StoneInventory.Itemswitch.location = { container, slot }
+					Necrosis_RecordStoneInventory("Itemswitch", container, slot)
 				end
 			end
 		end
