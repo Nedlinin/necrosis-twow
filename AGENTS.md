@@ -4,11 +4,12 @@ Core addon behavior resides in `Necrosis.lua`, `NecrosisInitialize.lua`, and sup
 
 ## Build, Test, and Development Commands
 No build step is required; the addon loads directly from the repository folder. 
-It is worth testing lua changes with luac (preferably 5.1) when finalizing everything.
+It is worth testing lua changes with luac (use Lua 5.0 to match the WoW 1.12 client) when finalizing everything.
 
 ## Coding Style & Naming Conventions
-Follow `.editorconfig`: tabs for indentation (width 4), CRLF line endings, UTF-8 encoding to preserve accented credits. Table keys and globals use UpperCamelCase (`NecrosisButton`, `StoneMenuPos`), while event handlers keep the legacy `Necrosis_OnEvent` form. Favor double quotes for strings to match existing files, and extend configuration tables rather than introducing globals.
+UTF-8 encoding to preserve accented characters. Table keys and globals use UpperCamelCase (`NecrosisButton`, `StoneMenuPos`), while event handlers keep the legacy `Necrosis_OnEvent` form. Favor double quotes for strings to match existing files, and extend configuration tables rather than introducing globals.
 The code should follow WoW API for client version 1.12.  This is running on the Turtle Private Server.
+Use stylua to format all .lua files.  The configuration for stylua is in the root of the repository in a file named stylua.toml.
 
 ## Testing Guidelines
 Manual verification is expected. After copying the addon into TurtleWoW, test core flows: shard count updates, stone creation/use cooldowns, graphical timers, and localized dialogs. Capture screenshots when UI changes touch `Necrosis.xml` or `UI/` assets. If you introduce saved variables, confirm they persist by relogging. Keep combat log open to spot Lua errors; `/console scriptErrors 1` helps surface them.

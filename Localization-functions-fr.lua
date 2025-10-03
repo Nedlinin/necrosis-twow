@@ -1,221 +1,155 @@
 ------------------------------------------------------------------------------------------------------
 -- Necrosis LdC
 --
--- Créateur initial (US) : Infernal (http://www.revolvus.com/games/interface/necrosis/)
--- Implémentation de base (FR) : Tilienna Thorondor
--- Reprise du projet : Lomig & Nyx des Larmes de Cenarius, Kael'Thas
--- 
--- Skins et voix Françaises : Eliah, Ner'zhul
--- Version Allemande par Arne Meier et Halisstra, Lothar
--- Remerciements spéciaux pour Sadyre (JoL)
+-- Original creator (US): Infernal (http://www.revolvus.com/games/interface/necrosis/)
+-- Base implementation (FR): Tilienna Thorondor
+-- Project continuation: Lomig & Nyx of Larmes de Cenarius, Kael'Thas
+--
+-- French skins and voices: Eliah, Ner'zhul
+-- German version: Arne Meier and Halisstra, Lothar
+-- Special thanks to Sadyre (JoL)
 -- Version 05.09.2006-1
 ------------------------------------------------------------------------------------------------------
 
-
-
 ------------------------------------------------
--- VERSION FRANCAISE DES FONCTIONS --
+-- FRENCH VERSION FUNCTIONS --
 ------------------------------------------------
 
-if ( GetLocale() == "frFR" ) then
+if GetLocale() == "frFR" then
+	NECROSIS_UNIT_WARLOCK = "D\195\169moniste"
 
-NECROSIS_UNIT_WARLOCK = "D\195\169moniste";
+	NECROSIS_ANTI_FEAR_SPELL = {
+		-- Buffs giving temporary immunity to fear effects
+		["Buff"] = {
+			"Gardien de peur", -- Dwarf priest racial trait
+			"Volont\195\169 des r\195\169prouv\195\169", -- Forsaken racial trait
+			"Sans peur", -- Trinket
+			"Furie Berzerker", -- Warrior Fury talent
+			"T\195\169m\195\169rit\195\169", -- Warrior Fury talent
+			"Souhait mortel", -- Warrior Fury talent
+			"Courroux bestial", -- Hunter Beast Mastery talent (pet only)
+			"Carapace de glace", -- Mage Ice talent
+			"Protection divine", -- Paladin Holy buff
+			"Bouclier divin", -- Paladin Holy buff
+			"Totem de s\195\169isme", -- Shaman totem
+			"Abolir la magie", -- Majordomo (NPC) spell
+			--  "Grounding Totem" is not considerated, as it can remove other spell than fear, and only one each 10 sec.
+		},
 
-NECROSIS_ANTI_FEAR_SPELL = {
-	-- Buffs giving temporary immunity to fear effects
-	["Buff"] = {
-		"Gardien de peur",				-- Dwarf priest racial trait
-		"Volont\195\169 des r\195\169prouv\195\169",	-- Forsaken racial trait
-		"Sans peur",					-- Trinket
-		"Furie Berzerker",				-- Warrior Fury talent
-		"T\195\169m\195\169rit\195\169",		-- Warrior Fury talent
-		"Souhait mortel",				-- Warrior Fury talent
-		"Courroux bestial",				-- Hunter Beast Mastery talent (pet only)
-		"Carapace de glace",				-- Mage Ice talent
-		"Protection divine",				-- Paladin Holy buff
-		"Bouclier divin",				-- Paladin Holy buff
-		"Totem de s\195\169isme",			-- Shaman totem
-		"Abolir la magie"				-- Majordomo (NPC) spell
-		--  "Grounding Totem" is not considerated, as it can remove other spell than fear, and only one each 10 sec.		
-	},
-
-	-- Debuffs and curses giving temporary immunity to fear effects
-	["Debuff"] = {
-		"Mal\195\169diction de t\195\169m\195\169rit\195\169"		-- Warlock curse
+		-- Debuffs and curses giving temporary immunity to fear effects
+		["Debuff"] = {
+			"Mal\195\169diction de t\195\169m\195\169rit\195\169", -- Warlock curse
+		},
 	}
-};
 
--- Creature type absolutly immune to fear effects
-NECROSIS_ANTI_FEAR_UNIT = {
-	"Mort-vivant"
-};
+	-- Creature type absolutly immune to fear effects
+	NECROSIS_ANTI_FEAR_UNIT = {
+		"Mort-vivant",
+	}
 
--- Word to search for spell immunity. First (.+) replace the spell's name, 2nd (.+) replace the creature's name
-NECROSIS_ANTI_FEAR_SRCH = "Votre (.+) rate. (.+) y est insensible."
+	-- Word to search for spell immunity. First (.+) replace the spell's name, 2nd (.+) replace the creature's name
+	NECROSIS_ANTI_FEAR_SRCH = "Votre (.+) rate. (.+) y est insensible."
 
-NECROSIS_SPELL_TABLE = {
-	[1] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Invocation d'un palefroi corrompu",			Length = 0,	Type = 0},
-	[2] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil, 
-		Name = "Invocation d'un destrier de l'effroi",			Length = 0,	Type = 0},
-	[3] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Invocation d'un diablotin",				Length = 0,	Type = 0},
-	[4] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Invocation d'un marcheur du Vide",			Length = 0,	Type = 0},
-	[5] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Invocation d'une succube",				Length = 0,	Type = 0},
-	[6] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Invocation d'un chasseur corrompu",			Length = 0,	Type = 0},
-	[7] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Trait de l'ombre",					Length = 0,	Type = 0},
-	[8] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Inferno",						Length = 3600,	Type = 3},
-	[9] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Bannir",						Length = 30,	Type = 2},
-	[10] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Asservir d\195\169mon",					Length = 30000,	Type = 2},
-	[11] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "R\195\169surrection de Pierre d'\195\162me",		Length = 1800,	Type = 1},
-	[12] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Immolation",						Length = 15,	Type = 5},
-	[13] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Peur",							Length = 15,	Type = 5},
-	[14] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Corruption",						Length = 17,	Type = 5},
-	[15] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Domination corrompue",					Length = 300,	Type = 3},
-	[16] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Mal\195\169diction funeste",				Length = 60,	Type = 3},
-	[17] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Sacrifice",						Length = 30,	Type = 3},
-	[18] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Feu de l'\195\162me",					Length = 60,	Type = 3},
-	[19] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Voile mortel",						Length = 120,	Type = 3},
-	[20] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Br\195\187lure de l'ombre",				Length = 15,	Type = 3},
-	[21] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Conflagration",						Length = 10,	Type = 3},
-	[22] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Mal\195\169diction d'agonie",				Length = 24,	Type = 4},
-	[23] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Mal\195\169diction de faiblesse",			Length = 120,	Type = 4},
-	[24] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Mal\195\169diction de t\195\169m\195\169rit\195\169",	Length = 120,	Type = 4},
-	[25] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Mal\195\169diction des langages",			Length = 30,	Type = 4},
-	[26] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Mal\195\169diction des \195\169l\195\169ments",		Length = 300,	Type = 4},
-	[27] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Mal\195\169diction de l'ombre",				Length = 300,	Type = 4},
-	[28] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Siphon de vie",						Length = 30,	Type = 5},
-	[29] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Hurlement de terreur",					Length = 40,	Type = 3},
-	[30] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Rituel de mal\195\169diction",				Length = 3600,	Type = 0},
-	[31] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Armure d\195\169moniaque",				Length = 0,	Type = 0},
-	[32] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Respiration interminable",				Length = 0,	Type = 0},
-	[33] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Invisibilit\195\169",					Length = 0,	Type = 0},
-	[34] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Oeil de Kilrogg",					Length = 0,	Type = 0},
-	[35] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Asservir d\195\169mon",					Length = 0,	Type = 0},
-	[36] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Peau de d\195\169mon",					Length = 0,	Type = 0},
-	[37] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Rituel d'invocation",					Length = 0,	Type = 0},
-	[38] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Lien spirituel",					Length = 0,	Type = 0},
-	[39] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "D\195\169tection des d\195\169mons",			Length = 0,	Type = 0},
-	[40] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Mal\195\169diction de fatigue",				Length = 12,	Type = 4},
-	[41] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Connexion",						Length = 0,	Type = 0},
-	[42] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Mal\195\169diction amplifi\195\169e",			Length = 180,	Type = 3},
-	[43] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Gardien de l'ombre",					Length = 30,	Type = 3},
-	[44] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Sacrifice d\195\169moniaque",				Length = 0,	Type = 0},
-	[45] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Création de Pierre gangrenée",		Length = 0,	Type = 0},
-	[46] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Création de Pierre de colère",		Length = 0,	Type = 0},
-	[47] = {ID = nil, Rank = nil, CastTime = nil, Mana = nil,
-		Name = "Création de Pierre du Vide",		Length = 0,	Type = 0},
-};
--- Type 0 = Pas de Timer
--- Type 1 = Timer permanent principal
--- Type 2 = Timer permanent
--- Type 3 = Timer de cooldown
--- Type 4 = Timer de malédiction
--- Type 5 = Timer de combat
+	local localizedSpellOverrides = {
+		[1] = "Invocation d'un palefroi corrompu",
+		[2] = "Invocation d'un destrier de l'effroi",
+		[3] = "Invocation d'un diablotin",
+		[4] = "Invocation d'un marcheur du Vide",
+		[5] = "Invocation d'une succube",
+		[6] = "Invocation d'un chasseur corrompu",
+		[7] = "Trait de l'ombre",
+		[8] = "Inferno",
+		[9] = "Bannir",
+		[10] = "Asservir d\195\169mon",
+		[11] = "R\195\169surrection de Pierre d'\195\162me",
+		[12] = "Immolation",
+		[13] = "Peur",
+		[14] = "Corruption",
+		[15] = "Domination corrompue",
+		[16] = "Mal\195\169diction funeste",
+		[17] = "Sacrifice",
+		[18] = "Feu de l'\195\162me",
+		[19] = "Voile mortel",
+		[20] = "Br\195\187lure de l'ombre",
+		[21] = "Conflagration",
+		[22] = "Mal\195\169diction d'agonie",
+		[23] = "Mal\195\169diction de faiblesse",
+		[24] = "Mal\195\169diction de t\195\169m\195\169rit\195\169",
+		[25] = "Mal\195\169diction des langages",
+		[26] = "Mal\195\169diction des \195\169l\195\169ments",
+		[27] = "Mal\195\169diction de l'ombre",
+		[28] = "Siphon de vie",
+		[29] = "Hurlement de terreur",
+		[30] = "Rituel de mal\195\169diction",
+		[31] = "Armure d\195\169moniaque",
+		[32] = "Respiration interminable",
+		[33] = "Invisibilit\195\169",
+		[34] = "Oeil de Kilrogg",
+		[35] = "Asservir d\195\169mon",
+		[36] = "Peau de d\195\169mon",
+		[37] = "Rituel d'invocation",
+		[38] = "Lien spirituel",
+		[39] = "D\195\169tection des d\195\169mons",
+		[40] = "Mal\195\169diction de fatigue",
+		[41] = "Connexion",
+		[42] = "Mal\195\169diction amplifi\195\169e",
+		[43] = "Gardien de l'ombre",
+		[44] = "Sacrifice d\195\169moniaque",
+		[45] = "Création de Pierre gangrenée",
+		[46] = "Création de Pierre de colère",
+		[47] = "Création de Pierre du Vide",
+	}
 
-NECROSIS_ITEM = {
-	["Soulshard"] = "Fragment d'\195\162me",
-	["Soulstone"] = "Pierre d'\195\162me",
-	["Healthstone"] = "Pierre de soins",
-	["Spellstone"] = "Pierre de sort",
-	["Firestone"] = "Pierre de feu",
-	["Felstone"] = "Pierre gangrenée",
-	["Wrathstone"] = "Pierre de colère",
-	["Voidstone"] = "Pierre du Vide",
-	["Offhand"] = "Tenu en main gauche",
-	["Twohand"] = "Deux mains",
-	["InfernalStone"] = "Pierre infernale",
-	["DemoniacStone"] = "Figurine d\195\169moniaque",
-	["Hearthstone"] = "Pierre de foyer",
-	["SoulPouch"] = {"Bourse d'\195\162me", "Sac en gangr\195\169toffe", "Sac en gangr\195\169toffe du Magma"}
-};
+	NECROSIS_SPELL_TABLE = Necrosis_BuildSpellTable(localizedSpellOverrides)
 
+	-- NECROSIS_TIMER_TYPE.NONE = No timer
+	-- NECROSIS_TIMER_TYPE.PRIMARY = Primary persistent timer
+	-- NECROSIS_TIMER_TYPE.SELF_BUFF = Persistent timer
+	-- NECROSIS_TIMER_TYPE.COOLDOWN = Cooldown timer
+	-- NECROSIS_TIMER_TYPE.CURSE = Curse timer
+	-- NECROSIS_TIMER_TYPE.COMBAT = Combat timer
 
-NECROSIS_STONE_RANK = {
-	[1] = " (mineure)",			-- Rank Minor
-	[2] = " (inf\195\169rieure)",		-- Rank Lesser
-	[3] = "",				-- Rank Intermediate, no name
-	[4] = " (sup\195\169rieure)",		-- Rank Greater
-	[5] = " (majeure)"			-- Rank Major
-};
+	NECROSIS_STONE_RANK = {
+		[1] = " (mineure)", -- Rank Minor
+		[2] = " (inf\195\169rieure)", -- Rank Lesser
+		[3] = "", -- Rank Intermediate, no name
+		[4] = " (sup\195\169rieure)", -- Rank Greater
+		[5] = " (majeure)", -- Rank Major
+	}
 
-NECROSIS_NIGHTFALL = {
-	["BoltName"] = "Trait",
-	["ShadowTrance"] = "Transe de l'ombre",
-};
+	NECROSIS_NIGHTFALL = {
+		["BoltName"] = "Trait",
+		["ShadowTrance"] = "Transe de l'ombre",
+	}
 
-NECROSIS_CREATE = {
-	[1] = "Cr\195\169ation de Pierre d'\195\162me",
-	[2] = "Cr\195\169ation de Pierre de soins",
-	[3] = "Cr\195\169ation de Pierre de sort",
-	[4] = "Cr\195\169ation de Pierre de feu",
-	[5] = "Cr\195\169ation de Pierre gangrenée",
-	[6] = "Cr\195\169ation de Pierre de colère",
-	[7] = "Cr\195\169ation de Pierre du Vide"
-};
+	NECROSIS_CREATE = {
+		[1] = "Cr\195\169ation de Pierre d'\195\162me",
+		[2] = "Cr\195\169ation de Pierre de soins",
+		[3] = "Cr\195\169ation de Pierre de sort",
+		[4] = "Cr\195\169ation de Pierre de feu",
+		[5] = "Cr\195\169ation de Pierre gangrenée",
+		[6] = "Cr\195\169ation de Pierre de colère",
+		[7] = "Cr\195\169ation de Pierre du Vide",
+	}
 
-NECROSIS_PET_LOCAL_NAME = {
-	[1] = "Diablotin",
-	[2] = "Marcheur du Vide",
-	[3] = "Succube",
-	[4] = "Chasseur corrompu",
-	[5] = "Infernal",
-	[6] = "Garde funeste"
-};
+	NECROSIS_PET_LOCAL_NAME = {
+		[1] = "Diablotin",
+		[2] = "Marcheur du Vide",
+		[3] = "Succube",
+		[4] = "Chasseur corrompu",
+		[5] = "Infernal",
+		[6] = "Garde funeste",
+	}
 
-NECROSIS_TRANSLATION = {
-	["Cooldown"] = "Temps",
-	["Hearth"] = "Pierre de foyer",
-	["Rank"] = "Rang",
-	["Invisible"] = "D\195\169tection de l'invisibilit\195\169",
-	["LesserInvisible"] = "D\195\169tection de l'invisibilit\195\169 inf\195\169rieure",
-	["GreaterInvisible"] = "D\195\169tection de l'invisibilit\195\169 sup\195\169rieure",
-	["SoulLinkGain"] = "Vous gagnez Lien spirituel.",
-	["SacrificeGain"] = "Vous gagnez Sacrifice.",
-	["SummoningRitual"] = "Rituel d'invocation"
-};
-
+	NECROSIS_TRANSLATION = {
+		["Cooldown"] = "Temps",
+		["Hearth"] = "Pierre de foyer",
+		["Rank"] = "Rang",
+		["Invisible"] = "D\195\169tection de l'invisibilit\195\169",
+		["LesserInvisible"] = "D\195\169tection de l'invisibilit\195\169 inf\195\169rieure",
+		["GreaterInvisible"] = "D\195\169tection de l'invisibilit\195\169 sup\195\169rieure",
+		["SoulLinkGain"] = "Vous gagnez Lien spirituel.",
+		["SacrificeGain"] = "Vous gagnez Sacrifice.",
+		["SummoningRitual"] = "Rituel d'invocation",
+	}
 end

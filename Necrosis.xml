@@ -171,7 +171,7 @@
 			</OnMouseUp>
 		</Scripts>
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\SoulstoneButton"/>
-		<HighlightTexture alphaMode="ADD" file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight"/>
+		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
 
 	<Button name="NecrosisSpellstoneButton" hidden="false" parent="UIParent" movable="true">
@@ -211,7 +211,7 @@
 			</OnMouseUp>
 		</Scripts>
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\SpellstoneButton"/>
-		<HighlightTexture alphaMode="ADD" file="Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight"/>
+		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
 
 		<Button name="NecrosisHealthstoneButton" hidden="false" parent="UIParent" movable="true">
@@ -251,7 +251,7 @@
 			</OnMouseUp>
 		</Scripts>
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\HealthstoneButton"/>
-		<HighlightTexture alphaMode="ADD" file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight"/>
+		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
 	
 	<Button name="NecrosisMountButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
