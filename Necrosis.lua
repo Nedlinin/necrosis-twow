@@ -351,6 +351,19 @@ local LastCast = {
 	Stone = { id = 0, click = "LeftButton" },
 }
 
+local function Necrosis_SetMenuFramesAlpha(menuState, alpha)
+	local frames = menuState.frames
+	if not frames then
+		return
+	end
+	for index = 1, table.getn(frames) do
+		local frame = frames[index]
+		if frame then
+			frame:SetAlpha(alpha)
+		end
+	end
+end
+
 local function Necrosis_ToggleMenu(state, button, options)
 	state.open = not state.open
 	if not state.open then
@@ -360,6 +373,9 @@ local function Necrosis_ToggleMenu(state, button, options)
 		if state.frames[1] then
 			state.frames[1]:ClearAllPoints()
 			state.frames[1]:SetPoint("CENTER", button, "CENTER", 3000, 3000)
+		end
+		if options.resetAlpha then
+			Necrosis_SetMenuFramesAlpha(state, options.resetAlpha)
 		end
 		state.alpha = 1
 		if options.onClose then
@@ -372,6 +388,9 @@ local function Necrosis_ToggleMenu(state, button, options)
 	button:SetNormalTexture(options.openTexture)
 	if options.rightSticky and options.rightSticky() then
 		state.sticky = true
+	end
+	if options.setAlpha then
+		Necrosis_SetMenuFramesAlpha(state, options.setAlpha)
 	end
 	if options.onOpen then
 		options.onOpen()
@@ -2886,6 +2905,7 @@ function Necrosis_BuffMenu(button)
 		rightSticky = function()
 			return button == "RightButton"
 		end,
+		setAlpha = 1,
 	})
 	if not opened then
 		return
@@ -2893,15 +2913,6 @@ function Necrosis_BuffMenu(button)
 	if not buffMenu.frames[1] then
 		return
 	end
-	NecrosisBuffMenu1:SetAlpha(1)
-	NecrosisBuffMenu2:SetAlpha(1)
-	NecrosisBuffMenu3:SetAlpha(1)
-	NecrosisBuffMenu4:SetAlpha(1)
-	NecrosisBuffMenu5:SetAlpha(1)
-	NecrosisBuffMenu6:SetAlpha(1)
-	NecrosisBuffMenu7:SetAlpha(1)
-	NecrosisBuffMenu8:SetAlpha(1)
-	NecrosisBuffMenu9:SetAlpha(1)
 	buffMenu.frames[1]:ClearAllPoints()
 	buffMenu.frames[1]:SetPoint(
 		"CENTER",
@@ -2932,19 +2943,11 @@ function Necrosis_CurseMenu(button)
 		rightSticky = function()
 			return button == "RightButton"
 		end,
+		setAlpha = 1,
 	})
 	if not opened then
 		return
 	end
-	NecrosisCurseMenu1:SetAlpha(1)
-	NecrosisCurseMenu2:SetAlpha(1)
-	NecrosisCurseMenu3:SetAlpha(1)
-	NecrosisCurseMenu4:SetAlpha(1)
-	NecrosisCurseMenu5:SetAlpha(1)
-	NecrosisCurseMenu6:SetAlpha(1)
-	NecrosisCurseMenu7:SetAlpha(1)
-	NecrosisCurseMenu8:SetAlpha(1)
-	NecrosisCurseMenu9:SetAlpha(1)
 	curseMenu.frames[1]:ClearAllPoints()
 	curseMenu.frames[1]:SetPoint(
 		"CENTER",
@@ -2975,19 +2978,11 @@ function Necrosis_PetMenu(button)
 		rightSticky = function()
 			return button == "RightButton"
 		end,
+		setAlpha = 1,
 	})
 	if not opened then
 		return
 	end
-	NecrosisPetMenu1:SetAlpha(1)
-	NecrosisPetMenu2:SetAlpha(1)
-	NecrosisPetMenu3:SetAlpha(1)
-	NecrosisPetMenu4:SetAlpha(1)
-	NecrosisPetMenu5:SetAlpha(1)
-	NecrosisPetMenu6:SetAlpha(1)
-	NecrosisPetMenu7:SetAlpha(1)
-	NecrosisPetMenu8:SetAlpha(1)
-	NecrosisPetMenu9:SetAlpha(1)
 	petMenu.frames[1]:ClearAllPoints()
 	petMenu.frames[1]:SetPoint("CENTER", "NecrosisPetMenuButton", "CENTER", ((36 / NecrosisConfig.PetMenuPos) * 31), 26)
 	petMenu.fadeAt = GetTime() + 3
@@ -3010,15 +3005,14 @@ function Necrosis_StoneMenu(button)
 		rightSticky = function()
 			return button == "RightButton"
 		end,
+		setAlpha = 1,
 		onOpen = Necrosis_UpdateIcons,
 		onClose = Necrosis_UpdateIcons,
 	})
 	if not opened then
 		return
 	end
-	NecrosisStoneMenu1:SetAlpha(1)
-	NecrosisStoneMenu2:SetAlpha(1)
-	NecrosisStoneMenu3:SetAlpha(1)
+	Necrosis_SetMenuFramesAlpha(stoneMenu, 1)
 	stoneMenu.frames[1]:ClearAllPoints()
 	stoneMenu.frames[1]:SetPoint(
 		"CENTER",
