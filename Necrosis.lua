@@ -512,7 +512,7 @@ local LastCast = {
 local LastRefreshedBuffName = nil
 local LastRefreshedBuffTime = 0
 
-local LastAuraScanTime = 0
+local AuraScanAccumulator = 0
 
 local TRACKED_SELF_BUFFS = { 31, 36, 11 }
 
@@ -706,7 +706,7 @@ local SoulshardState = {
 	slots = {},
 	nextSlotIndex = 1,
 	pendingMoves = 0,
-	nextTidyTime = 0,
+	tidyAccumulator = 0,
 }
 
 -- Variables used to manage summoning components
@@ -875,24 +875,30 @@ end
 local textTimersDisplay = ""
 
 -- Function executed on UI updates (roughly every 0.1 seconds)
-function Necrosis_OnUpdate()
+function Necrosis_OnUpdate(self, elapsed)
 	-- The function is only used if Necrosis is initialized and the player is a Warlock --
 	if (not Loaded) and UnitClass("player") ~= NECROSIS_UNIT_WARLOCK then
 		return
 	end
 	-- The function is only used if Necrosis is initialized and the player is a Warlock --
 
-	-- Soul shard handling: sort shards once per second
+	elapsed = elapsed or 0
 	local curTime = GetTime()
-	if (curTime - SoulshardState.nextTidyTime) >= 1 then
-		SoulshardState.nextTidyTime = curTime
+
+	-- Soul shard handling: sort shards once per second
+	SoulshardState.tidyAccumulator = (SoulshardState.tidyAccumulator or 0) + elapsed
+	if SoulshardState.tidyAccumulator >= 1 then
+		local tidyOvershoot = floor(SoulshardState.tidyAccumulator)
+		SoulshardState.tidyAccumulator = SoulshardState.tidyAccumulator - tidyOvershoot
 		if SoulshardState.pendingMoves > 0 then
 			Necrosis_SoulshardSwitch("MOVE")
 		end
 	end
 
-	if (curTime - LastAuraScanTime) >= 1 then
-		LastAuraScanTime = curTime
+	AuraScanAccumulator = AuraScanAccumulator + elapsed
+	if AuraScanAccumulator >= 1 then
+		local auraOvershoot = floor(AuraScanAccumulator)
+		AuraScanAccumulator = AuraScanAccumulator - auraOvershoot
 		local playerName = UnitName("player") or ""
 		local playerLevel = UnitLevel("player") or ""
 		local tracked = TRACKED_SELF_BUFFS or { 31, 36 }
@@ -903,7 +909,7 @@ function Necrosis_OnUpdate()
 				local timerExists = Necrosis_TimerExists and Necrosis_TimerExists(data.Name)
 				if buffId and timeLeft > 0 then
 					local durationSeconds = floor(timeLeft)
-					local expiry = floor(GetTime() + durationSeconds)
+					local expiry = floor(curTime + durationSeconds)
 					local baseDuration = data.Length or durationSeconds
 					local updated = false
 					if type(Necrosis_UpdateTimerEntry) == "function" then
