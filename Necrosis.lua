@@ -334,6 +334,12 @@ local function Necrosis_OnSpellcastStartEvent(_, spellName)
 	Necrosis_OnSpellcastStart(spellName)
 end
 
+local function Necrosis_OnSpellcastStopEvent()
+	if type(Necrosis_SpellManagement) == "function" then
+		Necrosis_SpellManagement()
+	end
+end
+
 local function Necrosis_OnTradeRequestEvent()
 	Necrosis_SetTradeRequest(true)
 end
@@ -463,7 +469,7 @@ end
 local NECROSIS_EVENT_HANDLERS = {
 	BAG_UPDATE = Necrosis_OnBagUpdate,
 	SPELLCAST_START = Necrosis_OnSpellcastStartEvent,
-	SPELLCAST_STOP = Necrosis_SpellManagement,
+	SPELLCAST_STOP = Necrosis_OnSpellcastStopEvent,
 	SPELLCAST_FAILED = Necrosis_ClearSpellcastContext,
 	SPELLCAST_INTERRUPTED = Necrosis_ClearSpellcastContext,
 	TRADE_REQUEST = Necrosis_OnTradeRequestEvent,
@@ -874,18 +880,7 @@ end
 
 local textTimersDisplay = ""
 
--- Function executed on UI updates (roughly every 0.1 seconds)
-function Necrosis_OnUpdate(self, elapsed)
-	-- The function is only used if Necrosis is initialized and the player is a Warlock --
-	if (not Loaded) and UnitClass("player") ~= NECROSIS_UNIT_WARLOCK then
-		return
-	end
-	-- The function is only used if Necrosis is initialized and the player is a Warlock --
-
-	elapsed = elapsed or 0
-	local curTime = GetTime()
-
-	-- Soul shard handling: sort shards once per second
+local function Necrosis_UpdateSoulShardSorting(elapsed)
 	SoulshardState.tidyAccumulator = (SoulshardState.tidyAccumulator or 0) + elapsed
 	if SoulshardState.tidyAccumulator >= 1 then
 		local tidyOvershoot = floor(SoulshardState.tidyAccumulator)
@@ -894,24 +889,52 @@ function Necrosis_OnUpdate(self, elapsed)
 			Necrosis_SoulshardSwitch("MOVE")
 		end
 	end
+end
 
+local function Necrosis_UpdateTrackedBuffTimers(elapsed, curTime)
 	AuraScanAccumulator = AuraScanAccumulator + elapsed
-	if AuraScanAccumulator >= 1 then
-		local auraOvershoot = floor(AuraScanAccumulator)
-		AuraScanAccumulator = AuraScanAccumulator - auraOvershoot
-		local playerName = UnitName("player") or ""
-		local playerLevel = UnitLevel("player") or ""
-		local tracked = TRACKED_SELF_BUFFS or { 31, 36 }
-		for _, spellIndex in ipairs(tracked) do
-			local data = NECROSIS_SPELL_TABLE[spellIndex]
-			if data and data.Name then
-				local buffId, timeLeft = Necrosis_FindPlayerBuff(data.Name)
-				local timerExists = Necrosis_TimerExists and Necrosis_TimerExists(data.Name)
-				if buffId and timeLeft > 0 then
-					local durationSeconds = floor(timeLeft)
-					local expiry = floor(curTime + durationSeconds)
-					local baseDuration = data.Length or durationSeconds
-					local updated = false
+	if AuraScanAccumulator < 1 then
+		return
+	end
+
+	local auraOvershoot = floor(AuraScanAccumulator)
+	AuraScanAccumulator = AuraScanAccumulator - auraOvershoot
+
+	local playerName = UnitName("player") or ""
+	local playerLevel = UnitLevel("player") or ""
+	local tracked = TRACKED_SELF_BUFFS or { 31, 36 }
+	for _, spellIndex in ipairs(tracked) do
+		local data = NECROSIS_SPELL_TABLE[spellIndex]
+		if data and data.Name then
+			local buffId, timeLeft = Necrosis_FindPlayerBuff(data.Name)
+			local timerExists = Necrosis_TimerExists and Necrosis_TimerExists(data.Name)
+			if buffId and timeLeft > 0 then
+				local durationSeconds = floor(timeLeft)
+				local expiry = floor(curTime + durationSeconds)
+				local baseDuration = data.Length or durationSeconds
+				local updated = false
+				if type(Necrosis_UpdateTimerEntry) == "function" then
+					updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
+						SpellGroup,
+						SpellTimer,
+						data.Name,
+						playerName,
+						playerLevel,
+						baseDuration,
+						expiry,
+						data.Type
+					)
+				end
+				if not updated then
+					SpellTimer, TimerTable = Necrosis_RemoveTimerByName(data.Name, SpellTimer, TimerTable)
+					SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerEntry(
+						spellIndex,
+						playerName,
+						playerLevel,
+						SpellGroup,
+						SpellTimer,
+						TimerTable
+					)
 					if type(Necrosis_UpdateTimerEntry) == "function" then
 						updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
 							SpellGroup,
@@ -924,325 +947,180 @@ function Necrosis_OnUpdate(self, elapsed)
 							data.Type
 						)
 					end
-					if not updated then
-						SpellTimer, TimerTable = Necrosis_RemoveTimerByName(data.Name, SpellTimer, TimerTable)
-						SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerEntry(
-							spellIndex,
-							playerName,
-							playerLevel,
-							SpellGroup,
-							SpellTimer,
-							TimerTable
-						)
-						if type(Necrosis_UpdateTimerEntry) == "function" then
-							updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
-								SpellGroup,
-								SpellTimer,
-								data.Name,
-								playerName,
-								playerLevel,
-								baseDuration,
-								expiry,
-								data.Type
-							)
-						end
-					end
-					LastRefreshedBuffName = data.Name
-					LastRefreshedBuffTime = curTime
-					if DEBUG_TIMER_EVENTS then
-						Necrosis_DebugPrint(
-							"BUFF fallback",
-							data.Name,
-							updated and "updated from OnUpdate" or "inserted from OnUpdate",
-							"timeLeft=",
-							durationSeconds
-						)
-					end
-				elseif timerExists then
-					SpellTimer, TimerTable = Necrosis_RemoveTimerByName(data.Name, SpellTimer, TimerTable)
-					if DEBUG_TIMER_EVENTS then
-						Necrosis_DebugPrint("BUFF fallback", data.Name, "removed (buff missing)")
-					end
+				end
+				LastRefreshedBuffName = data.Name
+				LastRefreshedBuffTime = curTime
+				-- if DEBUG_TIMER_EVENTS then
+				-- 	Necrosis_DebugPrint(
+				-- 		"BUFF fallback",
+				-- 		data.Name,
+				-- 		updated and "updated from OnUpdate" or "inserted from OnUpdate",
+				-- 		"timeLeft=",
+				-- 			durationSeconds
+				-- 	)
+				-- end
+			elseif timerExists then
+				SpellTimer, TimerTable = Necrosis_RemoveTimerByName(data.Name, SpellTimer, TimerTable)
+				if DEBUG_TIMER_EVENTS then
+					Necrosis_DebugPrint("BUFF fallback", data.Name, "removed (buff missing)")
 				end
 			end
 		end
 	end
+end
 
-	----------------------------------------------------------
-	-- Manage Warlock spells
-	----------------------------------------------------------
+local function Necrosis_UpdateMenuState(menu, frameName, toggleFunc, curTime)
+	if not menu or not menu.fading then
+		return
+	end
 
-	-- Manage the demon summon menu
-	local petMenu = MenuState.Pet
-	if petMenu.fading then
-		if curTime >= petMenu.fadeAt and petMenu.alpha > 0 and not petMenu.sticky then
-			petMenu.fadeAt = curTime + 0.1
-			Necrosis_SetMenuAlpha("NecrosisPetMenu", petMenu.alpha)
-			petMenu.alpha = petMenu.alpha - 0.1
+	if curTime >= menu.fadeAt and menu.alpha > 0 and not menu.sticky then
+		menu.fadeAt = curTime + 0.1
+		Necrosis_SetMenuAlpha(frameName, menu.alpha)
+		menu.alpha = menu.alpha - 0.1
+	end
+
+	if menu.alpha <= 0 then
+		toggleFunc()
+	end
+end
+
+local function Necrosis_UpdateMenus(curTime)
+	Necrosis_UpdateMenuState(MenuState.Pet, "NecrosisPetMenu", Necrosis_PetMenu, curTime)
+	Necrosis_UpdateMenuState(MenuState.Buff, "NecrosisBuffMenu", Necrosis_BuffMenu, curTime)
+	Necrosis_UpdateMenuState(MenuState.Curse, "NecrosisCurseMenu", Necrosis_CurseMenu, curTime)
+	Necrosis_UpdateMenuState(MenuState.Stone, "NecrosisStoneMenu", Necrosis_StoneMenu, curTime)
+end
+
+local function Necrosis_UpdateShadowTrance(curTime)
+	if not NecrosisConfig.ShadowTranceAlert then
+		return
+	end
+
+	local Actif = false
+	local TimeLeft = 0
+	Necrosis_UnitHasTrance()
+	if ShadowTranceID ~= -1 then
+		Actif = true
+	end
+	if Actif and not ShadowTrance then
+		ShadowTrance = true
+		Necrosis_Msg(NECROSIS_NIGHTFALL_TEXT.Message, "USER")
+		if NecrosisConfig.Sound then
+			PlaySoundFile(NECROSIS_SOUND.ShadowTrance)
 		end
-		if petMenu.alpha <= 0 then
-			Necrosis_PetMenu()
+		local ShadowTranceIndex, cancel = GetPlayerBuff(ShadowTranceID, "HELPFUL|HARMFUL|PASSIVE")
+		TimeLeft = floor(GetPlayerBuffTimeLeft(ShadowTranceIndex))
+		NecrosisShadowTranceTimer:SetText(TimeLeft)
+		ShowUIPanel(NecrosisShadowTranceButton)
+	end
+	if not Actif and ShadowTrance then
+		HideUIPanel(NecrosisShadowTranceButton)
+		ShadowTrance = false
+	end
+	if Actif and ShadowTrance then
+		local ShadowTranceIndex, cancel = GetPlayerBuff(ShadowTranceID, "HELPFUL|HARMFUL|PASSIVE")
+		TimeLeft = floor(GetPlayerBuffTimeLeft(ShadowTranceIndex))
+		NecrosisShadowTranceTimer:SetText(TimeLeft)
+	end
+end
+
+local function Necrosis_UpdateAntiFear(curTime)
+	if not NecrosisConfig.AntiFearAlert then
+		return
+	end
+
+	local Actif = false
+	if UnitExists("target") and UnitCanAttack("player", "target") and not UnitIsDead("target") then
+		if not UnitIsPlayer("target") then
+			for index = 1, table.getn(NECROSIS_ANTI_FEAR_UNIT), 1 do
+				if UnitCreatureType("target") == NECROSIS_ANTI_FEAR_UNIT[index] then
+					Actif = 2
+					break
+				end
+			end
+		end
+		if not Actif then
+			for index = 1, table.getn(NECROSIS_ANTI_FEAR_SPELL.Buff), 1 do
+				if Necrosis_UnitHasBuff("target", NECROSIS_ANTI_FEAR_SPELL.Buff[index]) then
+					Actif = 3
+					break
+				end
+			end
+			for index = 1, table.getn(NECROSIS_ANTI_FEAR_SPELL.Debuff), 1 do
+				if Necrosis_UnitHasEffect("target", NECROSIS_ANTI_FEAR_SPELL.Debuff[index]) then
+					Actif = 3
+					break
+				end
+			end
+		end
+		if AFCurrentTargetImmune and not Actif then
+			Actif = 1
 		end
 	end
 
-	-- Gestion du menu des Buffs
-	local buffMenu = MenuState.Buff
-	if buffMenu.fading then
-		if curTime >= buffMenu.fadeAt and buffMenu.alpha > 0 and not buffMenu.sticky then
-			buffMenu.fadeAt = curTime + 0.1
-			Necrosis_SetMenuAlpha("NecrosisBuffMenu", buffMenu.alpha)
-			buffMenu.alpha = buffMenu.alpha - 0.1
-		end
-		if buffMenu.alpha <= 0 then
-			Necrosis_BuffMenu()
-		end
-	end
-
-	-- Gestion du menu des Curses
-	local curseMenu = MenuState.Curse
-	if curseMenu.fading then
-		if curTime >= curseMenu.fadeAt and curseMenu.alpha > 0 and not curseMenu.sticky then
-			curseMenu.fadeAt = curTime + 0.1
-			Necrosis_SetMenuAlpha("NecrosisCurseMenu", curseMenu.alpha)
-			curseMenu.alpha = curseMenu.alpha - 0.1
-		end
-		if curseMenu.alpha <= 0 then
-			Necrosis_CurseMenu()
-		end
-	end
-
-	local stoneMenu = MenuState.Stone
-	if stoneMenu.fading then
-		if curTime >= stoneMenu.fadeAt and stoneMenu.alpha > 0 and not stoneMenu.sticky then
-			stoneMenu.fadeAt = curTime + 0.1
-			Necrosis_SetMenuAlpha("NecrosisStoneMenu", stoneMenu.alpha)
-			stoneMenu.alpha = stoneMenu.alpha - 0.1
-		end
-		if stoneMenu.alpha <= 0 then
-			Necrosis_StoneMenu()
-		end
-	end
-
-	-- Manage the Nightfall talent
-	if NecrosisConfig.ShadowTranceAlert then
-		local Actif = false
-		local TimeLeft = 0
-		Necrosis_UnitHasTrance()
-		if ShadowTranceID ~= -1 then
-			Actif = true
-		end
-		if Actif and not ShadowTrance then
-			ShadowTrance = true
-			Necrosis_Msg(NECROSIS_NIGHTFALL_TEXT.Message, "USER")
+	if Actif then
+		if not AntiFearInUse then
+			AntiFearInUse = true
+			Necrosis_Msg(NECROSIS_MESSAGE.Information.FearProtect, "USER")
+			NecrosisAntiFearButton:SetNormalTexture(
+				"Interface\\AddOns\\Necrosis\\UI\\AntiFear" .. AFImageType[Actif] .. "-02"
+			)
 			if NecrosisConfig.Sound then
-				PlaySoundFile(NECROSIS_SOUND.ShadowTrance)
+				PlaySoundFile(NECROSIS_SOUND.Fear)
 			end
-			local ShadowTranceIndex, cancel = GetPlayerBuff(ShadowTranceID, "HELPFUL|HARMFUL|PASSIVE")
-			TimeLeft = floor(GetPlayerBuffTimeLeft(ShadowTranceIndex))
-			NecrosisShadowTranceTimer:SetText(TimeLeft)
-			ShowUIPanel(NecrosisShadowTranceButton)
-		end
-		if not Actif and ShadowTrance then
-			HideUIPanel(NecrosisShadowTranceButton)
-			ShadowTrance = false
-		end
-		if Actif and ShadowTrance then
-			local ShadowTranceIndex, cancel = GetPlayerBuff(ShadowTranceID, "HELPFUL|HARMFUL|PASSIVE")
-			TimeLeft = floor(GetPlayerBuffTimeLeft(ShadowTranceIndex))
-			NecrosisShadowTranceTimer:SetText(TimeLeft)
-		end
-	end
-
-	-- Gestion des Antifears
-	if NecrosisConfig.AntiFearAlert then
-		local Actif = false -- must be False, or a number from 1 to AFImageType[] max element.
-
-		-- Checking if we have a target. Any fear need a target to be casted on
-		if UnitExists("target") and UnitCanAttack("player", "target") and not UnitIsDead("target") then
-			-- Checking if the target has natural immunity (only NPC target)
-			if not UnitIsPlayer("target") then
-				for index = 1, table.getn(NECROSIS_ANTI_FEAR_UNIT), 1 do
-					if UnitCreatureType("target") == NECROSIS_ANTI_FEAR_UNIT[index] then
-						Actif = 2 -- Immun
-						break
-					end
-				end
-			end
-
-			-- We'll start to parse the target buffs, as his class doesn't give him natural permanent immunity
-			if not Actif then
-				for index = 1, table.getn(NECROSIS_ANTI_FEAR_SPELL.Buff), 1 do
-					if Necrosis_UnitHasBuff("target", NECROSIS_ANTI_FEAR_SPELL.Buff[index]) then
-						Actif = 3 -- Prot
-						break
-					end
-				end
-
-				-- No buff found, let's try the debuffs
-				for index = 1, table.getn(NECROSIS_ANTI_FEAR_SPELL.Debuff), 1 do
-					if Necrosis_UnitHasEffect("target", NECROSIS_ANTI_FEAR_SPELL.Debuff[index]) then
-						Actif = 3 -- Prot
-						break
-					end
-				end
-			end
-
-			-- an immunity has been detected before, but we still don't know why => show the button anyway
-			if AFCurrentTargetImmune and not Actif then
-				Actif = 1
-			end
-		end
-
-		if Actif then
-			-- Antifear button is currently not visible, we have to change that
-			if not AntiFearInUse then
-				AntiFearInUse = true
-				Necrosis_Msg(NECROSIS_MESSAGE.Information.FearProtect, "USER")
-				NecrosisAntiFearButton:SetNormalTexture(
-					"Interface\\AddOns\\Necrosis\\UI\\AntiFear" .. AFImageType[Actif] .. "-02"
-				)
-				if NecrosisConfig.Sound then
-					PlaySoundFile(NECROSIS_SOUND.Fear)
-				end
-				ShowUIPanel(NecrosisAntiFearButton)
-				AFBlink1 = curTime + 0.6
+			ShowUIPanel(NecrosisAntiFearButton)
+			AFBlink1 = curTime + 0.6
+			AFBlink2 = 2
+		elseif curTime >= AFBlink1 then
+			if AFBlink2 == 1 then
 				AFBlink2 = 2
-
-			-- Timer to make the button blink
-			elseif curTime >= AFBlink1 then
-				if AFBlink2 == 1 then
-					AFBlink2 = 2
-				else
-					AFBlink2 = 1
-				end
-				AFBlink1 = curTime + 0.4
-				NecrosisAntiFearButton:SetNormalTexture(
-					"Interface\\AddOns\\Necrosis\\UI\\AntiFear" .. AFImageType[Actif] .. "-0" .. AFBlink2
-				)
+			else
+				AFBlink2 = 1
 			end
-		elseif AntiFearInUse then -- No antifear on target, but the button is still visible => gonna hide it
-			AntiFearInUse = false
-			HideUIPanel(NecrosisAntiFearButton)
+			AFBlink1 = curTime + 0.4
+			NecrosisAntiFearButton:SetNormalTexture(
+				"Interface\\AddOns\\Necrosis\\UI\\AntiFear" .. AFImageType[Actif] .. "-0" .. AFBlink2
+			)
 		end
+	elseif AntiFearInUse then
+		AntiFearInUse = false
+		HideUIPanel(NecrosisAntiFearButton)
 	end
+end
 
-	-- Gestion du Timer des sorts
-	if not NecrosisSpellTimerButton:IsVisible() then
-		ShowUIPanel(NecrosisSpellTimerButton)
-	end
-
+local function Necrosis_HandleShardCount()
 	if NecrosisConfig.CountType == 3 then
 		NecrosisShardCount:SetText("")
 	end
-	local update = false
-	if (curTime - SpellCastTime) >= 1 then
-		SpellCastTime = curTime
-		update = true
+end
+
+local function Necrosis_ShouldUpdateSpellState(curTime)
+	if (curTime - SpellCastTime) < 1 then
+		return false
+	end
+	SpellCastTime = curTime
+	return true
+end
+
+local function Necrosis_HandleTradingAndIcons(shouldUpdate)
+	if not shouldUpdate then
+		return
 	end
 
-	-- Refresh the buttons every second
-	-- On accepte le trade de la pierre de soin si transfert en cours
-	if update then
-		if Trading then
-			TradingNow = TradingNow - 1
-			if TradingNow == 0 then
-				AcceptTrade()
-				Trading = false
-			end
+	if Trading then
+		TradingNow = TradingNow - 1
+		if TradingNow == 0 then
+			AcceptTrade()
+			Trading = false
 		end
-		Necrosis_UpdateIcons()
 	end
 
-	-- Parcours du tableau des Timers
-	if SpellTimer then
-		if update then
-			wipe_array(TextTimerSegments)
-			-- Reuse the shared buffer to avoid rebuilding timer strings each frame
-			local textBuffer = TextTimerSegments
-			local graphCount = 0
-			local previousActive = GraphicalTimer.activeCount or 0
-			local curTimeFloor = floor(curTime)
-			for index = 1, table.getn(SpellTimer), 1 do
-				if SpellTimer[index] then
-					if curTime <= SpellTimer[index].TimeMax then
-						-- Build the timer display
-						SpellGroup, TimerTable, graphCount = Necrosis_DisplayTimer(
-							textBuffer,
-							index,
-							SpellGroup,
-							SpellTimer,
-							GraphicalTimer,
-							TimerTable,
-							graphCount,
-							curTimeFloor
-						)
-					end
-					-- Remove finished timers
-					if curTime >= (SpellTimer[index].TimeMax - 0.5) and SpellTimer[index].TimeMax ~= -1 then
-						-- If the timer was for the Soulstone, notify the Warlock
-						if SpellTimer[index].Name == NECROSIS_SPELL_TABLE[11].Name then
-							Necrosis_Msg(NECROSIS_MESSAGE.Information.SoulstoneEnd, "USER")
-							SpellTimer[index].Target = ""
-							SpellTimer[index].TimeMax = -1
-							if NecrosisConfig.Sound then
-								PlaySoundFile(NECROSIS_SOUND.SoulstoneEnd)
-							end
-							Necrosis_RemoveTimerFrame(SpellTimer[index].Gtimer, TimerTable)
-							-- Update the Soulstone button appearance
-							Necrosis_UpdateIcons()
-						-- Otherwise remove the timer quietly (except for Enslave)
-						elseif SpellTimer[index].Name ~= NECROSIS_SPELL_TABLE[10].Name then
-							SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
-							index = 0
-							break
-						end
-					end
-					-- If the Warlock is no longer affected by Demon Sacrifice
-					if SpellTimer and SpellTimer[index].Name == NECROSIS_SPELL_TABLE[17].Name then -- Sacrifice
-						if
-							not Necrosis_UnitHasEffect("player", SpellTimer[index].Name)
-							and SpellTimer[index].TimeMax ~= nil
-						then
-							SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
-							index = 0
-							break
-						end
-					end
-					-- If the targeted unit is no longer affected by the spell (resist)
-					if
-						SpellTimer
-						and (SpellTimer[index].Type == TIMER_TYPE.CURSE or SpellTimer[index].Type == TIMER_TYPE.COMBAT)
-						and SpellTimer[index].Target == UnitName("target")
-					then
-						-- Cheat a little to let the mob fully register the debuff ^^
-						if
-							curTime >= ((SpellTimer[index].TimeMax - SpellTimer[index].Time) + 1.5)
-							and SpellTimer[index] ~= 6
-						then
-							if not Necrosis_UnitHasEffect("target", SpellTimer[index].Name) then
-								SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
-								index = 0
-								break
-							end
-						end
-					end
-				end
-			end
-			-- Clear leftover graphical timer slots when the active count shrinks
-			if previousActive > graphCount then
-				for slotIndex = graphCount + 1, previousActive, 1 do
-					GraphicalTimer.names[slotIndex] = nil
-					GraphicalTimer.expiryTimes[slotIndex] = nil
-					GraphicalTimer.initialDurations[slotIndex] = nil
-					GraphicalTimer.isTitle[slotIndex] = nil
-					GraphicalTimer.displayLines[slotIndex] = nil
-					GraphicalTimer.slotIds[slotIndex] = nil
-				end
-			end
-			GraphicalTimer.activeCount = graphCount
-			textTimersDisplay = table.concat(textBuffer)
-		end
-	else
+	Necrosis_UpdateIcons()
+end
+
+local function Necrosis_UpdateSpellTimers(curTime, shouldUpdate)
+	if not SpellTimer then
 		for i = 1, 10, 1 do
 			local frameName = "NecrosisTarget" .. i .. "Text"
 			local frameItem = getglobal(frameName)
@@ -1250,14 +1128,104 @@ function Necrosis_OnUpdate(self, elapsed)
 				frameItem:Hide()
 			end
 		end
+		return
 	end
 
+	if not shouldUpdate then
+		return
+	end
+
+	if SpellGroup and SpellGroup.Visible then
+		for index = 4, table.getn(SpellGroup.Visible), 1 do
+			SpellGroup.Visible[index] = false
+		end
+	end
+
+	wipe_array(TextTimerSegments)
+	local textBuffer = TextTimerSegments
+	local graphCount = 0
+	local previousActive = GraphicalTimer.activeCount or 0
+	local curTimeFloor = floor(curTime)
+	for index = 1, table.getn(SpellTimer), 1 do
+		if SpellTimer[index] then
+			if curTime <= SpellTimer[index].TimeMax then
+				SpellGroup, TimerTable, graphCount = Necrosis_DisplayTimer(
+					textBuffer,
+					index,
+					SpellGroup,
+					SpellTimer,
+					GraphicalTimer,
+					TimerTable,
+					graphCount,
+					curTimeFloor
+				)
+			end
+			if curTime >= (SpellTimer[index].TimeMax - 0.5) and SpellTimer[index].TimeMax ~= -1 then
+				if SpellTimer[index].Name == NECROSIS_SPELL_TABLE[11].Name then
+					Necrosis_Msg(NECROSIS_MESSAGE.Information.SoulstoneEnd, "USER")
+					SpellTimer[index].Target = ""
+					SpellTimer[index].TimeMax = -1
+					if NecrosisConfig.Sound then
+						PlaySoundFile(NECROSIS_SOUND.SoulstoneEnd)
+					end
+					Necrosis_RemoveTimerFrame(SpellTimer[index].Gtimer, TimerTable)
+					Necrosis_UpdateIcons()
+				elseif SpellTimer[index].Name ~= NECROSIS_SPELL_TABLE[10].Name then
+					SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
+					index = 0
+					break
+				end
+			end
+			if SpellTimer and SpellTimer[index].Name == NECROSIS_SPELL_TABLE[17].Name then
+				if
+					not Necrosis_UnitHasEffect("player", SpellTimer[index].Name)
+					and SpellTimer[index].TimeMax ~= nil
+				then
+					SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
+					index = 0
+					break
+				end
+			end
+			if
+				SpellTimer
+				and (SpellTimer[index].Type == TIMER_TYPE.CURSE or SpellTimer[index].Type == TIMER_TYPE.COMBAT)
+				and SpellTimer[index].Target == UnitName("target")
+			then
+				if
+					curTime >= ((SpellTimer[index].TimeMax - SpellTimer[index].Time) + 1.5)
+					and SpellTimer[index] ~= 6
+				then
+					if not Necrosis_UnitHasEffect("target", SpellTimer[index].Name) then
+						SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
+						index = 0
+						break
+					end
+				end
+			end
+		end
+	end
+
+	if previousActive > graphCount then
+		for slotIndex = graphCount + 1, previousActive, 1 do
+			GraphicalTimer.names[slotIndex] = nil
+			GraphicalTimer.expiryTimes[slotIndex] = nil
+			GraphicalTimer.initialDurations[slotIndex] = nil
+			GraphicalTimer.isTitle[slotIndex] = nil
+			GraphicalTimer.displayLines[slotIndex] = nil
+			GraphicalTimer.slotIds[slotIndex] = nil
+		end
+	end
+	GraphicalTimer.activeCount = graphCount
+	textTimersDisplay = table.concat(textBuffer)
+end
+
+local function Necrosis_UpdateTimerDisplay()
 	if NecrosisConfig.ShowSpellTimers or NecrosisConfig.Graphical then
-		-- Si affichage de timer texte
+		if not NecrosisSpellTimerButton:IsVisible() then
+			ShowUIPanel(NecrosisSpellTimerButton)
+		end
 		if not NecrosisConfig.Graphical then
-			-- Color the textual timer display
 			textTimersDisplay = Necrosis_MsgAddColor(textTimersDisplay)
-			-- Affichage des timers
 			NecrosisListSpells:SetText(textTimersDisplay)
 		else
 			NecrosisListSpells:SetText("")
@@ -1265,12 +1233,32 @@ function Necrosis_OnUpdate(self, elapsed)
 		for i = 4, table.getn(SpellGroup.Name) do
 			SpellGroup.Visible[i] = false
 		end
-	else
-		if NecrosisSpellTimerButton:IsVisible() then
-			NecrosisListSpells:SetText("")
-			HideUIPanel(NecrosisSpellTimerButton)
-		end
+	elseif NecrosisSpellTimerButton:IsVisible() then
+		NecrosisListSpells:SetText("")
+		HideUIPanel(NecrosisSpellTimerButton)
 	end
+end
+
+-- Function executed on UI updates (roughly every 0.1 seconds)
+function Necrosis_OnUpdate(self, elapsed)
+	if (not Loaded) and UnitClass("player") ~= NECROSIS_UNIT_WARLOCK then
+		return
+	end
+
+	elapsed = elapsed or 0
+	local curTime = GetTime()
+
+	Necrosis_UpdateSoulShardSorting(elapsed)
+	Necrosis_UpdateTrackedBuffTimers(elapsed, curTime)
+	Necrosis_UpdateMenus(curTime)
+	Necrosis_UpdateShadowTrance(curTime)
+	Necrosis_UpdateAntiFear(curTime)
+	Necrosis_HandleShardCount()
+
+	local shouldUpdate = Necrosis_ShouldUpdateSpellState(curTime)
+	Necrosis_HandleTradingAndIcons(shouldUpdate)
+	Necrosis_UpdateSpellTimers(curTime, shouldUpdate)
+	Necrosis_UpdateTimerDisplay()
 end
 
 -- Function triggered for each intercepted event
