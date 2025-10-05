@@ -26,6 +26,56 @@ local function Necrosis_DeepMerge(target, source)
 	end
 end
 
+local function Necrosis_ConfigClone(source)
+	if type(source) ~= "table" then
+		return source
+	end
+	local copy = {}
+	for key, value in pairs(source) do
+		if type(value) == "table" then
+			copy[key] = Necrosis_ConfigClone(value)
+		else
+			copy[key] = value
+		end
+	end
+	return copy
+end
+
+local function Necrosis_ConfigSchemasMatch(defaultValue, savedValue)
+	if type(defaultValue) ~= type(savedValue) then
+		return false
+	end
+	if type(defaultValue) ~= "table" then
+		return true
+	end
+	for key, defVal in pairs(defaultValue) do
+		local savedVal = savedValue[key]
+		if savedVal == nil then
+			return false
+		end
+		if not Necrosis_ConfigSchemasMatch(defVal, savedVal) then
+			return false
+		end
+	end
+	for key in pairs(savedValue) do
+		if defaultValue[key] == nil then
+			return false
+		end
+	end
+	return true
+end
+
+local function Necrosis_ResetDefaultAnchors()
+	NecrosisButton:ClearAllPoints()
+	NecrosisShadowTranceButton:ClearAllPoints()
+	NecrosisAntiFearButton:ClearAllPoints()
+	NecrosisSpellTimerButton:ClearAllPoints()
+	NecrosisButton:SetPoint("CENTER", "UIParent", "CENTER", 0, -100)
+	NecrosisShadowTranceButton:SetPoint("CENTER", "UIParent", "CENTER", 100, -30)
+	NecrosisAntiFearButton:SetPoint("CENTER", "UIParent", "CENTER", 100, 30)
+	NecrosisSpellTimerButton:SetPoint("CENTER", "UIParent", "CENTER", 120, 340)
+end
+
 function Necrosis_Initialize()
 	Necrosis_Localization_Dialog_En()
 	-- Initialize localized text (original / French / German)
@@ -63,22 +113,24 @@ function Necrosis_Initialize()
 		HideUIPanel(NecrosisShadowTranceButton)
 	else
 		-- Load (or create) the player's configuration and print it to the console
+		local resetToDefault = false
 		if NecrosisConfig == nil then
-			NecrosisConfig = Default_NecrosisConfig
-			Necrosis_Msg(NECROSIS_MESSAGE.Interface.DefaultConfig, "USER")
-			NecrosisButton:ClearAllPoints()
-			NecrosisShadowTranceButton:ClearAllPoints()
-			NecrosisAntiFearButton:ClearAllPoints()
-			NecrosisSpellTimerButton:ClearAllPoints()
-			NecrosisButton:SetPoint("CENTER", "UIParent", "CENTER", 0, -100)
-			NecrosisShadowTranceButton:SetPoint("CENTER", "UIParent", "CENTER", 100, -30)
-			NecrosisAntiFearButton:SetPoint("CENTER", "UIParent", "CENTER", 100, 30)
-			NecrosisSpellTimerButton:SetPoint("CENTER", "UIParent", "CENTER", 120, 340)
-		else
-			if NecrosisConfig.Version ~= Default_NecrosisConfig.Version then
+			NecrosisConfig = Necrosis_ConfigClone(Default_NecrosisConfig)
+			resetToDefault = true
+		elseif NecrosisConfig.Version ~= Default_NecrosisConfig.Version then
+			if Necrosis_ConfigSchemasMatch(Default_NecrosisConfig, NecrosisConfig) then
 				Necrosis_DeepMerge(NecrosisConfig, Default_NecrosisConfig)
-				NecrosisConfig.Version = Default_NecrosisConfig.Version
+			else
+				NecrosisConfig = Necrosis_ConfigClone(Default_NecrosisConfig)
+				resetToDefault = true
 			end
+			NecrosisConfig.Version = Default_NecrosisConfig.Version
+		end
+
+		if resetToDefault then
+			Necrosis_Msg(NECROSIS_MESSAGE.Interface.DefaultConfig, "USER")
+			Necrosis_ResetDefaultAnchors()
+		else
 			Necrosis_Msg(NECROSIS_MESSAGE.Interface.UserConfig, "USER")
 		end
 

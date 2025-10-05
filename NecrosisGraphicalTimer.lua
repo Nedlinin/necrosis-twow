@@ -15,8 +15,8 @@
 -- Table layout:
 -- table {
 -- names = "Mob or spell name",
--- expiryTimes = "Total duration of the spell",
--- initialDurations = "Remaining time for the spell",
+-- expiryTimes = "Absolute expiration timestamp",
+-- initialDurations = "Full duration of the spell",
 -- isTitle = "true if it is a title, false otherwise",
 -- displayLines = "numeric timer text",
 -- slotIds = "Index of the associated timer (between 1 and 65)"
@@ -110,17 +110,29 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 					NecrosisConfig.SpellTimerPos * 23,
 					yPosition
 				)
-				frameItem2:SetMinMaxValues(
-					timerData.expiryTimes[index] - timerData.initialDurations[index],
-					timerData.expiryTimes[index]
-				)
-				frameItem2:SetValue(
-					2 * timerData.expiryTimes[index] - (timerData.initialDurations[index] + floor(GetTime()))
-				)
+				local totalDuration = timerData.initialDurations[index]
+				if not totalDuration or totalDuration <= 0 then
+					totalDuration = 1
+				end
+				local expiryTime = timerData.expiryTimes[index]
+				local startTime = expiryTime - totalDuration
+				frameItem2:SetMinMaxValues(startTime, expiryTime)
+				local current = floor(GetTime())
+				local value = 2 * expiryTime - (totalDuration + current)
+				if value < startTime then
+					value = startTime
+				elseif value > expiryTime then
+					value = expiryTime
+				end
+				frameItem2:SetValue(value)
 				local r, g
 				local b = 37 / 255
-				local PercentColor = (timerData.expiryTimes[index] - floor(GetTime()))
-					/ timerData.initialDurations[index]
+				local PercentColor = (expiryTime - current) / totalDuration
+				if PercentColor < 0 then
+					PercentColor = 0
+				elseif PercentColor > 1 then
+					PercentColor = 1
+				end
 				if PercentColor > 0.5 then
 					r = (49 / 255) + (((1 - PercentColor) * 2) * (1 - (49 / 255)))
 					g = 207 / 255
@@ -149,12 +161,7 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 				)
 				frameItem5:SetText(timerData.displayLines[index])
 
-				local sparkPosition = 150
-					- (
-							(floor(GetTime()) - (timerData.expiryTimes[index] - timerData.initialDurations[index]))
-							/ timerData.initialDurations[index]
-						)
-						* 150
+				local sparkPosition = 150 - ((current - startTime) / totalDuration) * 150
 				if sparkPosition < 1 then
 					sparkPosition = 1
 				end

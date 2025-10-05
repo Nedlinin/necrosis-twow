@@ -41,7 +41,17 @@ local function Necrosis_FinalizeTimerInsert(spellGroup, spellTimer, timerTable)
 	return spellGroup, spellTimer, timerTable
 end
 
-function Necrosis_UpdateTimerEntry(spellGroup, spellTimer, name, target, level, timeRemaining, expiryTime, timerType)
+function Necrosis_UpdateTimerEntry(
+	spellGroup,
+	spellTimer,
+	name,
+	target,
+	level,
+	timeRemaining,
+	expiryTime,
+	timerType,
+	initialDuration
+)
 	if not spellTimer or not name then
 		return false, spellGroup, spellTimer
 	end
@@ -59,8 +69,27 @@ function Necrosis_UpdateTimerEntry(spellGroup, spellTimer, name, target, level, 
 			local originalTarget = timer.Target
 			local originalLevel = timer.TargetLevel
 			local originalGroup = timer.Group
-			timer.Time = timeRemaining or 0
-			timer.TimeMax = expiryTime
+			local previousInitial = timer.InitialDuration or timer.Time
+			local newInitial = initialDuration
+			if not newInitial or newInitial <= 0 then
+				if previousInitial and previousInitial > 0 then
+					newInitial = previousInitial
+				elseif timer.Time and timer.Time > 0 then
+					newInitial = timer.Time
+				elseif timeRemaining and timeRemaining > 0 then
+					newInitial = timeRemaining
+				else
+					newInitial = 0
+				end
+			end
+			if timeRemaining and timeRemaining > 0 and timeRemaining > newInitial then
+				newInitial = timeRemaining
+			end
+			timer.InitialDuration = newInitial > 0 and newInitial or nil
+			timer.Time = newInitial or 0
+			if expiryTime then
+				timer.TimeMax = expiryTime
+			end
 			if timerType then
 				timer.Type = timerType
 			end
@@ -105,8 +134,17 @@ function Necrosis_InsertTimerEntry(IndexTable, Target, LevelTarget, SpellGroup, 
 	local expiryTime = floor(GetTime() + duration)
 	local timerType = NECROSIS_SPELL_TABLE[IndexTable].Type
 	local updated
-	updated, SpellGroup, SpellTimer =
-		Necrosis_UpdateTimerEntry(SpellGroup, SpellTimer, name, target, level, duration, expiryTime, timerType)
+	updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
+		SpellGroup,
+		SpellTimer,
+		name,
+		target,
+		level,
+		duration,
+		expiryTime,
+		timerType,
+		duration
+	)
 	if updated then
 		return SpellGroup, SpellTimer, TimerTable
 	end
@@ -115,6 +153,7 @@ function Necrosis_InsertTimerEntry(IndexTable, Target, LevelTarget, SpellGroup, 
 		Name = NECROSIS_SPELL_TABLE[IndexTable].Name,
 		Time = duration,
 		TimeMax = expiryTime,
+		InitialDuration = duration,
 		Type = timerType,
 		Target = target,
 		TargetLevel = level,
@@ -143,8 +182,17 @@ function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTime
 		timeRemaining = 120
 		expiryTime = floor(GetTime() + timeRemaining)
 		local updated
-		updated, SpellGroup, SpellTimer =
-			Necrosis_UpdateTimerEntry(SpellGroup, SpellTimer, name, "", "", timeRemaining, expiryTime, timerType)
+		updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
+			SpellGroup,
+			SpellTimer,
+			name,
+			"",
+			"",
+			timeRemaining,
+			expiryTime,
+			timerType,
+			timeRemaining
+		)
 		if updated then
 			return SpellGroup, SpellTimer, TimerTable
 		end
@@ -152,6 +200,7 @@ function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTime
 			Name = name,
 			Time = timeRemaining,
 			TimeMax = expiryTime,
+			InitialDuration = timeRemaining,
 			Type = timerType,
 			Target = target,
 			TargetLevel = "",
@@ -167,8 +216,17 @@ function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTime
 		timeRemaining = 120
 		expiryTime = floor(GetTime() + timeRemaining)
 		local updated
-		updated, SpellGroup, SpellTimer =
-			Necrosis_UpdateTimerEntry(SpellGroup, SpellTimer, name, "", "", timeRemaining, expiryTime, timerType)
+		updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
+			SpellGroup,
+			SpellTimer,
+			name,
+			"",
+			"",
+			timeRemaining,
+			expiryTime,
+			timerType,
+			timeRemaining
+		)
 		if updated then
 			return SpellGroup, SpellTimer, TimerTable
 		end
@@ -176,6 +234,7 @@ function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTime
 			Name = name,
 			Time = timeRemaining,
 			TimeMax = expiryTime,
+			InitialDuration = timeRemaining,
 			Type = timerType,
 			Target = target,
 			TargetLevel = "",
@@ -194,8 +253,17 @@ function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTime
 		target = "???"
 		group = 1
 		local updated
-		updated, SpellGroup, SpellTimer =
-			Necrosis_UpdateTimerEntry(SpellGroup, SpellTimer, name, target, "", timeRemaining, expiryTime, timerType)
+		updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
+			SpellGroup,
+			SpellTimer,
+			name,
+			target,
+			"",
+			timeRemaining,
+			expiryTime,
+			timerType,
+			timeRemaining
+		)
 		if updated then
 			return SpellGroup, SpellTimer, TimerTable
 		end
@@ -203,6 +271,7 @@ function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTime
 			Name = name,
 			Time = timeRemaining,
 			TimeMax = expiryTime,
+			InitialDuration = timeRemaining,
 			Type = timerType,
 			Target = target,
 			TargetLevel = "",
@@ -228,27 +297,42 @@ function Necrosis_InsertCustomTimer(
 	targetLevel,
 	SpellGroup,
 	SpellTimer,
-	TimerTable
+	TimerTable,
+	initialDuration
 )
 	local name = spellName
 	local target = targetName or ""
 	local level = targetLevel or ""
 	local timeRemaining = duration or 0
+	local totalDuration = initialDuration or duration or 0
 	if timeRemaining <= 0 then
 		return SpellGroup, SpellTimer, TimerTable
 	end
+	if totalDuration <= 0 or timeRemaining > totalDuration then
+		totalDuration = timeRemaining
+	end
 	local expiryTime = floor(GetTime() + timeRemaining)
 	local updated
-	updated, SpellGroup, SpellTimer =
-		Necrosis_UpdateTimerEntry(SpellGroup, SpellTimer, name, target, level, timeRemaining, expiryTime, timerType)
+	updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
+		SpellGroup,
+		SpellTimer,
+		name,
+		target,
+		level,
+		timeRemaining,
+		expiryTime,
+		timerType,
+		totalDuration
+	)
 	if updated then
 		return SpellGroup, SpellTimer, TimerTable
 	end
 
 	table.insert(SpellTimer, {
 		Name = name,
-		Time = timeRemaining,
+		Time = totalDuration,
 		TimeMax = expiryTime,
+		InitialDuration = totalDuration,
 		Type = timerType,
 		Target = target,
 		TargetLevel = level,
@@ -525,10 +609,22 @@ function Necrosis_DisplayTimer(
 		timeText = timeText .. "0" .. seconds
 	end
 
-	local remaining = timer.TimeMax - currentTime
+	local remaining = 0
+	if timer.TimeMax then
+		remaining = timer.TimeMax - currentTime
+		if remaining < 0 then
+			remaining = 0
+		end
+	end
+	local totalDuration = timer.InitialDuration or timer.Time
 	local percent = 0
-	if timer.Time and timer.Time > 0 then
-		percent = (remaining / timer.Time) * 100
+	if totalDuration and totalDuration > 0 then
+		percent = (remaining / totalDuration) * 100
+		if percent < 0 then
+			percent = 0
+		elseif percent > 100 then
+			percent = 100
+		end
 	end
 	local color = NecrosisTimerColor(percent)
 
@@ -572,8 +668,9 @@ function Necrosis_DisplayTimer(
 
 	graphCount = graphCount + 1
 	GraphicalTimer.names[graphCount] = timer.Name
-	GraphicalTimer.expiryTimes[graphCount] = timer.TimeMax
-	GraphicalTimer.initialDurations[graphCount] = timer.Time
+	GraphicalTimer.expiryTimes[graphCount] = timer.TimeMax or currentTime
+	local displayDuration = totalDuration and totalDuration > 0 and totalDuration or (remaining > 0 and remaining or 1)
+	GraphicalTimer.initialDurations[graphCount] = displayDuration
 	GraphicalTimer.isTitle[graphCount] = false
 	GraphicalTimer.displayLines[graphCount] = timerLabel
 	GraphicalTimer.slotIds[graphCount] = timer.Gtimer

@@ -261,7 +261,8 @@ local function Necrosis_OnSpellcastStart(spellName)
 				playerLevel,
 				duration,
 				expiry,
-				data.Type
+				data.Type,
+				duration
 			)
 		end
 		if not updated then
@@ -358,10 +359,14 @@ local function Necrosis_OnUnitPetEvent(_, unitId)
 	end
 end
 
-local function Necrosis_FindPlayerBuff(buffName)
-	if not buffName then
+local function Necrosis_FindPlayerBuff(buffName, options)
+	if not buffName and type(options) ~= "table" then
 		return nil, 0
 	end
+	options = options or {}
+	local tooltipPattern = options.tooltipPattern
+	local plainSearch = options.plain ~= false
+	local matcher = options.matcher
 	local index = 0
 	while true do
 		local buffId = GetPlayerBuff(index, "HELPFUL")
@@ -371,9 +376,23 @@ local function Necrosis_FindPlayerBuff(buffName)
 		Necrosis_MoneyToggle()
 		NecrosisTooltip:SetPlayerBuff(buffId)
 		local tooltipName = NecrosisTooltipTextLeft1 and NecrosisTooltipTextLeft1:GetText()
-		if tooltipName == buffName then
+		local matched = false
+		if matcher and tooltipName then
+			matched = matcher(tooltipName)
+		elseif tooltipName then
+			if buffName and tooltipName == buffName then
+				matched = true
+			elseif tooltipPattern then
+				if plainSearch then
+					matched = string.find(tooltipName, tooltipPattern, 1, true) ~= nil
+				else
+					matched = string.find(tooltipName, tooltipPattern) ~= nil
+				end
+			end
+		end
+		if matched then
 			local timeLeft = GetPlayerBuffTimeLeft(buffId) or 0
-			return buffId, timeLeft
+			return buffId, timeLeft, tooltipName
 		end
 		index = index + 1
 	end
@@ -385,6 +404,239 @@ end
 
 local function Necrosis_OnDebuffEvent()
 	Necrosis_SelfEffect("DEBUFF")
+end
+
+local STONE_BUFF_KEYS = { "Firestone", "Felstone", "Wrathstone", "Voidstone" }
+
+local function Necrosis_CreateStoneBuffConfig(itemKey)
+	local stoneName = itemKey
+	if NECROSIS_ITEM and NECROSIS_ITEM[itemKey] then
+		stoneName = NECROSIS_ITEM[itemKey]
+	end
+	return {
+		timerName = stoneName,
+		buffName = stoneName,
+		timerType = NECROSIS_TIMER_TYPE.SELF_BUFF,
+		tooltipPattern = stoneName,
+	}
+end
+
+local function Necrosis_BuildDefaultTrackedBuffs()
+	local buffs = {
+		{ spellIndex = 31 },
+		{ spellIndex = 36 },
+		{ spellIndex = 11 },
+	}
+	for index = 1, table.getn(STONE_BUFF_KEYS) do
+		local stoneKey = STONE_BUFF_KEYS[index]
+		local config = Necrosis_CreateStoneBuffConfig(stoneKey)
+		table.insert(buffs, config)
+	end
+	return buffs
+end
+
+local DEFAULT_TRACKED_SELF_BUFFS = Necrosis_BuildDefaultTrackedBuffs()
+
+local TRACKED_SELF_BUFFS = DEFAULT_TRACKED_SELF_BUFFS
+local TRACKED_SELF_BUFF_COUNT = table.getn(TRACKED_SELF_BUFFS)
+
+local function Necrosis_GetStoredBuffDuration(timerName)
+	if not timerName then
+		return nil
+	end
+	if type(NecrosisConfig) ~= "table" then
+		return nil
+	end
+	local durations = NecrosisConfig.TrackedBuffDurations
+	if type(durations) == "table" then
+		return durations[timerName]
+	end
+	return nil
+end
+
+local function Necrosis_SetStoredBuffDuration(timerName, duration)
+	if not timerName or not duration or duration <= 0 then
+		return
+	end
+	if type(NecrosisConfig) ~= "table" then
+		return
+	end
+	NecrosisConfig.TrackedBuffDurations = NecrosisConfig.TrackedBuffDurations or {}
+	local durations = NecrosisConfig.TrackedBuffDurations
+	if not durations[timerName] or duration > durations[timerName] then
+		durations[timerName] = duration
+	end
+end
+
+local function Necrosis_GetTrackedBuffTimerName(buffConfig)
+	if not buffConfig then
+		return nil
+	end
+	if buffConfig.timerName then
+		return buffConfig.timerName
+	end
+	if buffConfig.spellIndex then
+		local data = NECROSIS_SPELL_TABLE[buffConfig.spellIndex]
+		if data and data.Name then
+			return data.Name
+		end
+	end
+	return buffConfig.buffName
+end
+
+local function Necrosis_FindTrackedBuffConfigByName(searchText)
+	if not searchText then
+		return nil
+	end
+	if type(TRACKED_SELF_BUFFS) ~= "table" then
+		return nil
+	end
+	local count = TRACKED_SELF_BUFF_COUNT or table.getn(TRACKED_SELF_BUFFS)
+	for index = 1, count do
+		local config = TRACKED_SELF_BUFFS[index]
+		if config then
+			local timerName = Necrosis_GetTrackedBuffTimerName(config)
+			if timerName and string.find(searchText, timerName, 1, true) then
+				return config
+			end
+			if config.buffName and string.find(searchText, config.buffName, 1, true) then
+				return config
+			end
+			if config.spellIndex then
+				local data = NECROSIS_SPELL_TABLE[config.spellIndex]
+				if data and data.Name and string.find(searchText, data.Name, 1, true) then
+					return config
+				end
+			end
+			local pattern = config.tooltipPattern
+			if pattern then
+				local plain = config.plain ~= false
+				if plain then
+					if string.find(searchText, pattern, 1, true) then
+						return config
+					end
+				elseif string.find(searchText, pattern) then
+					return config
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function Necrosis_FindTrackedBuffTimerName(searchText)
+	local config = Necrosis_FindTrackedBuffConfigByName(searchText)
+	if not config then
+		return nil
+	end
+	return Necrosis_GetTrackedBuffTimerName(config)
+end
+
+local function Necrosis_RemoveTrackedBuffTimerForMessage(message)
+	if not message then
+		return false
+	end
+	local timerName = Necrosis_FindTrackedBuffTimerName(message)
+	if not timerName then
+		return false
+	end
+	SpellTimer, TimerTable = Necrosis_RemoveTimerByName(timerName, SpellTimer, TimerTable)
+	return true
+end
+
+local function Necrosis_RefreshSelfBuffTimer(buffConfig, playerName, playerLevel, currentTime)
+	buffConfig = buffConfig or {}
+	local spellIndex = buffConfig.spellIndex
+	local data = nil
+	if spellIndex then
+		data = NECROSIS_SPELL_TABLE[spellIndex]
+		if not data or not data.Name then
+			if DEBUG_TIMER_EVENTS then
+				Necrosis_DebugPrint("UNIT_AURA", "no spell data", spellIndex)
+			end
+			return false, Necrosis_GetTrackedBuffTimerName(buffConfig)
+		end
+	end
+	local timerName = Necrosis_GetTrackedBuffTimerName(buffConfig)
+	local searchName = buffConfig.buffName or (data and data.Name)
+	if not timerName then
+		timerName = searchName
+	end
+	local buffId, timeLeft = Necrosis_FindPlayerBuff(searchName, buffConfig)
+	if not buffId or timeLeft <= 0 then
+		return false, timerName
+	end
+	local durationSeconds = floor(timeLeft)
+	local expiry = floor(currentTime + durationSeconds)
+	local timerType = buffConfig.timerType or (data and data.Type) or NECROSIS_TIMER_TYPE.SELF_BUFF
+	local baseDuration = buffConfig.baseDuration
+	if data and data.Length and data.Length > 0 then
+		if not baseDuration or data.Length > baseDuration then
+			baseDuration = data.Length
+		end
+	end
+	local storedDuration = Necrosis_GetStoredBuffDuration(timerName)
+	if storedDuration and storedDuration > 0 then
+		if not baseDuration or storedDuration > baseDuration then
+			baseDuration = storedDuration
+		end
+	end
+	if buffConfig.expectedDuration and buffConfig.expectedDuration > 0 then
+		if not baseDuration or buffConfig.expectedDuration > baseDuration then
+			baseDuration = buffConfig.expectedDuration
+		end
+	end
+	if not baseDuration or baseDuration <= 0 then
+		baseDuration = durationSeconds
+	end
+	if durationSeconds > baseDuration then
+		baseDuration = durationSeconds
+	end
+	buffConfig.baseDuration = baseDuration
+	Necrosis_SetStoredBuffDuration(timerName, baseDuration)
+	local updated = false
+	if type(Necrosis_UpdateTimerEntry) == "function" then
+		updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
+			SpellGroup,
+			SpellTimer,
+			timerName,
+			playerName,
+			playerLevel,
+			durationSeconds,
+			expiry,
+			timerType,
+			baseDuration
+		)
+	end
+	if not updated then
+		SpellTimer, TimerTable = Necrosis_RemoveTimerByName(timerName, SpellTimer, TimerTable)
+		if spellIndex then
+			SpellGroup, SpellTimer, TimerTable =
+				Necrosis_InsertTimerEntry(spellIndex, playerName, playerLevel, SpellGroup, SpellTimer, TimerTable)
+		else
+			SpellGroup, SpellTimer, TimerTable = Necrosis_InsertCustomTimer(
+				timerName,
+				durationSeconds,
+				timerType,
+				playerName,
+				playerLevel,
+				SpellGroup,
+				SpellTimer,
+				TimerTable,
+				baseDuration
+			)
+		end
+		if DEBUG_TIMER_EVENTS then
+			Necrosis_DebugPrint("UNIT_AURA", timerName, "inserted from scan", "timeLeft=", durationSeconds)
+		end
+	else
+		if DEBUG_TIMER_EVENTS then
+			Necrosis_DebugPrint("UNIT_AURA", timerName, "updated from scan", "timeLeft=", durationSeconds)
+		end
+	end
+	LastRefreshedBuffName = timerName
+	LastRefreshedBuffTime = currentTime
+	return true, timerName
 end
 
 local function Necrosis_OnPlayerAuraEvent(_, unitId)
@@ -400,62 +652,20 @@ local function Necrosis_OnPlayerAuraEvent(_, unitId)
 
 	local playerName = UnitName("player") or ""
 	local playerLevel = UnitLevel("player") or ""
-
-	local function ensureSelfBuffTimer(spellIndex)
-		local data = NECROSIS_SPELL_TABLE[spellIndex]
-		if not data or not data.Name then
-			if DEBUG_TIMER_EVENTS then
-				Necrosis_DebugPrint("UNIT_AURA", "no spell data", spellIndex)
-			end
-			return false
-		end
-		local buffId, timeLeft = Necrosis_FindPlayerBuff(data.Name)
-		if not buffId or timeLeft <= 0 then
-			return false
-		end
-		local durationSeconds = floor(timeLeft)
-		local expiry = floor(GetTime() + durationSeconds)
-		local updated = false
-		if type(Necrosis_UpdateTimerEntry) == "function" then
-			updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
-				SpellGroup,
-				SpellTimer,
-				data.Name,
-				playerName,
-				playerLevel,
-				durationSeconds,
-				expiry,
-				data.Type
-			)
-		end
-		if not updated then
-			SpellTimer, TimerTable = Necrosis_RemoveTimerByName(data.Name, SpellTimer, TimerTable)
-			SpellGroup, SpellTimer, TimerTable =
-				Necrosis_InsertTimerEntry(spellIndex, playerName, playerLevel, SpellGroup, SpellTimer, TimerTable)
-			if DEBUG_TIMER_EVENTS then
-				Necrosis_DebugPrint("UNIT_AURA", data.Name, "inserted from scan", "timeLeft=", durationSeconds)
-			end
-		else
-			if DEBUG_TIMER_EVENTS then
-				Necrosis_DebugPrint("UNIT_AURA", data.Name, "updated from scan", "timeLeft=", durationSeconds)
-			end
-		end
-		LastRefreshedBuffName = data.Name
-		LastRefreshedBuffTime = GetTime()
-		return true
-	end
-
+	local currentTime = GetTime()
 	if type(TRACKED_SELF_BUFFS) ~= "table" then
-		TRACKED_SELF_BUFFS = { 31, 36, 11 }
+		TRACKED_SELF_BUFFS = DEFAULT_TRACKED_SELF_BUFFS
+		TRACKED_SELF_BUFF_COUNT = table.getn(TRACKED_SELF_BUFFS)
 	end
-
-	for _, spellIndex in ipairs(TRACKED_SELF_BUFFS) do
-		if not ensureSelfBuffTimer(spellIndex) then
-			local data = NECROSIS_SPELL_TABLE[spellIndex]
-			if data and data.Name and Necrosis_TimerExists and Necrosis_TimerExists(data.Name) then
-				SpellTimer, TimerTable = Necrosis_RemoveTimerByName(data.Name, SpellTimer, TimerTable)
+	for index = 1, TRACKED_SELF_BUFF_COUNT do
+		local buffConfig = TRACKED_SELF_BUFFS[index]
+		local handled, timerName = Necrosis_RefreshSelfBuffTimer(buffConfig, playerName, playerLevel, currentTime)
+		if not handled then
+			timerName = timerName or Necrosis_GetTrackedBuffTimerName(buffConfig)
+			if timerName and Necrosis_TimerExists and Necrosis_TimerExists(timerName) then
+				SpellTimer, TimerTable = Necrosis_RemoveTimerByName(timerName, SpellTimer, TimerTable)
 				if DEBUG_TIMER_EVENTS then
-					Necrosis_DebugPrint("UNIT_AURA", data.Name, "buff missing; removed timer")
+					Necrosis_DebugPrint("UNIT_AURA", timerName, "buff missing; removed timer")
 				end
 			end
 		end
@@ -519,8 +729,6 @@ local LastRefreshedBuffName = nil
 local LastRefreshedBuffTime = 0
 
 local AuraScanAccumulator = 0
-
-local TRACKED_SELF_BUFFS = { 31, 36, 11 }
 
 local function Necrosis_GetBuffSpellIndexByName(buffName)
 	if not buffName then
@@ -902,67 +1110,17 @@ local function Necrosis_UpdateTrackedBuffTimers(elapsed, curTime)
 
 	local playerName = UnitName("player") or ""
 	local playerLevel = UnitLevel("player") or ""
-	local tracked = TRACKED_SELF_BUFFS or { 31, 36 }
-	for _, spellIndex in ipairs(tracked) do
-		local data = NECROSIS_SPELL_TABLE[spellIndex]
-		if data and data.Name then
-			local buffId, timeLeft = Necrosis_FindPlayerBuff(data.Name)
-			local timerExists = Necrosis_TimerExists and Necrosis_TimerExists(data.Name)
-			if buffId and timeLeft > 0 then
-				local durationSeconds = floor(timeLeft)
-				local expiry = floor(curTime + durationSeconds)
-				local baseDuration = data.Length or durationSeconds
-				local updated = false
-				if type(Necrosis_UpdateTimerEntry) == "function" then
-					updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
-						SpellGroup,
-						SpellTimer,
-						data.Name,
-						playerName,
-						playerLevel,
-						baseDuration,
-						expiry,
-						data.Type
-					)
-				end
-				if not updated then
-					SpellTimer, TimerTable = Necrosis_RemoveTimerByName(data.Name, SpellTimer, TimerTable)
-					SpellGroup, SpellTimer, TimerTable = Necrosis_InsertTimerEntry(
-						spellIndex,
-						playerName,
-						playerLevel,
-						SpellGroup,
-						SpellTimer,
-						TimerTable
-					)
-					if type(Necrosis_UpdateTimerEntry) == "function" then
-						updated, SpellGroup, SpellTimer = Necrosis_UpdateTimerEntry(
-							SpellGroup,
-							SpellTimer,
-							data.Name,
-							playerName,
-							playerLevel,
-							baseDuration,
-							expiry,
-							data.Type
-						)
-					end
-				end
-				LastRefreshedBuffName = data.Name
-				LastRefreshedBuffTime = curTime
-				-- if DEBUG_TIMER_EVENTS then
-				-- 	Necrosis_DebugPrint(
-				-- 		"BUFF fallback",
-				-- 		data.Name,
-				-- 		updated and "updated from OnUpdate" or "inserted from OnUpdate",
-				-- 		"timeLeft=",
-				-- 			durationSeconds
-				-- 	)
-				-- end
-			elseif timerExists then
-				SpellTimer, TimerTable = Necrosis_RemoveTimerByName(data.Name, SpellTimer, TimerTable)
+	local tracked = TRACKED_SELF_BUFFS or DEFAULT_TRACKED_SELF_BUFFS
+	local trackedCount = TRACKED_SELF_BUFF_COUNT or table.getn(tracked)
+	for index = 1, trackedCount do
+		local buffConfig = tracked[index]
+		local handled, timerName = Necrosis_RefreshSelfBuffTimer(buffConfig, playerName, playerLevel, curTime)
+		if not handled then
+			timerName = timerName or Necrosis_GetTrackedBuffTimerName(buffConfig)
+			if timerName and Necrosis_TimerExists and Necrosis_TimerExists(timerName) then
+				SpellTimer, TimerTable = Necrosis_RemoveTimerByName(timerName, SpellTimer, TimerTable)
 				if DEBUG_TIMER_EVENTS then
-					Necrosis_DebugPrint("BUFF fallback", data.Name, "removed (buff missing)")
+					Necrosis_DebugPrint("BUFF fallback", timerName, "removed (buff missing)")
 				end
 			end
 		end
@@ -1406,6 +1564,12 @@ function Necrosis_SelfEffect(action)
 				end
 			end
 			LastRefreshedBuffName = nil
+		else
+			local trackedConfig = Necrosis_FindTrackedBuffConfigByName(arg1)
+			if trackedConfig and not trackedConfig.spellIndex then
+				Necrosis_RefreshSelfBuffTimer(trackedConfig, playerName, playerLevel, GetTime())
+				LastRefreshedBuffName = nil
+			end
 		end
 	else
 		-- Update the mount button when the Warlock dismounts
@@ -1424,11 +1588,15 @@ function Necrosis_SelfEffect(action)
 			AmplifyUp = false
 			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 3)
 		end
-		-- Remove the Demon Armor/Skin timer when it fades
-		if NECROSIS_SPELL_TABLE[31].Name and string.find(arg1, NECROSIS_SPELL_TABLE[31].Name) then
-			SpellTimer, TimerTable = Necrosis_RemoveTimerByName(NECROSIS_SPELL_TABLE[31].Name, SpellTimer, TimerTable)
-		elseif NECROSIS_SPELL_TABLE[36].Name and string.find(arg1, NECROSIS_SPELL_TABLE[36].Name) then
-			SpellTimer, TimerTable = Necrosis_RemoveTimerByName(NECROSIS_SPELL_TABLE[36].Name, SpellTimer, TimerTable)
+		-- Remove tracked buff timers when they fade
+		if not Necrosis_RemoveTrackedBuffTimerForMessage(arg1) then
+			if NECROSIS_SPELL_TABLE[31].Name and string.find(arg1, NECROSIS_SPELL_TABLE[31].Name) then
+				SpellTimer, TimerTable =
+					Necrosis_RemoveTimerByName(NECROSIS_SPELL_TABLE[31].Name, SpellTimer, TimerTable)
+			elseif NECROSIS_SPELL_TABLE[36].Name and string.find(arg1, NECROSIS_SPELL_TABLE[36].Name) then
+				SpellTimer, TimerTable =
+					Necrosis_RemoveTimerByName(NECROSIS_SPELL_TABLE[36].Name, SpellTimer, TimerTable)
+			end
 		end
 	end
 	return
@@ -3955,7 +4123,8 @@ function NecrosisTimer(timerName, durationSeconds)
 		targetLevel,
 		SpellGroup,
 		SpellTimer,
-		TimerTable
+		TimerTable,
+		durationSeconds
 	)
 end
 
