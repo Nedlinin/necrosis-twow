@@ -15,19 +15,26 @@
 -- DISPLAY FUNCTIONS (CONSOLE, CHAT, SYSTEM MESSAGE)
 ------------------------------------------------------------------------------------------------------
 
+local USER_MESSAGE_PREFIX = "|CFFFF00FFNe|CFFFF50FFcr|CFFFF99FFos|CFFFFC4FFis|CFFFFFFFF: "
+local MESSAGE_COLOR_CACHE = setmetatable({}, { __mode = "kv" })
+
 function Necrosis_Msg(msg, type)
 	if msg and type then
 		-- If the type is "USER", display the message on screen...
 		if type == "USER" then
 			-- Cleverly colorize the message :D
-			msg = Necrosis_MsgAddColor(msg)
-			local Intro = "|CFFFF00FFNe|CFFFF50FFcr|CFFFF99FFos|CFFFFC4FFis|CFFFFFFFF: "
+			local colored = MESSAGE_COLOR_CACHE[msg]
+			if not colored then
+				colored = Necrosis_MsgAddColor(msg)
+				MESSAGE_COLOR_CACHE[msg] = colored
+			end
+			local fullMessage = USER_MESSAGE_PREFIX .. colored
 			if NecrosisConfig.ChatType then
 				-- ...... on the first chat window
-				ChatFrame1:AddMessage(Intro .. msg, 1.0, 0.7, 1.0, 1.0, UIERRORS_HOLD_TIME)
+				ChatFrame1:AddMessage(fullMessage, 1.0, 0.7, 1.0, 1.0, UIERRORS_HOLD_TIME)
 			else
 				-- ...... or at the center of the screen
-				UIErrorsFrame:AddMessage(Intro .. msg, 1.0, 0.7, 1.0, 1.0, UIERRORS_HOLD_TIME)
+				UIErrorsFrame:AddMessage(fullMessage, 1.0, 0.7, 1.0, 1.0, UIERRORS_HOLD_TIME)
 			end
 		-- If the type is "WORLD", send the message to the raid, otherwise to the party, otherwise to local chat
 		elseif type == "WORLD" then
@@ -55,29 +62,37 @@ end
 -- ... AND COLORAMA WAS BORN!
 ------------------------------------------------------------------------------------------------------
 
+local NECROSIS_COLOR_CODES = {
+	white = "|CFFFFFFFF",
+	lightBlue = "|CFF99CCFF",
+	brightGreen = "|CFF00FF00",
+	lightGreen2 = "|CFF66FF66",
+	lightGreen1 = "|CFF99FF66",
+	yellowGreen = "|CFFCCFF66",
+	lightYellow = "|CFFFFFF66",
+	darkYellow = "|CFFFFCC00",
+	lightOrange = "|CFFFFCC66",
+	dirtyOrange = "|CFFFF9933",
+	darkOrange = "|CFFFF6600",
+	redOrange = "|CFFFF3300",
+	red = "|CFFFF0000",
+	lightRed = "|CFFFF5555",
+	lightPurple1 = "|CFFFFC4FF",
+	lightPurple2 = "|CFFFF99FF",
+	purple = "|CFFFF50FF",
+	darkPurple1 = "|CFFFF00FF",
+	darkPurple2 = "|CFFB700B7",
+	close = "|r",
+}
+
 -- Replace color codes in strings with their color definitions
 function Necrosis_MsgAddColor(msg)
-	msg = string.gsub(msg, "<white>", "|CFFFFFFFF")
-	msg = string.gsub(msg, "<lightBlue>", "|CFF99CCFF")
-	msg = string.gsub(msg, "<brightGreen>", "|CFF00FF00")
-	msg = string.gsub(msg, "<lightGreen2>", "|CFF66FF66")
-	msg = string.gsub(msg, "<lightGreen1>", "|CFF99FF66")
-	msg = string.gsub(msg, "<yellowGreen>", "|CFFCCFF66")
-	msg = string.gsub(msg, "<lightYellow>", "|CFFFFFF66")
-	msg = string.gsub(msg, "<darkYellow>", "|CFFFFCC00")
-	msg = string.gsub(msg, "<lightOrange>", "|CFFFFCC66")
-	msg = string.gsub(msg, "<dirtyOrange>", "|CFFFF9933")
-	msg = string.gsub(msg, "<darkOrange>", "|CFFFF6600")
-	msg = string.gsub(msg, "<redOrange>", "|CFFFF3300")
-	msg = string.gsub(msg, "<red>", "|CFFFF0000")
-	msg = string.gsub(msg, "<lightRed>", "|CFFFF5555")
-	msg = string.gsub(msg, "<lightPurple1>", "|CFFFFC4FF")
-	msg = string.gsub(msg, "<lightPurple2>", "|CFFFF99FF")
-	msg = string.gsub(msg, "<purple>", "|CFFFF50FF")
-	msg = string.gsub(msg, "<darkPurple1>", "|CFFFF00FF")
-	msg = string.gsub(msg, "<darkPurple2>", "|CFFB700B7")
-	msg = string.gsub(msg, "<close>", "|r")
-	return msg
+	if not msg or msg == "" then
+		return msg
+	end
+	return string.gsub(msg, "<([%w]+)>", function(code)
+		return NECROSIS_COLOR_CODES[code] or "<" .. code .. ">"
+	end)
 end
 
 -- Insert color codes into timers based on remaining duration

@@ -125,7 +125,7 @@
 				HideUIPanel(this);
 			</OnLoad>
 			<OnUpdate>
-				Necrosis_OnUpdate();
+				Necrosis_OnUpdate(this, arg1);
 			</OnUpdate>
 			<OnEvent>
 				Necrosis_OnEvent(event);

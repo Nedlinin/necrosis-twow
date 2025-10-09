@@ -19,204 +19,89 @@ SpellTimer = {}
 
 local TIMER_TYPE = NECROSIS_TIMER_TYPE
 
-local function wipe_table(t)
-	for key in pairs(t) do
-		t[key] = nil
+local function Necrosis_ResetTimerDisplayCache(timer)
+	if not timer then
+		return
+	end
+	timer.cachedDisplaySuffix = nil
+	timer.cachedPercentBucket = nil
+	timer.cachedDisplayName = nil
+	timer.cachedShowTarget = nil
+	timer.cachedTarget = nil
+	if type(Necrosis_MarkTextTimersDirty) == "function" then
+		Necrosis_MarkTextTimersDirty()
 	end
 end
 
-local BASE_GROUP_NAMES = { "Rez", "Main", "Cooldown" }
-local BASE_GROUP_SUBNAMES = { " ", " ", " " }
-local ReusableGroupNames = {}
-local ReusableGroupSubNames = {}
-local ReusableGroupVisible = {}
-local ReusableGroupKeyCache = {}
--- Pool of recycled target-level lookup tables so we can avoid reallocating them each refresh
-local ReusableGroupKeyBucketPool = {}
-
-local function Necrosis_FinalizeTimerInsert(spellGroup, spellTimer, timerTable)
-	spellTimer, timerTable = Necrosis_AddTimerFrame(spellTimer, timerTable)
-	Necrosis_SortTimers(spellTimer, "Type")
-	spellGroup, spellTimer = Necrosis_AssignTimerGroups(spellGroup, spellTimer)
-	return spellGroup, spellTimer, timerTable
+local function Necrosis_ShouldSkipSpellTimer(spellIndex)
+	if not spellIndex then
+		return false
+	end
+	local spellData = NECROSIS_SPELL_TABLE[spellIndex]
+	if not spellData then
+		return false
+	end
+	if spellIndex == 13 then
+		-- Preserve Fear timer handling
+		return false
+	end
+	local timerType = spellData.Type
+	if timerType == TIMER_TYPE.CURSE or timerType == TIMER_TYPE.COMBAT then
+		return true
+	end
+	return false
 end
 
-function Necrosis_UpdateTimerEntry(spellGroup, spellTimer, name, target, level, timeRemaining, expiryTime, timerType)
+local function Necrosis_FinalizeTimerInsert(spellTimer, timerTable)
+	spellTimer, timerTable = Necrosis_AddTimerFrame(spellTimer, timerTable)
+	Necrosis_SortTimers(spellTimer)
+	return spellTimer, timerTable
+end
+
+function Necrosis_UpdateTimerEntry(spellTimer, name, target, timeRemaining, expiryTime, timerType, initialDuration)
 	if not spellTimer or not name then
-		return false, spellGroup, spellTimer
+		return false, spellTimer
 	end
 
 	target = target or ""
-	level = level or ""
 	local now = GetTime()
 	if not expiryTime then
 		expiryTime = floor(now + (timeRemaining or 0))
 	end
 	for index = 1, table.getn(spellTimer), 1 do
 		local timer = spellTimer[index]
-		if timer.Name == name and timer.Target == target and timer.TargetLevel == level then
-			local originalType = timer.Type
-			local originalTarget = timer.Target
-			local originalLevel = timer.TargetLevel
-			local originalGroup = timer.Group
-			timer.Time = timeRemaining or 0
-			timer.TimeMax = expiryTime
+		if timer.Name == name and timer.Target == target then
+			local previousInitial = timer.InitialDuration or timer.Time
+			local newInitial = initialDuration
+			if not newInitial or newInitial <= 0 then
+				if previousInitial and previousInitial > 0 then
+					newInitial = previousInitial
+				elseif timer.Time and timer.Time > 0 then
+					newInitial = timer.Time
+				elseif timeRemaining and timeRemaining > 0 then
+					newInitial = timeRemaining
+				else
+					newInitial = 0
+				end
+			end
+			if timeRemaining and timeRemaining > 0 and timeRemaining > newInitial then
+				newInitial = timeRemaining
+			end
+			timer.InitialDuration = newInitial > 0 and newInitial or nil
+			timer.Time = newInitial or 0
+			if expiryTime then
+				timer.TimeMax = expiryTime
+			end
 			if timerType then
 				timer.Type = timerType
 			end
 			timer.Target = target
-			timer.TargetLevel = level
-			-- Avoid re-sorting and regrouping unless spell metadata actually changed
-			local needsResort = timerType and timerType ~= originalType
-			local needsReassign = needsResort or originalTarget ~= target or originalLevel ~= level
-			if needsResort then
-				Necrosis_SortTimers(spellTimer, "Type")
-			end
-			if needsReassign then
-				spellGroup, spellTimer = Necrosis_AssignTimerGroups(spellGroup, spellTimer)
-			elseif originalGroup then
-				timer.Group = originalGroup
-			end
-			return true, spellGroup, spellTimer
+			Necrosis_ResetTimerDisplayCache(timer)
+			Necrosis_SortTimers(spellTimer)
+			return true, spellTimer
 		end
 	end
-	return false, spellGroup, spellTimer
-end
-
--- That's what the timer table is for!
-function Necrosis_InsertTimerEntry(IndexTable, Target, LevelTarget, SpellGroup, SpellTimer, TimerTable)
-	if type(Necrosis_DebugPrint) == "function" then
-		Necrosis_DebugPrint(
-			"InsertTimer",
-			"index=",
-			IndexTable,
-			"name=",
-			NECROSIS_SPELL_TABLE[IndexTable].Name or "?",
-			"target=",
-			Target or ""
-		)
-	end
-
-	-- Insert the entry into the table
-	local name = NECROSIS_SPELL_TABLE[IndexTable].Name
-	local target = Target or ""
-	local level = LevelTarget or ""
-	local duration = NECROSIS_SPELL_TABLE[IndexTable].Length or 0
-	local expiryTime = floor(GetTime() + duration)
-	local timerType = NECROSIS_SPELL_TABLE[IndexTable].Type
-	local updated
-	updated, SpellGroup, SpellTimer =
-		Necrosis_UpdateTimerEntry(SpellGroup, SpellTimer, name, target, level, duration, expiryTime, timerType)
-	if updated then
-		return SpellGroup, SpellTimer, TimerTable
-	end
-
-	table.insert(SpellTimer, {
-		Name = NECROSIS_SPELL_TABLE[IndexTable].Name,
-		Time = duration,
-		TimeMax = expiryTime,
-		Type = timerType,
-		Target = target,
-		TargetLevel = level,
-		Group = 0,
-		Gtimer = nil,
-	})
-
-	return Necrosis_FinalizeTimerInsert(SpellGroup, SpellTimer, TimerTable)
-end
-
--- And to insert the stone timer
-function Necrosis_InsertStoneTimer(Stone, start, duration, SpellGroup, SpellTimer, TimerTable)
-	-- Insert the entry into the table
-	local name
-	local timeRemaining
-	local expiryTime
-	local timerType = 2
-	local target = ""
-	local group = 2
-	local inserted = false
-	if Stone == "Healthstone" then
-		if type(Necrosis_DebugPrint) == "function" then
-			Necrosis_DebugPrint("InsertTimerStone", Stone, "duration=", 120)
-		end
-		name = NECROSIS_COOLDOWN.Healthstone
-		timeRemaining = 120
-		expiryTime = floor(GetTime() + timeRemaining)
-		local updated
-		updated, SpellGroup, SpellTimer =
-			Necrosis_UpdateTimerEntry(SpellGroup, SpellTimer, name, "", "", timeRemaining, expiryTime, timerType)
-		if updated then
-			return SpellGroup, SpellTimer, TimerTable
-		end
-		table.insert(SpellTimer, {
-			Name = name,
-			Time = timeRemaining,
-			TimeMax = expiryTime,
-			Type = timerType,
-			Target = target,
-			TargetLevel = "",
-			Group = group,
-			Gtimer = nil,
-		})
-		inserted = true
-	elseif Stone == "Spellstone" then
-		if type(Necrosis_DebugPrint) == "function" then
-			Necrosis_DebugPrint("InsertTimerStone", Stone, "duration=", 120)
-		end
-		name = NECROSIS_COOLDOWN.Spellstone
-		timeRemaining = 120
-		expiryTime = floor(GetTime() + timeRemaining)
-		local updated
-		updated, SpellGroup, SpellTimer =
-			Necrosis_UpdateTimerEntry(SpellGroup, SpellTimer, name, "", "", timeRemaining, expiryTime, timerType)
-		if updated then
-			return SpellGroup, SpellTimer, TimerTable
-		end
-		table.insert(SpellTimer, {
-			Name = name,
-			Time = timeRemaining,
-			TimeMax = expiryTime,
-			Type = timerType,
-			Target = target,
-			TargetLevel = "",
-			Group = group,
-			Gtimer = nil,
-		})
-		inserted = true
-	elseif Stone == "Soulstone" then
-		if type(Necrosis_DebugPrint) == "function" then
-			Necrosis_DebugPrint("InsertTimerStone", Stone, "duration=", duration or "nil")
-		end
-		name = NECROSIS_SPELL_TABLE[11].Name
-		timerType = NECROSIS_SPELL_TABLE[11].Type
-		timeRemaining = floor((duration or 0) - GetTime() + (start or 0))
-		expiryTime = floor((start or 0) + (duration or 0))
-		target = "???"
-		group = 1
-		local updated
-		updated, SpellGroup, SpellTimer =
-			Necrosis_UpdateTimerEntry(SpellGroup, SpellTimer, name, target, "", timeRemaining, expiryTime, timerType)
-		if updated then
-			return SpellGroup, SpellTimer, TimerTable
-		end
-		table.insert(SpellTimer, {
-			Name = name,
-			Time = timeRemaining,
-			TimeMax = expiryTime,
-			Type = timerType,
-			Target = target,
-			TargetLevel = "",
-			Group = group,
-			Gtimer = nil,
-		})
-		inserted = true
-	end
-
-	if not inserted then
-		return SpellGroup, SpellTimer, TimerTable
-	end
-
-	return Necrosis_FinalizeTimerInsert(SpellGroup, SpellTimer, TimerTable)
+	return false, spellTimer
 end
 
 -- For creating custom timers
@@ -225,38 +110,147 @@ function Necrosis_InsertCustomTimer(
 	duration,
 	timerType,
 	targetName,
-	targetLevel,
-	SpellGroup,
 	SpellTimer,
-	TimerTable
+	TimerTable,
+	initialDuration,
+	expiryTime
 )
-	local name = spellName
-	local target = targetName or ""
-	local level = targetLevel or ""
-	local timeRemaining = duration or 0
-	if timeRemaining <= 0 then
-		return SpellGroup, SpellTimer, TimerTable
+	return Necrosis_EnsureNamedTimer(
+		spellName,
+		duration,
+		timerType,
+		targetName,
+		initialDuration,
+		expiryTime,
+		SpellTimer,
+		TimerTable
+	)
+end
+
+local Necrosis_ReusableEnsureOptions = {}
+
+local function Necrosis_GetEnsureOptions()
+	Necrosis_ReusableEnsureOptions.spellIndex = nil
+	Necrosis_ReusableEnsureOptions.name = nil
+	Necrosis_ReusableEnsureOptions.duration = nil
+	Necrosis_ReusableEnsureOptions.timerType = nil
+	Necrosis_ReusableEnsureOptions.target = nil
+	Necrosis_ReusableEnsureOptions.initial = nil
+	Necrosis_ReusableEnsureOptions.expiry = nil
+	return Necrosis_ReusableEnsureOptions
+end
+
+function Necrosis_EnsureTimer(options, SpellTimer, TimerTable)
+	if type(Necrosis_ShouldUseSpellTimers) == "function" and not Necrosis_ShouldUseSpellTimers() then
+		return SpellTimer, TimerTable
 	end
-	local expiryTime = floor(GetTime() + timeRemaining)
+	options = options or Necrosis_GetEnsureOptions()
+	local spellIndex = options.spellIndex
+	local name = options.name
+	local target = options.target or ""
+	local timerType = options.timerType or TIMER_TYPE.SELF_BUFF
+	local duration = options.duration
+	local initial = options.initial
+	local expiry = options.expiry
+
+	if spellIndex then
+		local data = NECROSIS_SPELL_TABLE[spellIndex]
+		if data then
+			name = name or data.Name
+			timerType = timerType or data.Type
+			if duration == nil then
+				duration = data.Length
+			end
+			if initial == nil and data.Length and data.Length > 0 then
+				initial = data.Length
+			end
+		end
+		if Necrosis_ShouldSkipSpellTimer(spellIndex) then
+			if SpellTimer and name then
+				SpellTimer, TimerTable = Necrosis_RemoveTimerByName(name, SpellTimer, TimerTable)
+			end
+			return SpellTimer, TimerTable
+		end
+	end
+
+	if not name then
+		return SpellTimer, TimerTable
+	end
+
+	if duration and duration <= 0 then
+		if not expiry then
+			return SpellTimer, TimerTable
+		end
+	end
+
+	if not expiry and duration and duration > 0 then
+		expiry = floor(GetTime() + duration)
+	end
+
+	if initial == nil then
+		initial = duration
+	end
+
 	local updated
-	updated, SpellGroup, SpellTimer =
-		Necrosis_UpdateTimerEntry(SpellGroup, SpellTimer, name, target, level, timeRemaining, expiryTime, timerType)
+	updated, SpellTimer = Necrosis_UpdateTimerEntry(SpellTimer, name, target, duration, expiry, timerType, initial)
 	if updated then
-		return SpellGroup, SpellTimer, TimerTable
+		return SpellTimer, TimerTable
+	end
+
+	local insertDuration = initial or duration or 0
+	if insertDuration < 0 then
+		insertDuration = 0
+	end
+
+	if not SpellTimer then
+		SpellTimer = {}
 	end
 
 	table.insert(SpellTimer, {
 		Name = name,
-		Time = timeRemaining,
-		TimeMax = expiryTime,
+		Time = insertDuration,
+		TimeMax = expiry,
+		InitialDuration = insertDuration > 0 and insertDuration or nil,
 		Type = timerType,
 		Target = target,
-		TargetLevel = level,
-		Group = 0,
-		Gtimer = nil,
 	})
+	Necrosis_ResetTimerDisplayCache(SpellTimer[table.getn(SpellTimer)])
 
-	return Necrosis_FinalizeTimerInsert(SpellGroup, SpellTimer, TimerTable)
+	return Necrosis_FinalizeTimerInsert(SpellTimer, TimerTable)
+end
+
+function Necrosis_EnsureSpellIndexTimer(
+	spellIndex,
+	target,
+	duration,
+	timerType,
+	initial,
+	expiry,
+	SpellTimer,
+	TimerTable
+)
+	local options = Necrosis_GetEnsureOptions()
+	options.spellIndex = spellIndex
+	options.target = target
+	options.duration = duration
+	options.timerType = timerType
+	options.initial = initial
+	options.expiry = expiry
+	return Necrosis_EnsureTimer(options, SpellTimer, TimerTable)
+end
+
+function Necrosis_EnsureNamedTimer(name, duration, timerType, target, initial, expiry, SpellTimer, TimerTable)
+	if not name then
+		return SpellTimer, TimerTable
+	end
+	local options = Necrosis_GetEnsureOptions()
+	options.name = name
+	options.duration = duration
+	options.timerType = timerType
+	options.target = target
+	options.initial = initial
+	options.expiry = expiry
+	return Necrosis_EnsureTimer(options, SpellTimer, TimerTable)
 end
 
 ------------------------------------------------------------------------------------------------------
@@ -266,11 +260,23 @@ end
 -- Remove the timer once its index is known
 function Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
 	-- Remove the graphical timer
-	local Gtime = SpellTimer[index].Gtimer
-	TimerTable = Necrosis_RemoveTimerFrame(Gtime, TimerTable)
+	local removedSlot = SpellTimer[index].Gtimer
+	if removedSlot then
+		TimerTable = Necrosis_RemoveTimerFrame(removedSlot, TimerTable)
+	end
 
 	-- Remove the timer from the list
 	table.remove(SpellTimer, index)
+
+	for i = index, table.getn(SpellTimer), 1 do
+		local timer = SpellTimer[i]
+		if timer then
+			timer.Gtimer = nil
+		end
+	end
+	if type(Necrosis_MarkTextTimersDirty) == "function" then
+		Necrosis_MarkTextTimersDirty()
+	end
 
 	return SpellTimer, TimerTable
 end
@@ -287,29 +293,21 @@ function Necrosis_RemoveTimerByName(name, SpellTimer, TimerTable)
 end
 
 -- Remove combat timers when regeneration starts
-function Necrosis_RemoveCombatTimers(SpellGroup, SpellTimer, TimerTable)
-	for index = 1, table.getn(SpellTimer), 1 do
-		if SpellTimer[index] then
-			-- Remove the target name when cooldowns are per-character
-			if SpellTimer[index].Type == TIMER_TYPE.COOLDOWN then
-				SpellTimer[index].Target = ""
-				SpellTimer[index].TargetLevel = ""
+function Necrosis_RemoveCombatTimers(SpellTimer, TimerTable)
+	for index = table.getn(SpellTimer), 1, -1 do
+		local timer = SpellTimer[index]
+		if timer then
+			if timer.Type == TIMER_TYPE.COOLDOWN then
+				timer.Target = ""
+				Necrosis_ResetTimerDisplayCache(timer)
 			end
-			-- Remove combat timers
-			if (SpellTimer[index].Type == TIMER_TYPE.CURSE) or (SpellTimer[index].Type == TIMER_TYPE.COMBAT) then
-				SpellTimer = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
+			if timer.Type == TIMER_TYPE.CURSE or timer.Type == TIMER_TYPE.COMBAT then
+				SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
 			end
 		end
 	end
 
-	if table.getn(SpellGroup.Name) >= 4 then
-		for index = 4, table.getn(SpellGroup.Name), 1 do
-			table.remove(SpellGroup.Name)
-			table.remove(SpellGroup.SubName)
-			table.remove(SpellGroup.Visible)
-		end
-	end
-	return SpellGroup, SpellTimer, TimerTable
+	return SpellTimer, TimerTable
 end
 
 ------------------------------------------------------------------------------------------------------
@@ -329,131 +327,31 @@ end
 -- SORTING FUNCTIONS
 ------------------------------------------------------------------------------------------------------
 
--- Assign each timer to its group
-function Necrosis_AssignTimerGroups(SpellGroup, SpellTimer)
-	SpellGroup = SpellGroup or { Name = {}, SubName = {}, Visible = {} }
-	SpellGroup.Name = SpellGroup.Name or {}
-	SpellGroup.SubName = SpellGroup.SubName or {}
-	SpellGroup.Visible = SpellGroup.Visible or {}
-
-	local previousNames = SpellGroup.Name
-	local previousSubNames = SpellGroup.SubName
-	local previousVisible = SpellGroup.Visible
-	local baseName1 = previousNames and previousNames[1] or BASE_GROUP_NAMES[1]
-	local baseName2 = previousNames and previousNames[2] or BASE_GROUP_NAMES[2]
-	local baseName3 = previousNames and previousNames[3] or BASE_GROUP_NAMES[3]
-	local baseSub1 = previousSubNames and previousSubNames[1]
-	if baseSub1 == nil then
-		baseSub1 = BASE_GROUP_SUBNAMES[1]
+function Necrosis_SortTimers(SpellTimer)
+	if not SpellTimer then
+		return
 	end
-	local baseSub2 = previousSubNames and previousSubNames[2]
-	if baseSub2 == nil then
-		baseSub2 = BASE_GROUP_SUBNAMES[2]
-	end
-	local baseSub3 = previousSubNames and previousSubNames[3]
-	if baseSub3 == nil then
-		baseSub3 = BASE_GROUP_SUBNAMES[3]
-	end
-	local baseVis1 = previousVisible and previousVisible[1]
-	if baseVis1 == nil then
-		baseVis1 = true
-	end
-	local baseVis2 = previousVisible and previousVisible[2]
-	if baseVis2 == nil then
-		baseVis2 = true
-	end
-	local baseVis3 = previousVisible and previousVisible[3]
-	if baseVis3 == nil then
-		baseVis3 = true
-	end
-
-	wipe_table(ReusableGroupNames)
-	wipe_table(ReusableGroupSubNames)
-	wipe_table(ReusableGroupVisible)
-
-	-- Return previously used target buckets to the pool before rebuilding the map
-	for target, bucket in pairs(ReusableGroupKeyCache) do
-		if type(bucket) == "table" then
-			for key in pairs(bucket) do
-				bucket[key] = nil
-			end
-			local poolIndex = table.getn(ReusableGroupKeyBucketPool) + 1
-			ReusableGroupKeyBucketPool[poolIndex] = bucket
+	table.sort(SpellTimer, function(left, right)
+		if not left then
+			return false
 		end
-		ReusableGroupKeyCache[target] = nil
-	end
-
-	local names = ReusableGroupNames
-	local subNames = ReusableGroupSubNames
-	local visible = ReusableGroupVisible
-	local groupByTarget = ReusableGroupKeyCache
-
-	names[1] = baseName1
-	names[2] = baseName2
-	names[3] = baseName3
-	subNames[1] = baseSub1
-	subNames[2] = baseSub2
-	subNames[3] = baseSub3
-	visible[1] = baseVis1
-	visible[2] = baseVis2
-	visible[3] = baseVis3
-
-	local nextGroupIndex = 4
-
-	local function ensureGroupIndex(target, level)
-		target = target or ""
-		local levelValue = level ~= nil and level or ""
-		-- Each target keeps a small table of level -> group index to minimize lookups
-		local bucket = groupByTarget[target]
-		if not bucket then
-			local poolIndex = table.getn(ReusableGroupKeyBucketPool)
-			if poolIndex > 0 then
-				bucket = ReusableGroupKeyBucketPool[poolIndex]
-				ReusableGroupKeyBucketPool[poolIndex] = nil
-			else
-				bucket = {}
-			end
-			groupByTarget[target] = bucket
+		if not right then
+			return true
 		end
-		local index = bucket[levelValue]
-		if not index then
-			index = nextGroupIndex
-			nextGroupIndex = nextGroupIndex + 1
-			names[index] = target
-			subNames[index] = levelValue
-			visible[index] = false
-			bucket[levelValue] = index
+		local leftTime = left.TimeMax
+		if not leftTime or leftTime <= 0 then
+			leftTime = math.huge
 		end
-		return index
-	end
-
-	if SpellTimer then
-		for index = 1, table.getn(SpellTimer), 1 do
-			local timer = SpellTimer[index]
-			if timer then
-				if timer.Type and timer.Type <= 3 then
-					timer.Group = timer.Type
-				else
-					timer.Group = ensureGroupIndex(timer.Target, timer.TargetLevel)
-				end
-			end
+		local rightTime = right.TimeMax
+		if not rightTime or rightTime <= 0 then
+			rightTime = math.huge
 		end
-	end
-
-	SpellGroup.Name = names
-	SpellGroup.SubName = subNames
-	SpellGroup.Visible = visible
-
-	if SpellTimer then
-		Necrosis_SortTimers(SpellTimer, "Group")
-	end
-	return SpellGroup, SpellTimer
-end
-
--- Sort timers by group
-function Necrosis_SortTimers(SpellTimer, key)
-	return table.sort(SpellTimer, function(SubTab1, SubTab2)
-		return SubTab1[key] < SubTab2[key]
+		if leftTime == rightTime then
+			local leftName = left.Name or ""
+			local rightName = right.Name or ""
+			return leftName < rightName
+		end
+		return leftTime < rightTime
 	end)
 end
 
@@ -464,41 +362,21 @@ end
 function Necrosis_DisplayTimer(
 	textBuffer,
 	index,
-	SpellGroup,
 	SpellTimer,
 	GraphicalTimer,
 	TimerTable,
 	graphCount,
-	currentTime
+	currentTime,
+	buildText
 )
 	-- textBuffer and graphCount let callers reuse preallocated storage between updates
 	if not SpellTimer then
-		return SpellGroup, TimerTable, graphCount
+		return TimerTable, graphCount
 	end
 
 	local timer = SpellTimer[index]
 	if not timer then
-		return SpellGroup, TimerTable, graphCount
-	end
-
-	local groupIndex = timer.Group
-	if
-		not SpellGroup.Visible[groupIndex]
-		and SpellGroup.SubName[groupIndex] ~= nil
-		and SpellGroup.Name[groupIndex] ~= nil
-	then
-		local header = SpellGroup.Name[groupIndex] .. " " .. SpellGroup.SubName[groupIndex]
-		textBuffer[table.getn(textBuffer) + 1] = "<purple>-------------------------------\n"
-			.. header
-			.. "\n-------------------------------<close>\n"
-		graphCount = graphCount + 1
-		GraphicalTimer.names[graphCount] = header
-		GraphicalTimer.expiryTimes[graphCount] = 0
-		GraphicalTimer.initialDurations[graphCount] = 0
-		GraphicalTimer.isTitle[graphCount] = true
-		GraphicalTimer.displayLines[graphCount] = ""
-		GraphicalTimer.slotIds[graphCount] = 0
-		SpellGroup.Visible[groupIndex] = true
+		return TimerTable, graphCount
 	end
 
 	local seconds
@@ -525,28 +403,82 @@ function Necrosis_DisplayTimer(
 		timeText = timeText .. "0" .. seconds
 	end
 
-	local remaining = timer.TimeMax - currentTime
+	local remaining = 0
+	if timer.TimeMax then
+		remaining = timer.TimeMax - currentTime
+		if remaining < 0 then
+			remaining = 0
+		end
+	end
+	local totalDuration = timer.InitialDuration or timer.Time
 	local percent = 0
-	if timer.Time and timer.Time > 0 then
-		percent = (remaining / timer.Time) * 100
+	if totalDuration and totalDuration > 0 then
+		percent = (remaining / totalDuration) * 100
+		if percent < 0 then
+			percent = 0
+		elseif percent > 100 then
+			percent = 100
+		end
 	end
-	local color = NecrosisTimerColor(percent)
+	local percentBucket = floor(percent / 10)
+	if percentBucket < 0 then
+		percentBucket = 0
+	elseif percentBucket > 10 then
+		percentBucket = 10
+	end
 
-	local showTarget = (timer.Type == 1 or timer.Name == NECROSIS_SPELL_TABLE[16].Name) and timer.Target ~= ""
-	local line = "<white>" .. timeText .. " - <close>" .. color .. timer.Name .. "<close><white>"
-	if showTarget then
-		line = line .. " - " .. timer.Target .. "<close>\n"
+	local displayName
+	if timer.Type == TIMER_TYPE.COOLDOWN and timer.Name and timer.Name ~= "" then
+		local expected = timer.Name .. " Cooldown"
+		if timer.DisplayName ~= expected then
+			timer.DisplayName = expected
+		end
+		displayName = timer.DisplayName
 	else
-		line = line .. "<close>\n"
+		timer.DisplayName = nil
+		displayName = timer.Name or ""
 	end
-	textBuffer[table.getn(textBuffer) + 1] = line
+
+	local targetName = timer.Target or ""
+	local showTarget = (timer.Type == TIMER_TYPE.PRIMARY or timer.Name == NECROSIS_SPELL_TABLE[16].Name)
+		and targetName ~= ""
+	local needsSuffixUpdate = timer.cachedDisplaySuffix == nil
+	if not needsSuffixUpdate and timer.cachedPercentBucket ~= percentBucket then
+		needsSuffixUpdate = true
+	end
+	if not needsSuffixUpdate and timer.cachedDisplayName ~= displayName then
+		needsSuffixUpdate = true
+	end
+	if not needsSuffixUpdate and timer.cachedShowTarget ~= showTarget then
+		needsSuffixUpdate = true
+	end
+	if not needsSuffixUpdate and showTarget and timer.cachedTarget ~= targetName then
+		needsSuffixUpdate = true
+	end
+	if needsSuffixUpdate then
+		local color = NecrosisTimerColor(percent)
+		local suffix = " - <close>" .. color .. displayName .. "<close><white>"
+		if showTarget then
+			suffix = suffix .. " - " .. targetName .. "<close>\n"
+		else
+			suffix = suffix .. "<close>\n"
+		end
+		timer.cachedDisplaySuffix = suffix
+		timer.cachedPercentBucket = percentBucket
+		timer.cachedDisplayName = displayName
+		timer.cachedShowTarget = showTarget
+		timer.cachedTarget = showTarget and targetName or ""
+	end
+	if buildText then
+		textBuffer[table.getn(textBuffer) + 1] = "<white>" .. timeText .. (timer.cachedDisplaySuffix or "<close>\n")
+	end
 
 	local timerLabel = timeText
 	if showTarget then
 		if NecrosisConfig.SpellTimerPos == 1 then
-			timerLabel = timerLabel .. " - " .. timer.Target
+			timerLabel = timerLabel .. " - " .. targetName
 		else
-			timerLabel = timer.Target .. " - " .. timerLabel
+			timerLabel = targetName .. " - " .. timerLabel
 		end
 	end
 
@@ -568,13 +500,16 @@ function Necrosis_DisplayTimer(
 			end
 			timer.Gtimer = newIndex
 		end
+		if type(Necrosis_ShowTimerFrame) == "function" then
+			Necrosis_ShowTimerFrame(timer.Gtimer)
+		end
 	end
 
 	graphCount = graphCount + 1
-	GraphicalTimer.names[graphCount] = timer.Name
-	GraphicalTimer.expiryTimes[graphCount] = timer.TimeMax
-	GraphicalTimer.initialDurations[graphCount] = timer.Time
-	GraphicalTimer.isTitle[graphCount] = false
+	GraphicalTimer.names[graphCount] = displayName
+	GraphicalTimer.expiryTimes[graphCount] = timer.TimeMax or currentTime
+	local displayDuration = totalDuration and totalDuration > 0 and totalDuration or (remaining > 0 and remaining or 1)
+	GraphicalTimer.initialDurations[graphCount] = displayDuration
 	GraphicalTimer.displayLines[graphCount] = timerLabel
 	GraphicalTimer.slotIds[graphCount] = timer.Gtimer
 
@@ -603,5 +538,5 @@ function Necrosis_DisplayTimer(
 		Necrosis_DisplayTimerFrames(GraphicalTimer, TimerTable)
 	end
 
-	return SpellGroup, TimerTable, graphCount
+	return TimerTable, graphCount
 end

@@ -15,9 +15,8 @@
 -- Table layout:
 -- table {
 -- names = "Mob or spell name",
--- expiryTimes = "Total duration of the spell",
--- initialDurations = "Remaining time for the spell",
--- isTitle = "true if it is a title, false otherwise",
+-- expiryTimes = "Absolute expiration timestamp",
+-- initialDurations = "Full duration of the spell",
 -- displayLines = "numeric timer text",
 -- slotIds = "Index of the associated timer (between 1 and 65)"
 -- }
@@ -26,152 +25,130 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 	-- Force the first frame to always be the first mob (makes sense :P)
 
 	if timerData ~= nil then
-		local TimerTarget = 0
 		local yPosition = NecrosisConfig.SensListe * 5
 
-		local PositionTitre = {}
-
-		if NecrosisConfig.SensListe > 0 then
-			PositionTitre = { 11, 13 }
-		else
-			PositionTitre = { -13, -11 }
-		end
-
 		for index = 1, table.getn(timerData.names), 1 do
-			-- If the entry is a mob title
-			if timerData.isTitle[index] then
-				-- Switch to the next mob group
-				TimerTarget = TimerTarget + 1
-				if TimerTarget ~= 1 then
-					yPosition = yPosition - PositionTitre[1]
-				end
-				if TimerTarget == 11 then
-					TimerTarget = 1
-				end
-				-- Show the title
-				local frameName = "NecrosisTarget" .. TimerTarget .. "Text"
-				local frameItem = getglobal(frameName)
-				-- Position the frame's left corner relative to the SpellTimers button center
-				frameItem:ClearAllPoints()
-				frameItem:SetPoint(
-					NecrosisConfig.SpellTimerJust,
-					"NecrosisSpellTimerButton",
-					"CENTER",
-					NecrosisConfig.SpellTimerPos * 23,
-					yPosition
-				)
-				yPosition = yPosition - PositionTitre[2]
-				-- Name the frame and display it! :)
-				frameItem:SetText(timerData.names[index])
-				if not frameItem:IsShown() then
-					frameItem:Show()
-				end
+			local slotId = timerData.slotIds[index]
+			if not slotId then
+				return
+			end
+
+			local labelFrame = getglobal("NecrosisTimer" .. slotId .. "Text")
+			local barFrame = getglobal("NecrosisTimer" .. slotId .. "Bar")
+			local textureFrame = getglobal("NecrosisTimer" .. slotId .. "Texture")
+			local sparkFrame = getglobal("NecrosisTimer" .. slotId .. "Spark")
+			local timerTextFrame = getglobal("NecrosisTimer" .. slotId .. "OutText")
+
+			labelFrame:ClearAllPoints()
+			labelFrame:SetPoint(
+				NecrosisConfig.SpellTimerJust,
+				"NecrosisSpellTimerButton",
+				"CENTER",
+				NecrosisConfig.SpellTimerPos * 23,
+				yPosition + 1
+			)
+			if NecrosisConfig.Yellow then
+				labelFrame:SetTextColor(1, 0.82, 0)
 			else
-				-- Same for DoTs
-				local JustifInverse = "LEFT"
-				if NecrosisConfig.SpellTimerJust == "LEFT" then
-					JustifInverse = "RIGHT"
-				end
-
-				if timerData.slotIds[index] == nil then
-					return
-				end
-				local frameName1 = "NecrosisTimer" .. timerData.slotIds[index] .. "Text"
-				local frameItem1 = getglobal(frameName1)
-				local frameName2 = "NecrosisTimer" .. timerData.slotIds[index] .. "Bar"
-				local frameItem2 = getglobal(frameName2)
-				local frameName3 = "NecrosisTimer" .. timerData.slotIds[index] .. "Texture"
-				local frameItem3 = getglobal(frameName3)
-				local frameName4 = "NecrosisTimer" .. timerData.slotIds[index] .. "Spark"
-				local frameItem4 = getglobal(frameName4)
-				local frameName5 = "NecrosisTimer" .. timerData.slotIds[index] .. "OutText"
-				local frameItem5 = getglobal(frameName5)
-
-				frameItem1:ClearAllPoints()
-				frameItem1:SetPoint(
-					NecrosisConfig.SpellTimerJust,
-					"NecrosisSpellTimerButton",
-					"CENTER",
-					NecrosisConfig.SpellTimerPos * 23,
-					yPosition + 1
-				)
-				if NecrosisConfig.Yellow then
-					frameItem1:SetTextColor(1, 0.82, 0)
-				else
-					frameItem1:SetTextColor(1, 1, 1)
-				end
-				frameItem1:SetJustifyH("LEFT")
-				frameItem1:SetText(timerData.names[index])
-				frameItem2:ClearAllPoints()
-				frameItem2:SetPoint(
-					NecrosisConfig.SpellTimerJust,
-					"NecrosisSpellTimerButton",
-					"CENTER",
-					NecrosisConfig.SpellTimerPos * 23,
-					yPosition
-				)
-				frameItem2:SetMinMaxValues(
-					timerData.expiryTimes[index] - timerData.initialDurations[index],
-					timerData.expiryTimes[index]
-				)
-				frameItem2:SetValue(
-					2 * timerData.expiryTimes[index] - (timerData.initialDurations[index] + floor(GetTime()))
-				)
-				local r, g
-				local b = 37 / 255
-				local PercentColor = (timerData.expiryTimes[index] - floor(GetTime()))
-					/ timerData.initialDurations[index]
-				if PercentColor > 0.5 then
-					r = (49 / 255) + (((1 - PercentColor) * 2) * (1 - (49 / 255)))
-					g = 207 / 255
-				else
-					r = 1.0
-					g = (207 / 255) - (0.5 - PercentColor) * 2 * (207 / 255)
-				end
-				frameItem2:SetStatusBarColor(r, g, b)
-				frameItem3:ClearAllPoints()
-				frameItem3:SetPoint(
-					NecrosisConfig.SpellTimerJust,
-					"NecrosisSpellTimerButton",
-					"CENTER",
-					NecrosisConfig.SpellTimerPos * 23,
-					yPosition
-				)
-				frameItem5:ClearAllPoints()
-				frameItem5:SetTextColor(1, 1, 1)
-				frameItem5:SetJustifyH(NecrosisConfig.SpellTimerJust)
-				frameItem5:SetPoint(
-					NecrosisConfig.SpellTimerJust,
-					frameItem2,
-					JustifInverse,
-					NecrosisConfig.SpellTimerPos * 5,
-					1
-				)
-				frameItem5:SetText(timerData.displayLines[index])
-
-				local sparkPosition = 150
-					- (
-							(floor(GetTime()) - (timerData.expiryTimes[index] - timerData.initialDurations[index]))
-							/ timerData.initialDurations[index]
-						)
-						* 150
-				if sparkPosition < 1 then
-					sparkPosition = 1
-				end
-				frameItem4:SetPoint("CENTER", frameItem2, "LEFT", sparkPosition, 0)
-				yPosition = yPosition - NecrosisConfig.SensListe * 11
+				labelFrame:SetTextColor(1, 1, 1)
 			end
-		end
-		if TimerTarget < 10 then
-			for i = TimerTarget + 1, 10, 1 do
-				local frameName = "NecrosisTarget" .. i .. "Text"
-				local frameItem = getglobal(frameName)
-				if frameItem:IsShown() then
-					frameItem:Hide()
-				end
+			labelFrame:SetJustifyH("LEFT")
+			labelFrame:SetText(timerData.names[index])
+
+			barFrame:ClearAllPoints()
+			barFrame:SetPoint(
+				NecrosisConfig.SpellTimerJust,
+				"NecrosisSpellTimerButton",
+				"CENTER",
+				NecrosisConfig.SpellTimerPos * 23,
+				yPosition
+			)
+			local totalDuration = timerData.initialDurations[index]
+			if not totalDuration or totalDuration <= 0 then
+				totalDuration = 1
 			end
+			local expiryTime = timerData.expiryTimes[index]
+			local startTime = expiryTime - totalDuration
+			barFrame:SetMinMaxValues(startTime, expiryTime)
+			local current = floor(GetTime())
+			local value = 2 * expiryTime - (totalDuration + current)
+			if value < startTime then
+				value = startTime
+			elseif value > expiryTime then
+				value = expiryTime
+			end
+			barFrame:SetValue(value)
+			local r, g
+			local b = 37 / 255
+			local percentColor = (expiryTime - current) / totalDuration
+			if percentColor < 0 then
+				percentColor = 0
+			elseif percentColor > 1 then
+				percentColor = 1
+			end
+			if percentColor > 0.5 then
+				r = (49 / 255) + (((1 - percentColor) * 2) * (1 - (49 / 255)))
+				g = 207 / 255
+			else
+				r = 1.0
+				g = (207 / 255) - (0.5 - percentColor) * 2 * (207 / 255)
+			end
+			barFrame:SetStatusBarColor(r, g, b)
+
+			textureFrame:ClearAllPoints()
+			textureFrame:SetPoint(
+				NecrosisConfig.SpellTimerJust,
+				"NecrosisSpellTimerButton",
+				"CENTER",
+				NecrosisConfig.SpellTimerPos * 23,
+				yPosition
+			)
+
+			timerTextFrame:ClearAllPoints()
+			timerTextFrame:SetTextColor(1, 1, 1)
+			timerTextFrame:SetJustifyH(NecrosisConfig.SpellTimerJust)
+			local opposite = NecrosisConfig.SpellTimerJust == "LEFT" and "RIGHT" or "LEFT"
+			timerTextFrame:SetPoint(
+				NecrosisConfig.SpellTimerJust,
+				barFrame,
+				opposite,
+				NecrosisConfig.SpellTimerPos * 5,
+				1
+			)
+			timerTextFrame:SetText(timerData.displayLines[index])
+
+			local sparkPosition = 150 - ((current - startTime) / totalDuration) * 150
+			if sparkPosition < 1 then
+				sparkPosition = 1
+			end
+			sparkFrame:SetPoint("CENTER", barFrame, "LEFT", sparkPosition, 0)
+
+			yPosition = yPosition - NecrosisConfig.SensListe * 11
 		end
 	end
+end
+
+local NECROSIS_TIMER_FRAME_ELEMENTS = { "Text", "Bar", "Texture", "OutText" }
+
+local function Necrosis_ShowTimerFrameElements(frameIndex)
+	if not frameIndex or frameIndex <= 0 then
+		return
+	end
+	local elements = NECROSIS_TIMER_FRAME_ELEMENTS
+	for j = 1, 4, 1 do
+		local frameName = "NecrosisTimer" .. frameIndex .. elements[j]
+		local frameItem = getglobal(frameName)
+		if frameItem then
+			frameItem:Show()
+		end
+	end
+end
+
+function Necrosis_ShowTimerFrame(frameIndex)
+	if NecrosisConfig and not NecrosisConfig.Graphical then
+		return
+	end
+	Necrosis_ShowTimerFrameElements(frameIndex)
 end
 
 function Necrosis_AddTimerFrame(timerList, timerSlots)
@@ -185,16 +162,7 @@ function Necrosis_AddTimerFrame(timerList, timerSlots)
 			timerSlots[i] = true
 			timerList[table.getn(timerList)].Gtimer = i
 			-- Display the associated graphical timer
-			if NecrosisConfig.Graphical then
-				local elements = { "Text", "Bar", "Texture", "OutText" }
-				for j = 1, 4, 1 do
-					frameName = "NecrosisTimer" .. i .. elements[j]
-					frameItem = getglobal(frameName)
-					if frameItem then
-						frameItem:Show()
-					end
-				end
-			end
+			Necrosis_ShowTimerFrame(i)
 			return timerList, timerSlots
 		end
 	end
@@ -203,26 +171,19 @@ function Necrosis_AddTimerFrame(timerList, timerSlots)
 	local newIndex = slotCount + 1
 	timerSlots[newIndex] = true
 	timerList[table.getn(timerList)].Gtimer = newIndex
-	if NecrosisConfig.Graphical then
-		local elements = { "Text", "Bar", "Texture", "OutText" }
-		for j = 1, 4, 1 do
-			frameName = "NecrosisTimer" .. newIndex .. elements[j]
-			frameItem = getglobal(frameName)
-			if frameItem then
-				frameItem:Show()
-			end
-		end
-	end
+	Necrosis_ShowTimerFrame(newIndex)
 	return timerList, timerSlots
 end
 
 function Necrosis_RemoveTimerFrame(frameIndex, timerSlots)
 	-- Hide the graphical timer
-	local elements = { "Text", "Bar", "Texture", "OutText" }
+	local elements = NECROSIS_TIMER_FRAME_ELEMENTS
 	for j = 1, 4, 1 do
-		frameName = "NecrosisTimer" .. frameIndex .. elements[j]
-		frameItem = getglobal(frameName)
-		frameItem:Hide()
+		local frameName = "NecrosisTimer" .. frameIndex .. elements[j]
+		local frameItem = getglobal(frameName)
+		if frameItem then
+			frameItem:Hide()
+		end
 	end
 
 	-- Mark the graphical timer as reusable
