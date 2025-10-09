@@ -141,6 +141,9 @@ local function Necrosis_GetEnsureOptions()
 end
 
 function Necrosis_EnsureTimer(options, SpellTimer, TimerTable)
+	if type(Necrosis_ShouldUseSpellTimers) == "function" and not Necrosis_ShouldUseSpellTimers() then
+		return SpellTimer, TimerTable
+	end
 	options = options or Necrosis_GetEnsureOptions()
 	local spellIndex = options.spellIndex
 	local name = options.name

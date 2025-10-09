@@ -15,19 +15,26 @@
 -- DISPLAY FUNCTIONS (CONSOLE, CHAT, SYSTEM MESSAGE)
 ------------------------------------------------------------------------------------------------------
 
+local USER_MESSAGE_PREFIX = "|CFFFF00FFNe|CFFFF50FFcr|CFFFF99FFos|CFFFFC4FFis|CFFFFFFFF: "
+local MESSAGE_COLOR_CACHE = setmetatable({}, { __mode = "kv" })
+
 function Necrosis_Msg(msg, type)
 	if msg and type then
 		-- If the type is "USER", display the message on screen...
 		if type == "USER" then
 			-- Cleverly colorize the message :D
-			msg = Necrosis_MsgAddColor(msg)
-			local Intro = "|CFFFF00FFNe|CFFFF50FFcr|CFFFF99FFos|CFFFFC4FFis|CFFFFFFFF: "
+			local colored = MESSAGE_COLOR_CACHE[msg]
+			if not colored then
+				colored = Necrosis_MsgAddColor(msg)
+				MESSAGE_COLOR_CACHE[msg] = colored
+			end
+			local fullMessage = USER_MESSAGE_PREFIX .. colored
 			if NecrosisConfig.ChatType then
 				-- ...... on the first chat window
-				ChatFrame1:AddMessage(Intro .. msg, 1.0, 0.7, 1.0, 1.0, UIERRORS_HOLD_TIME)
+				ChatFrame1:AddMessage(fullMessage, 1.0, 0.7, 1.0, 1.0, UIERRORS_HOLD_TIME)
 			else
 				-- ...... or at the center of the screen
-				UIErrorsFrame:AddMessage(Intro .. msg, 1.0, 0.7, 1.0, 1.0, UIERRORS_HOLD_TIME)
+				UIErrorsFrame:AddMessage(fullMessage, 1.0, 0.7, 1.0, 1.0, UIERRORS_HOLD_TIME)
 			end
 		-- If the type is "WORLD", send the message to the raid, otherwise to the party, otherwise to local chat
 		elseif type == "WORLD" then

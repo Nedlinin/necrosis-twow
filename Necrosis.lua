@@ -106,6 +106,8 @@ local GraphicalTimer = {
 	slotIds = {},
 }
 
+local SoulshardState
+
 local TimerTable = {}
 for i = 1, 50, 1 do
 	TimerTable[i] = false
@@ -169,19 +171,41 @@ local function Necrosis_AttachRing(button)
 	return ring
 end
 
+local function Necrosis_SetNormalTextureIfDifferent(button, texturePath)
+	if not button or not texturePath then
+		return
+	end
+	if button.NecrosisCurrentTexture == texturePath then
+		return
+	end
+	button.SetNormalTexture(button, texturePath)
+	button.NecrosisCurrentTexture = texturePath
+end
+
 local function Necrosis_SetButtonTexture(button, base, variant)
 	if not button or not base then
 		return
 	end
 	local numberVariant = tonumber(variant) or variant or 2
+	if
+		button.NecrosisIconBase == base
+		and button.NecrosisTextureVariant
+		and button.NecrosisTextureVariant == numberVariant
+	then
+		return
+	end
 	if not HANDLED_ICON_BASES[base] then
-		button:SetNormalTexture(ICON_BASE_PATH .. base .. "-0" .. numberVariant)
+		local texturePath = ICON_BASE_PATH .. base .. "-0" .. numberVariant
+		Necrosis_SetNormalTextureIfDifferent(button, texturePath)
+		button.NecrosisIconBase = base
+		button.NecrosisTextureVariant = numberVariant
 		return
 	end
 	local texturePath = ICON_BASE_PATH .. base .. ".tga"
-	button:SetNormalTexture(texturePath)
+	Necrosis_SetNormalTextureIfDifferent(button, texturePath)
 	local icon = button:GetNormalTexture()
 	button.NecrosisIconBase = base
+	button.NecrosisTextureVariant = numberVariant
 	icon:SetVertexColor(1, 1, 1)
 	local ring = Necrosis_AttachRing(button)
 	if numberVariant == 1 then
@@ -207,9 +231,9 @@ end
 
 local function Necrosis_OnBagUpdate()
 	if NecrosisConfig.SoulshardSort then
-		Necrosis_SoulshardSwitch("CHECK")
+		SoulshardState.pendingSortCheck = true
 	else
-		Necrosis_BagExplore()
+		BagScanPending = true
 	end
 end
 
@@ -654,6 +678,38 @@ local NECROSIS_EVENT_HANDLERS = {
 	UNIT_AURA = Necrosis_OnPlayerAuraEvent,
 }
 
+local TIMER_EVENT_NAMES = {
+	"UNIT_AURA",
+	"CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS",
+	"CHAT_MSG_SPELL_AURA_GONE_SELF",
+	"CHAT_MSG_SPELL_BREAK_AURA",
+}
+
+local TimerEventsRegistered = true
+
+local function Necrosis_ShouldUseSpellTimers()
+	return NecrosisConfig.ShowSpellTimers or NecrosisConfig.Graphical
+end
+
+local function Necrosis_UpdateTimerEventRegistration()
+	if not NecrosisButton then
+		return
+	end
+	local want = Necrosis_ShouldUseSpellTimers()
+	if want == TimerEventsRegistered then
+		return
+	end
+	TimerEventsRegistered = want
+	for index = 1, table.getn(TIMER_EVENT_NAMES) do
+		local eventName = TIMER_EVENT_NAMES[index]
+		if want then
+			NecrosisButton:RegisterEvent(eventName)
+		else
+			NecrosisButton:UnregisterEvent(eventName)
+		end
+	end
+end
+
 local function Necrosis_RegisterSpecialFrame(frameName)
 	if not UISpecialFrames then
 		UISpecialFrames = {}
@@ -828,7 +884,7 @@ local function Necrosis_ToggleMenu(state, button, options)
 	if not state.open then
 		state.fading = false
 		state.sticky = false
-		button:SetNormalTexture(options.closedTexture)
+		Necrosis_SetNormalTextureIfDifferent(button, options.closedTexture)
 		if state.frames[1] then
 			state.frames[1]:ClearAllPoints()
 			state.frames[1]:SetPoint("CENTER", button, "CENTER", 3000, 3000)
@@ -844,7 +900,7 @@ local function Necrosis_ToggleMenu(state, button, options)
 	end
 
 	state.fading = true
-	button:SetNormalTexture(options.openTexture)
+	Necrosis_SetNormalTextureIfDifferent(button, options.openTexture)
 	if options.rightSticky and options.rightSticky() then
 		state.sticky = true
 	end
@@ -869,13 +925,14 @@ local AntiFearInUse = false
 local ShadowTranceID = -1
 
 -- Variables used to manage soul shards
-local SoulshardState = {
+SoulshardState = {
 	count = 0,
 	container = 4,
 	slots = {},
 	nextSlotIndex = 1,
 	pendingMoves = 0,
 	tidyAccumulator = 0,
+	pendingSortCheck = false,
 }
 
 -- Variables used to manage summoning components
@@ -908,6 +965,8 @@ local StoneInventory = {
 	Hearthstone = { onHand = false, location = { nil, nil } },
 	Itemswitch = { onHand = false, location = { nil, nil } },
 }
+
+local BagScanPending = true
 
 local STONE_ITEM_KEYS = {
 	"Soulstone",
@@ -1032,6 +1091,7 @@ function Necrosis_LoadVariables()
 
 	Necrosis_Initialize()
 	Loaded = true
+	Necrosis_UpdateTimerEventRegistration()
 
 	-- Detect the demon type when logging in
 	DemonType = UnitCreatureFamily("pet")
@@ -1085,6 +1145,19 @@ local function Necrosis_UpdateTrackedBuffTimers(elapsed, curTime)
 				end
 			end
 		end
+	end
+end
+
+local function Necrosis_ProcessBagUpdates()
+	if SoulshardState.pendingSortCheck then
+		SoulshardState.pendingSortCheck = false
+		BagScanPending = false
+		Necrosis_SoulshardSwitch("CHECK")
+		return
+	end
+	if BagScanPending then
+		BagScanPending = false
+		Necrosis_BagExplore()
 	end
 end
 
@@ -1182,7 +1255,8 @@ local function Necrosis_UpdateAntiFear(curTime)
 		if not AntiFearInUse then
 			AntiFearInUse = true
 			Necrosis_Msg(NECROSIS_MESSAGE.Information.FearProtect, "USER")
-			NecrosisAntiFearButton:SetNormalTexture(
+			Necrosis_SetNormalTextureIfDifferent(
+				NecrosisAntiFearButton,
 				"Interface\\AddOns\\Necrosis\\UI\\AntiFear" .. AFImageType[Actif] .. "-02"
 			)
 			if NecrosisConfig.Sound then
@@ -1198,7 +1272,8 @@ local function Necrosis_UpdateAntiFear(curTime)
 				AFBlink2 = 1
 			end
 			AFBlink1 = curTime + 0.4
-			NecrosisAntiFearButton:SetNormalTexture(
+			Necrosis_SetNormalTextureIfDifferent(
+				NecrosisAntiFearButton,
 				"Interface\\AddOns\\Necrosis\\UI\\AntiFear" .. AFImageType[Actif] .. "-0" .. AFBlink2
 			)
 		end
@@ -1239,6 +1314,9 @@ local function Necrosis_HandleTradingAndIcons(shouldUpdate)
 end
 
 local function Necrosis_UpdateSpellTimers(curTime, shouldUpdate)
+	if not Necrosis_ShouldUseSpellTimers() then
+		return
+	end
 	if not SpellTimer then
 		return
 	end
@@ -1372,9 +1450,12 @@ function Necrosis_OnUpdate(self, elapsed)
 	end
 
 	elapsed = elapsed or 0
+	Necrosis_UpdateTimerEventRegistration()
+
 	local curTime = GetTime()
 
 	Necrosis_UpdateSoulShardSorting(elapsed)
+	Necrosis_ProcessBagUpdates()
 	Necrosis_UpdateTrackedBuffTimers(elapsed, curTime)
 	Necrosis_UpdateMenus(curTime)
 	Necrosis_UpdateShadowTrance(curTime)
@@ -2141,7 +2222,10 @@ function Necrosis_UpdateIcons()
 	elseif LastCast.Stone.id == 4 and StoneInventory.Firestone.onHand then
 		Necrosis_SetButtonTexture(NecrosisStoneMenuButton, "FirestoneButton", 2)
 	else
-		NecrosisStoneMenuButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\StoneMenuButton-01")
+		Necrosis_SetNormalTextureIfDifferent(
+			NecrosisStoneMenuButton,
+			"Interface\\AddOns\\Necrosis\\UI\\StoneMenuButton-01"
+		)
 	end
 
 	-- Soulstone
@@ -2453,9 +2537,9 @@ function Necrosis_UpdateIcons()
 		end
 		if NECROSIS_SPELL_TABLE[37].ID then
 			if NECROSIS_SPELL_TABLE[37].Mana > mana or SoulshardState.count == 0 then
-				NecrosisBuffMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\TPButton-05")
+				Necrosis_SetNormalTextureIfDifferent(NecrosisBuffMenu5, "Interface\\AddOns\\Necrosis\\UI\\TPButton-05")
 			else
-				NecrosisBuffMenu5:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\TPButton-01")
+				Necrosis_SetNormalTextureIfDifferent(NecrosisBuffMenu5, "Interface\\AddOns\\Necrosis\\UI\\TPButton-01")
 			end
 		end
 		if NECROSIS_SPELL_TABLE[38].ID then
@@ -2557,9 +2641,15 @@ function Necrosis_UpdateIcons()
 		local start, duration, enable =
 			GetContainerItemCooldown(StoneInventory.Hearthstone.location[1], StoneInventory.Hearthstone.location[2])
 		if duration > 20 and start > 0 then
-			NecrosisSpellTimerButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\SpellTimerButton-Cooldown")
+			Necrosis_SetNormalTextureIfDifferent(
+				NecrosisSpellTimerButton,
+				"Interface\\AddOns\\Necrosis\\UI\\SpellTimerButton-Cooldown"
+			)
 		else
-			NecrosisSpellTimerButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\SpellTimerButton-Normal")
+			Necrosis_SetNormalTextureIfDifferent(
+				NecrosisSpellTimerButton,
+				"Interface\\AddOns\\Necrosis\\UI\\SpellTimerButton-Normal"
+			)
 		end
 	end
 end
@@ -2648,19 +2738,24 @@ function Necrosis_BagExplore()
 	-- Affichage du bouton principal de Necrosis
 	if NecrosisConfig.Circle == 1 then
 		if SoulshardState.count <= 32 then
-			NecrosisButton:SetNormalTexture(
+			Necrosis_SetNormalTextureIfDifferent(
+				NecrosisButton,
 				"Interface\\AddOns\\Necrosis\\UI\\" .. NecrosisConfig.NecrosisColor .. "\\Shard" .. SoulshardState.count
 			)
 		else
-			NecrosisButton:SetNormalTexture(
+			Necrosis_SetNormalTextureIfDifferent(
+				NecrosisButton,
 				"Interface\\AddOns\\Necrosis\\UI\\" .. NecrosisConfig.NecrosisColor .. "\\Shard32"
 			)
 		end
 	elseif StoneInventory.Soulstone.mode == 1 or StoneInventory.Soulstone.mode == 2 then
 		if SoulshardState.count <= 32 then
-			NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Bleu\\Shard" .. SoulshardState.count)
+			Necrosis_SetNormalTextureIfDifferent(
+				NecrosisButton,
+				"Interface\\AddOns\\Necrosis\\UI\\Bleu\\Shard" .. SoulshardState.count
+			)
 		else
-			NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Bleu\\Shard32")
+			Necrosis_SetNormalTextureIfDifferent(NecrosisButton, "Interface\\AddOns\\Necrosis\\UI\\Bleu\\Shard32")
 		end
 	end
 	if NecrosisConfig.ShowCount then
