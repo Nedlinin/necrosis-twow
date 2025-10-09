@@ -1042,6 +1042,13 @@ end
 ------------------------------------------------------------------------------------------------------
 
 local textTimersDisplay = ""
+local coloredTextTimersDisplay = ""
+local TextTimersNeedRefresh = true
+local LastTextTimerBuildTime = 0
+
+function Necrosis_MarkTextTimersDirty()
+	TextTimersNeedRefresh = true
+end
 
 local function Necrosis_UpdateSoulShardSorting(elapsed)
 	SoulshardState.tidyAccumulator = (SoulshardState.tidyAccumulator or 0) + elapsed
@@ -1246,6 +1253,10 @@ local function Necrosis_UpdateSpellTimers(curTime, shouldUpdate)
 	local previousActive = GraphicalTimer.activeCount or 0
 	local curTimeFloor = floor(curTime)
 	local targetName = UnitName("target")
+	local textVisible = NecrosisConfig.ShowSpellTimers
+		and not NecrosisConfig.Graphical
+		and NecrosisSpellTimerButton:IsVisible()
+	local buildText = textVisible and (TextTimersNeedRefresh or curTimeFloor ~= LastTextTimerBuildTime)
 
 	for index = table.getn(SpellTimer), 1, -1 do
 		local timer = SpellTimer[index]
@@ -1311,7 +1322,8 @@ local function Necrosis_UpdateSpellTimers(curTime, shouldUpdate)
 				GraphicalTimer,
 				TimerTable,
 				graphCount,
-				curTimeFloor
+				curTimeFloor,
+				buildText
 			)
 		end
 	end
@@ -1325,23 +1337,31 @@ local function Necrosis_UpdateSpellTimers(curTime, shouldUpdate)
 		end
 	end
 	GraphicalTimer.activeCount = graphCount
-	textTimersDisplay = table.concat(textBuffer)
+	if buildText then
+		textTimersDisplay = table.concat(textBuffer)
+		coloredTextTimersDisplay = Necrosis_MsgAddColor(textTimersDisplay)
+		LastTextTimerBuildTime = curTimeFloor
+		TextTimersNeedRefresh = false
+	end
 end
 
 local function Necrosis_UpdateTimerDisplay()
 	if NecrosisConfig.ShowSpellTimers or NecrosisConfig.Graphical then
 		if not NecrosisSpellTimerButton:IsVisible() then
 			ShowUIPanel(NecrosisSpellTimerButton)
+			if NecrosisConfig.ShowSpellTimers then
+				TextTimersNeedRefresh = true
+			end
 		end
 		if NecrosisConfig.ShowSpellTimers and not NecrosisConfig.Graphical then
-			textTimersDisplay = Necrosis_MsgAddColor(textTimersDisplay)
-			NecrosisListSpells:SetText(textTimersDisplay)
+			NecrosisListSpells:SetText(coloredTextTimersDisplay)
 		else
 			NecrosisListSpells:SetText("")
 		end
 	elseif NecrosisSpellTimerButton:IsVisible() then
 		NecrosisListSpells:SetText("")
 		HideUIPanel(NecrosisSpellTimerButton)
+		TextTimersNeedRefresh = true
 	end
 end
 

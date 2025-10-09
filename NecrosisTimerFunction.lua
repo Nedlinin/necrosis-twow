@@ -19,6 +19,20 @@ SpellTimer = {}
 
 local TIMER_TYPE = NECROSIS_TIMER_TYPE
 
+local function Necrosis_ResetTimerDisplayCache(timer)
+	if not timer then
+		return
+	end
+	timer.cachedDisplaySuffix = nil
+	timer.cachedPercentBucket = nil
+	timer.cachedDisplayName = nil
+	timer.cachedShowTarget = nil
+	timer.cachedTarget = nil
+	if type(Necrosis_MarkTextTimersDirty) == "function" then
+		Necrosis_MarkTextTimersDirty()
+	end
+end
+
 local function Necrosis_ShouldSkipSpellTimer(spellIndex)
 	if not spellIndex then
 		return false
@@ -82,6 +96,7 @@ function Necrosis_UpdateTimerEntry(spellTimer, name, target, timeRemaining, expi
 				timer.Type = timerType
 			end
 			timer.Target = target
+			Necrosis_ResetTimerDisplayCache(timer)
 			Necrosis_SortTimers(spellTimer)
 			return true, spellTimer
 		end
@@ -196,6 +211,7 @@ function Necrosis_EnsureTimer(options, SpellTimer, TimerTable)
 		Type = timerType,
 		Target = target,
 	})
+	Necrosis_ResetTimerDisplayCache(SpellTimer[table.getn(SpellTimer)])
 
 	return Necrosis_FinalizeTimerInsert(SpellTimer, TimerTable)
 end
@@ -255,6 +271,9 @@ function Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
 			timer.Gtimer = nil
 		end
 	end
+	if type(Necrosis_MarkTextTimersDirty) == "function" then
+		Necrosis_MarkTextTimersDirty()
+	end
 
 	return SpellTimer, TimerTable
 end
@@ -277,6 +296,7 @@ function Necrosis_RemoveCombatTimers(SpellTimer, TimerTable)
 		if timer then
 			if timer.Type == TIMER_TYPE.COOLDOWN then
 				timer.Target = ""
+				Necrosis_ResetTimerDisplayCache(timer)
 			end
 			if timer.Type == TIMER_TYPE.CURSE or timer.Type == TIMER_TYPE.COMBAT then
 				SpellTimer, TimerTable = Necrosis_RemoveTimerByIndex(index, SpellTimer, TimerTable)
@@ -336,7 +356,16 @@ end
 -- DISPLAY FUNCTIONS: STRING CREATION
 ------------------------------------------------------------------------------------------------------
 
-function Necrosis_DisplayTimer(textBuffer, index, SpellTimer, GraphicalTimer, TimerTable, graphCount, currentTime)
+function Necrosis_DisplayTimer(
+	textBuffer,
+	index,
+	SpellTimer,
+	GraphicalTimer,
+	TimerTable,
+	graphCount,
+	currentTime,
+	buildText
+)
 	-- textBuffer and graphCount let callers reuse preallocated storage between updates
 	if not SpellTimer then
 		return TimerTable, graphCount
@@ -388,35 +417,65 @@ function Necrosis_DisplayTimer(textBuffer, index, SpellTimer, GraphicalTimer, Ti
 			percent = 100
 		end
 	end
-	local color = NecrosisTimerColor(percent)
+	local percentBucket = floor(percent / 10)
+	if percentBucket < 0 then
+		percentBucket = 0
+	elseif percentBucket > 10 then
+		percentBucket = 10
+	end
 
-	local displayName = timer.DisplayName or timer.Name or ""
-	if timer.Type == TIMER_TYPE.COOLDOWN then
-		if displayName == "" then
-			displayName = timer.Name or ""
+	local displayName
+	if timer.Type == TIMER_TYPE.COOLDOWN and timer.Name and timer.Name ~= "" then
+		local expected = timer.Name .. " Cooldown"
+		if timer.DisplayName ~= expected then
+			timer.DisplayName = expected
 		end
-		if displayName ~= "" and not string.find(displayName, "Cooldown", 1, true) then
-			displayName = displayName .. " Cooldown"
-		end
-		timer.DisplayName = displayName
+		displayName = timer.DisplayName
 	else
 		timer.DisplayName = nil
+		displayName = timer.Name or ""
 	end
-	local showTarget = (timer.Type == 1 or timer.Name == NECROSIS_SPELL_TABLE[16].Name) and timer.Target ~= ""
-	local line = "<white>" .. timeText .. " - <close>" .. color .. displayName .. "<close><white>"
-	if showTarget then
-		line = line .. " - " .. timer.Target .. "<close>\n"
-	else
-		line = line .. "<close>\n"
+
+	local targetName = timer.Target or ""
+	local showTarget = (timer.Type == TIMER_TYPE.PRIMARY or timer.Name == NECROSIS_SPELL_TABLE[16].Name)
+		and targetName ~= ""
+	local needsSuffixUpdate = timer.cachedDisplaySuffix == nil
+	if not needsSuffixUpdate and timer.cachedPercentBucket ~= percentBucket then
+		needsSuffixUpdate = true
 	end
-	textBuffer[table.getn(textBuffer) + 1] = line
+	if not needsSuffixUpdate and timer.cachedDisplayName ~= displayName then
+		needsSuffixUpdate = true
+	end
+	if not needsSuffixUpdate and timer.cachedShowTarget ~= showTarget then
+		needsSuffixUpdate = true
+	end
+	if not needsSuffixUpdate and showTarget and timer.cachedTarget ~= targetName then
+		needsSuffixUpdate = true
+	end
+	if needsSuffixUpdate then
+		local color = NecrosisTimerColor(percent)
+		local suffix = " - <close>" .. color .. displayName .. "<close><white>"
+		if showTarget then
+			suffix = suffix .. " - " .. targetName .. "<close>\n"
+		else
+			suffix = suffix .. "<close>\n"
+		end
+		timer.cachedDisplaySuffix = suffix
+		timer.cachedPercentBucket = percentBucket
+		timer.cachedDisplayName = displayName
+		timer.cachedShowTarget = showTarget
+		timer.cachedTarget = showTarget and targetName or ""
+	end
+	if buildText then
+		textBuffer[table.getn(textBuffer) + 1] = "<white>" .. timeText .. (timer.cachedDisplaySuffix or "<close>\n")
+	end
 
 	local timerLabel = timeText
 	if showTarget then
 		if NecrosisConfig.SpellTimerPos == 1 then
-			timerLabel = timerLabel .. " - " .. timer.Target
+			timerLabel = timerLabel .. " - " .. targetName
 		else
-			timerLabel = timer.Target .. " - " .. timerLabel
+			timerLabel = targetName .. " - " .. timerLabel
 		end
 	end
 
