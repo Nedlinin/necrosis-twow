@@ -41,28 +41,92 @@ local function Necrosis_ConfigClone(source)
 	return copy
 end
 
-local function Necrosis_ConfigSchemasMatch(defaultValue, savedValue)
-	if type(defaultValue) ~= type(savedValue) then
-		return false
+local function Necrosis_ConfigHydrate(defaults, saved)
+	if type(saved) ~= "table" then
+		saved = {}
 	end
-	if type(defaultValue) ~= "table" then
-		return true
-	end
-	for key, defVal in pairs(defaultValue) do
-		local savedVal = savedValue[key]
-		if savedVal == nil then
-			return false
+	for key, defaultValue in pairs(defaults) do
+		local savedValue = saved[key]
+		local defaultType = type(defaultValue)
+		local savedType = type(savedValue)
+		if defaultType == "table" then
+			if savedType == "table" then
+				saved[key] = Necrosis_ConfigHydrate(defaultValue, savedValue)
+			else
+				saved[key] = Necrosis_ConfigClone(defaultValue)
+			end
+		else
+			if savedValue == nil or savedType ~= defaultType then
+				saved[key] = defaultValue
+			end
 		end
-		if not Necrosis_ConfigSchemasMatch(defVal, savedVal) then
-			return false
+	end
+	return saved
+end
+
+local function Necrosis_ParseVersion(version)
+	local values = {}
+	if type(version) ~= "string" then
+		version = tostring(version or "")
+	end
+	for token in string.gmatch(version, "%d+") do
+		table.insert(values, tonumber(token) or 0)
+	end
+	return values
+end
+
+local function Necrosis_CompareVersions(left, right)
+	local leftParts = Necrosis_ParseVersion(left)
+	local rightParts = Necrosis_ParseVersion(right)
+	local maxLen = math.max(table.getn(leftParts), table.getn(rightParts))
+	for index = 1, maxLen do
+		local l = leftParts[index] or 0
+		local r = rightParts[index] or 0
+		if l ~= r then
+			if l < r then
+				return -1
+			else
+				return 1
+			end
 		end
 	end
-	for key in pairs(savedValue) do
-		if defaultValue[key] == nil then
-			return false
+	return 0
+end
+
+NecrosisConfigMigrations = NecrosisConfigMigrations or {}
+local ConfigMigrations = NecrosisConfigMigrations
+
+--[[ Example migration illustrating how to insert a new entry while preserving existing data.
+ConfigMigrations["1.6.1"] = function(config)
+	if type(config.StonePosition) == "table" then
+		-- Inserts a placeholder at index 4, shifting later entries down.
+		table.insert(config.StonePosition, 4, config.StonePosition[4] or true)
+	end
+end
+]]
+
+local function Necrosis_RunConfigMigrations(config, fromVersion, toVersion)
+	fromVersion = fromVersion or "0"
+	toVersion = toVersion or fromVersion
+	if Necrosis_CompareVersions(fromVersion, toVersion) >= 0 then
+		return
+	end
+	local orderedVersions = {}
+	for version in pairs(ConfigMigrations) do
+		table.insert(orderedVersions, version)
+	end
+	table.sort(orderedVersions, function(left, right)
+		return Necrosis_CompareVersions(left, right) < 0
+	end)
+	for index = 1, table.getn(orderedVersions) do
+		local version = orderedVersions[index]
+		if Necrosis_CompareVersions(version, fromVersion) > 0 and Necrosis_CompareVersions(version, toVersion) <= 0 then
+			local migrator = ConfigMigrations[version]
+			if type(migrator) == "function" then
+				migrator(config, fromVersion, toVersion)
+			end
 		end
 	end
-	return true
 end
 
 local function Necrosis_ResetDefaultAnchors()
@@ -232,18 +296,17 @@ function Necrosis_Initialize()
 	else
 		-- Load (or create) the player's configuration and print it to the console
 		local resetToDefault = false
-		if NecrosisConfig == nil then
+		local previousVersion = nil
+		if type(NecrosisConfig) ~= "table" then
 			NecrosisConfig = Necrosis_ConfigClone(Default_NecrosisConfig)
+			previousVersion = Default_NecrosisConfig.Version
 			resetToDefault = true
-		elseif NecrosisConfig.Version ~= Default_NecrosisConfig.Version then
-			if Necrosis_ConfigSchemasMatch(Default_NecrosisConfig, NecrosisConfig) then
-				Necrosis_DeepMerge(NecrosisConfig, Default_NecrosisConfig)
-			else
-				NecrosisConfig = Necrosis_ConfigClone(Default_NecrosisConfig)
-				resetToDefault = true
-			end
-			NecrosisConfig.Version = Default_NecrosisConfig.Version
+		else
+			previousVersion = NecrosisConfig.Version or "0"
+			NecrosisConfig = Necrosis_ConfigHydrate(Default_NecrosisConfig, NecrosisConfig)
+			Necrosis_RunConfigMigrations(NecrosisConfig, previousVersion, Default_NecrosisConfig.Version)
 		end
+		NecrosisConfig.Version = Default_NecrosisConfig.Version
 
 		if resetToDefault then
 			Necrosis_Msg(NECROSIS_MESSAGE.Interface.DefaultConfig, "USER")

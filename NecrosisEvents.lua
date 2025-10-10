@@ -26,6 +26,14 @@ local function getAntiFearTexture(mode, variant)
 	return textures[variant] or textures[2]
 end
 
+local function getState(key)
+	return Necrosis.GetStateSlice(key)
+end
+
+local ShadowState = getState("shadowTrance")
+local AntiFearState = getState("antiFear")
+local TradeState = getState("trade")
+
 local function Necrosis_OnSpellcastStartEvent(_, spellName)
 	Necrosis_OnSpellcastStart(spellName)
 end

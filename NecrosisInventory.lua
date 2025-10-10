@@ -8,6 +8,25 @@ local GetTime = GetTime
 local GetItemInfo = GetItemInfo
 local GetContainerItemInfo = GetContainerItemInfo
 local GetContainerItemLink = GetContainerItemLink
+local InventoryConfig = NecrosisInventoryConfig
+
+local function getState(key)
+	return Necrosis.GetStateSlice(key)
+end
+
+local function getInventory(key)
+	return Necrosis.GetInventorySlice(key)
+end
+
+local SoulshardState = getState("soulshards")
+local ComponentState = getState("components")
+local CombatState = getState("combat")
+local MountState = getState("mount")
+local MessageState = getState("messages")
+local BagQueueState = getState("bags")
+local StoneInventory = getInventory("stones")
+local BagIsSoulPouch = getInventory("bagIsSoulPouch")
+local LastCast = Necrosis.GetLastCast()
 
 StoneIDInSpellTable = StoneIDInSpellTable or { 0, 0, 0, 0, 0, 0, 0 }
 StonePos = StonePos
@@ -23,40 +42,57 @@ StonePos = StonePos
 	}
 SoulstoneUsedOnTarget = SoulstoneUsedOnTarget or false
 
-STONE_ITEM_KEYS = STONE_ITEM_KEYS
-	or {
-		"Soulstone",
-		"Healthstone",
-		"Spellstone",
-		"Firestone",
-		"Felstone",
-		"Wrathstone",
-		"Voidstone",
-		"Hearthstone",
-	}
-
-STONE_NAME_PATTERNS = STONE_NAME_PATTERNS or {}
-OFFHAND_PATTERNS = OFFHAND_PATTERNS or {}
-
-local function Necrosis_BuildStoneNamePatterns()
-	wipe_table(STONE_NAME_PATTERNS)
-	for index = 1, table.getn(STONE_ITEM_KEYS), 1 do
-		local key = STONE_ITEM_KEYS[index]
-		local pattern = NECROSIS_ITEM[key]
-		if pattern and type(pattern) == "string" then
-			STONE_NAME_PATTERNS[key] = pattern
-		end
+local function Necrosis_GetBagState()
+	if type(BagQueueState) ~= "table" then
+		BagQueueState = getState("bags")
 	end
+	if BagQueueState.scanQueued == nil then
+		BagQueueState.scanQueued = false
+	end
+	if BagQueueState.nextScanTime == nil then
+		BagQueueState.nextScanTime = 0
+	end
+	if BagQueueState.processing == nil then
+		BagQueueState.processing = false
+	end
+	BagQueueState.pending = nil
+	BagQueueState.pendingSort = nil
+	return BagQueueState
 end
 
-local function Necrosis_BuildOffhandPatterns()
-	wipe_table(OFFHAND_PATTERNS)
-	if NECROSIS_ITEM.Offhand and type(NECROSIS_ITEM.Offhand) == "string" then
-		OFFHAND_PATTERNS[1] = NECROSIS_ITEM.Offhand
+local function Necrosis_ProcessBagScanQueue(curTime)
+	local state = Necrosis_GetBagState()
+	if state.processing then
+		return
+	end
+	if not state.scanQueued then
+		return
+	end
+	curTime = curTime or GetTime()
+	local nextScan = state.nextScanTime or 0
+	if nextScan > 0 and curTime < nextScan then
+		return
+	end
+	state.scanQueued = false
+	state.nextScanTime = 0
+	state.processing = true
+
+	local handledSort = false
+	if SoulshardState.pendingSortCheck then
+		SoulshardState.pendingSortCheck = false
+		Necrosis_SoulshardSwitch("CHECK")
+		handledSort = true
+	end
+
+	if not handledSort then
+		Necrosis_BagExplore()
+	end
+
+	state.processing = false
+	if state.scanQueued then
+		Necrosis_ProcessBagScanQueue(curTime)
 	end
 end
-
-local BagState
 
 local function Necrosis_GetTooltipLines(container, slot)
 	Necrosis_MoneyToggle()
@@ -95,11 +131,8 @@ local function Necrosis_GetBagSlotInfo(container, slot)
 	if not itemName or not equipLoc then
 		local tooltipName, line3, line4 = Necrosis_GetTooltipLines(container, slot)
 		itemName = itemName or tooltipName
-		if not equipLoc then
-			local offhandPattern = OFFHAND_PATTERNS[1]
-			if offhandPattern and (line3 == offhandPattern or line4 == offhandPattern) then
-				equipLoc = "INVTYPE_HOLDABLE"
-			end
+		if not equipLoc and InventoryConfig:IsOffhandTooltip(line3, line4) then
+			equipLoc = "INVTYPE_HOLDABLE"
 		end
 	end
 
@@ -110,30 +143,39 @@ local function Necrosis_IsOffhandItem(equipLoc, container, slot)
 	if equipLoc == "INVTYPE_HOLDABLE" then
 		return true
 	end
-	local offhandPattern = OFFHAND_PATTERNS[1]
-	if not offhandPattern then
-		return false
-	end
 	local _, line3, line4 = Necrosis_GetTooltipLines(container, slot)
-	return line3 == offhandPattern or line4 == offhandPattern
+	return InventoryConfig:IsOffhandItem(equipLoc, line3, line4)
 end
 
 function Necrosis_RequestBagScan(delay)
-	BagState = BagScanState or BagState or { pending = true, nextScanTime = 0 }
+	local state = Necrosis_GetBagState()
 	delay = delay or 0
 	if delay < 0 then
 		delay = 0
 	end
 	local now = GetTime()
-	local nextScan = now + delay
-	if not BagState.pending or BagState.nextScanTime == 0 or nextScan < BagState.nextScanTime then
-		BagState.nextScanTime = nextScan
+	local targetTime = 0
+	if delay > 0 then
+		targetTime = now + delay
 	end
-	BagState.pending = true
+	if not state.scanQueued then
+		state.nextScanTime = targetTime
+	else
+		if targetTime == 0 or state.nextScanTime == 0 or targetTime < state.nextScanTime then
+			state.nextScanTime = targetTime
+		end
+	end
+	state.scanQueued = true
+	if state.processing then
+		return
+	end
+	if targetTime == 0 then
+		Necrosis_ProcessBagScanQueue(now)
+	end
 end
 
-Necrosis_BuildStoneNamePatterns()
-Necrosis_BuildOffhandPatterns()
+InventoryConfig:BuildStoneNamePatterns()
+InventoryConfig:BuildOffhandPattern()
 
 function Necrosis_RecordStoneInventory(stoneKey, container, slot)
 	local data = StoneInventory[stoneKey]
@@ -171,6 +213,8 @@ function Necrosis_BagExplore()
 	SoulshardState.container = NecrosisConfig.SoulshardContainer
 	local shardContainer = SoulshardState.container
 	local needsRescan = false
+	local stoneKeys = InventoryConfig:GetStoneKeys()
+	local stonePatterns = InventoryConfig:EnsureStoneNamePatterns()
 
 	for container = 0, 4, 1 do
 		local slotCount = GetContainerNumSlots(container)
@@ -193,8 +237,8 @@ function Necrosis_BagExplore()
 					ComponentState.demoniac = ComponentState.demoniac + itemCount
 				end
 				local recorded = false
-				for _, stoneKey in ipairs(STONE_ITEM_KEYS) do
-					local pattern = STONE_NAME_PATTERNS[stoneKey]
+				for _, stoneKey in ipairs(stoneKeys) do
+					local pattern = stonePatterns[stoneKey]
 					if pattern and string.find(itemName, pattern, 1, true) then
 						Necrosis_RecordStoneInventory(stoneKey, container, slot)
 						recorded = true
@@ -208,9 +252,9 @@ function Necrosis_BagExplore()
 		end
 	end
 
-	BagState = BagState or BagScanState or { pending = false, nextScanTime = 0 }
-	BagState.pending = false
-	BagState.nextScanTime = 0
+	local state = Necrosis_GetBagState()
+	state.scanQueued = false
+	state.nextScanTime = 0
 	if needsRescan then
 		Necrosis_RequestBagScan(0.2)
 	end
@@ -272,27 +316,21 @@ function Necrosis_UpdateSoulShardSorting(elapsed)
 end
 
 function Necrosis_ProcessBagUpdates(curTime)
-	BagState = BagState or BagScanState or { pending = false, nextScanTime = 0 }
-	if SoulshardState.pendingSortCheck then
-		SoulshardState.pendingSortCheck = false
-		BagState.pending = false
-		BagState.nextScanTime = 0
-		Necrosis_SoulshardSwitch("CHECK")
+	local state = Necrosis_GetBagState()
+	if SoulshardState.pendingSortCheck and not state.scanQueued then
+		Necrosis_RequestBagScan(0)
+	end
+	if not state.scanQueued or state.processing then
 		return
 	end
-	if not BagState.pending then
-		return
-	end
-	local nextScan = BagState.nextScanTime or 0
+	local nextScan = state.nextScanTime or 0
 	if nextScan > 0 then
 		curTime = curTime or GetTime()
 		if curTime < nextScan then
 			return
 		end
 	end
-	BagState.pending = false
-	BagState.nextScanTime = 0
-	Necrosis_BagExplore()
+	Necrosis_ProcessBagScanQueue(curTime)
 end
 
 function Necrosis_HandleShardCount()
@@ -440,12 +478,11 @@ function Necrosis_UpdateIcons()
 
 	-- Determine whether a Soulstone was used by checking timers
 	local SoulstoneInUse = false
-	if SpellTimer then
-		for index = 1, table.getn(SpellTimer), 1 do
-			if (SpellTimer[index].Name == NECROSIS_SPELL_TABLE[11].Name) and SpellTimer[index].TimeMax > 0 then
-				SoulstoneInUse = true
-				break
-			end
+	local soulstoneTimerName = NECROSIS_SPELL_TABLE[11] and NECROSIS_SPELL_TABLE[11].Name
+	if soulstoneTimerName then
+		local timer = NecrosisTimerService and NecrosisTimerService:FindTimerByName(soulstoneTimerName)
+		if timer and timer.TimeMax and timer.TimeMax > 0 then
+			SoulstoneInUse = true
 		end
 	end
 
@@ -465,16 +502,16 @@ function Necrosis_UpdateIcons()
 			local timeRemaining = floor(duration - GetTime() + start)
 			if timeRemaining > 0 then
 				local expiry = floor(start + duration)
-				SpellTimer, TimerTable = Necrosis_EnsureSpellIndexTimer(
-					11,
-					"???",
-					timeRemaining,
-					NECROSIS_SPELL_TABLE[11].Type,
-					timeRemaining,
-					expiry,
-					SpellTimer,
-					TimerTable
-				)
+				if NecrosisTimerService then
+					NecrosisTimerService:EnsureSpellIndexTimer(
+						11,
+						"???",
+						timeRemaining,
+						NECROSIS_SPELL_TABLE[11].Type,
+						timeRemaining,
+						expiry
+					)
+				end
 			end
 			StoneInventory.Soulstone.mode = 4
 			NecrosisRL = false
@@ -519,7 +556,9 @@ function Necrosis_UpdateIcons()
 	if StoneInventory.Soulstone.onHand and SoulstoneInUse then
 		SoulstoneAdvice = false
 		if not (SoulstoneWaiting or SoulstoneCooldown) then
-			SpellTimer, TimerTable = Necrosis_RemoveTimerByName(NECROSIS_SPELL_TABLE[11].Name, SpellTimer, TimerTable)
+			if NecrosisTimerService then
+				NecrosisTimerService:RemoveTimerByName(NECROSIS_SPELL_TABLE[11].Name)
+			end
 			StoneInventory.Soulstone.mode = 2
 		else
 			SoulstoneWaiting = false

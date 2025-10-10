@@ -11,12 +11,10 @@ local function Necrosis_SetMenuAlpha(prefix, alpha)
 	end
 end
 
-MenuState = {
-	Pet = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
-	Buff = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
-	Curse = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
-	Stone = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
-}
+local MenuState = Necrosis.GetMenuState()
+MenuState = MenuState or {}
+
+local LastCast = Necrosis.GetLastCast()
 
 local function Necrosis_HasSpell(spellIndex)
 	return spellIndex and NECROSIS_SPELL_TABLE[spellIndex] and NECROSIS_SPELL_TABLE[spellIndex].ID
