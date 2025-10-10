@@ -20,57 +20,106 @@
 -- displayLines = "numeric timer text",
 -- slotIds = "Index of the associated timer (between 1 and 65)"
 -- }
+local LABEL_COLOR_YELLOW = { 1, 0.82, 0 }
+local LABEL_COLOR_WHITE = { 1, 1, 1 }
+local TIMER_BAR_BLUE = 37 / 255
+local TIMER_COLOR_LOW = 49 / 255
+local TIMER_COLOR_HIGH = 207 / 255
+local TIMER_SPARK_RANGE = 150
+local GRAPH_TIMER_BUTTON = "NecrosisSpellTimerButton"
+
+local TimerFrameCache = {}
+
+local function Necrosis_GetTimerFrame(slotId)
+	local cached = TimerFrameCache[slotId]
+	if cached then
+		return cached
+	end
+	local label = getglobal("NecrosisTimer" .. slotId .. "Text")
+	local bar = getglobal("NecrosisTimer" .. slotId .. "Bar")
+	local texture = getglobal("NecrosisTimer" .. slotId .. "Texture")
+	local spark = getglobal("NecrosisTimer" .. slotId .. "Spark")
+	local outText = getglobal("NecrosisTimer" .. slotId .. "OutText")
+	cached = {
+		label = label,
+		bar = bar,
+		texture = texture,
+		spark = spark,
+		outText = outText,
+	}
+	TimerFrameCache[slotId] = cached
+	return cached
+end
+
+local function Necrosis_ApplyBarColor(barFrame, percent)
+	if percent < 0 then
+		percent = 0
+	elseif percent > 1 then
+		percent = 1
+	end
+	local r
+	local g
+	if percent > 0.5 then
+		r = TIMER_COLOR_LOW + (((1 - percent) * 2) * (1 - TIMER_COLOR_LOW))
+		g = TIMER_COLOR_HIGH
+	else
+		r = 1
+		g = TIMER_COLOR_HIGH - (0.5 - percent) * 2 * TIMER_COLOR_HIGH
+	end
+	barFrame:SetStatusBarColor(r, g, TIMER_BAR_BLUE)
+end
+
 function Necrosis_DisplayTimerFrames(timerData, pointer)
 	-- Define the position where the first frame appears
 	-- Force the first frame to always be the first mob (makes sense :P)
 
 	if timerData ~= nil then
+		local anchorJustify = NecrosisConfig.SpellTimerJust
+		local opposite = anchorJustify == "LEFT" and "RIGHT" or "LEFT"
+		local baseOffset = NecrosisConfig.SpellTimerPos * 23
+		local textOffset = NecrosisConfig.SpellTimerPos * 5
+		local yStep = NecrosisConfig.SensListe * 11
 		local yPosition = NecrosisConfig.SensListe * 5
+		local labelColor = NecrosisConfig.Yellow and LABEL_COLOR_YELLOW or LABEL_COLOR_WHITE
+		local labelR, labelG, labelB = labelColor[1], labelColor[2], labelColor[3]
+		local current = floor(GetTime())
+		local names = timerData.names
+		local durations = timerData.initialDurations
+		local expiryTimes = timerData.expiryTimes
+		local displayLines = timerData.displayLines
+		local slotIds = timerData.slotIds
 
-		for index = 1, table.getn(timerData.names), 1 do
+		for index = 1, table.getn(names), 1 do
 			local slotId = timerData.slotIds[index]
 			if not slotId then
 				return
 			end
 
-			local labelFrame = getglobal("NecrosisTimer" .. slotId .. "Text")
-			local barFrame = getglobal("NecrosisTimer" .. slotId .. "Bar")
-			local textureFrame = getglobal("NecrosisTimer" .. slotId .. "Texture")
-			local sparkFrame = getglobal("NecrosisTimer" .. slotId .. "Spark")
-			local timerTextFrame = getglobal("NecrosisTimer" .. slotId .. "OutText")
+			local frames = Necrosis_GetTimerFrame(slotId)
+			local labelFrame = frames.label
+			local barFrame = frames.bar
+			local textureFrame = frames.texture
+			local sparkFrame = frames.spark
+			local timerTextFrame = frames.outText
+			if not (labelFrame and barFrame and textureFrame and sparkFrame and timerTextFrame) then
+				return
+			end
 
 			labelFrame:ClearAllPoints()
-			labelFrame:SetPoint(
-				NecrosisConfig.SpellTimerJust,
-				"NecrosisSpellTimerButton",
-				"CENTER",
-				NecrosisConfig.SpellTimerPos * 23,
-				yPosition + 1
-			)
-			if NecrosisConfig.Yellow then
-				labelFrame:SetTextColor(1, 0.82, 0)
-			else
-				labelFrame:SetTextColor(1, 1, 1)
-			end
+			labelFrame:SetPoint(anchorJustify, GRAPH_TIMER_BUTTON, "CENTER", baseOffset, yPosition + 1)
+			labelFrame:SetTextColor(labelR, labelG, labelB)
 			labelFrame:SetJustifyH("LEFT")
-			labelFrame:SetText(timerData.names[index])
+			labelFrame:SetText(names[index])
 
 			barFrame:ClearAllPoints()
-			barFrame:SetPoint(
-				NecrosisConfig.SpellTimerJust,
-				"NecrosisSpellTimerButton",
-				"CENTER",
-				NecrosisConfig.SpellTimerPos * 23,
-				yPosition
-			)
-			local totalDuration = timerData.initialDurations[index]
+			barFrame:SetPoint(anchorJustify, GRAPH_TIMER_BUTTON, "CENTER", baseOffset, yPosition)
+			local totalDuration = durations[index]
 			if not totalDuration or totalDuration <= 0 then
 				totalDuration = 1
 			end
-			local expiryTime = timerData.expiryTimes[index]
+			local expiryTime = expiryTimes[index]
 			local startTime = expiryTime - totalDuration
 			barFrame:SetMinMaxValues(startTime, expiryTime)
-			local current = floor(GetTime())
 			local value = 2 * expiryTime - (totalDuration + current)
 			if value < startTime then
 				value = startTime
@@ -78,52 +127,24 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 				value = expiryTime
 			end
 			barFrame:SetValue(value)
-			local r, g
-			local b = 37 / 255
-			local percentColor = (expiryTime - current) / totalDuration
-			if percentColor < 0 then
-				percentColor = 0
-			elseif percentColor > 1 then
-				percentColor = 1
-			end
-			if percentColor > 0.5 then
-				r = (49 / 255) + (((1 - percentColor) * 2) * (1 - (49 / 255)))
-				g = 207 / 255
-			else
-				r = 1.0
-				g = (207 / 255) - (0.5 - percentColor) * 2 * (207 / 255)
-			end
-			barFrame:SetStatusBarColor(r, g, b)
+			Necrosis_ApplyBarColor(barFrame, (expiryTime - current) / totalDuration)
 
 			textureFrame:ClearAllPoints()
-			textureFrame:SetPoint(
-				NecrosisConfig.SpellTimerJust,
-				"NecrosisSpellTimerButton",
-				"CENTER",
-				NecrosisConfig.SpellTimerPos * 23,
-				yPosition
-			)
+			textureFrame:SetPoint(anchorJustify, GRAPH_TIMER_BUTTON, "CENTER", baseOffset, yPosition)
 
 			timerTextFrame:ClearAllPoints()
 			timerTextFrame:SetTextColor(1, 1, 1)
-			timerTextFrame:SetJustifyH(NecrosisConfig.SpellTimerJust)
-			local opposite = NecrosisConfig.SpellTimerJust == "LEFT" and "RIGHT" or "LEFT"
-			timerTextFrame:SetPoint(
-				NecrosisConfig.SpellTimerJust,
-				barFrame,
-				opposite,
-				NecrosisConfig.SpellTimerPos * 5,
-				1
-			)
-			timerTextFrame:SetText(timerData.displayLines[index])
+			timerTextFrame:SetJustifyH(anchorJustify)
+			timerTextFrame:SetPoint(anchorJustify, barFrame, opposite, textOffset, 1)
+			timerTextFrame:SetText(displayLines[index])
 
-			local sparkPosition = 150 - ((current - startTime) / totalDuration) * 150
+			local sparkPosition = TIMER_SPARK_RANGE - ((current - startTime) / totalDuration) * TIMER_SPARK_RANGE
 			if sparkPosition < 1 then
 				sparkPosition = 1
 			end
 			sparkFrame:SetPoint("CENTER", barFrame, "LEFT", sparkPosition, 0)
 
-			yPosition = yPosition - NecrosisConfig.SensListe * 11
+			yPosition = yPosition - yStep
 		end
 	end
 end

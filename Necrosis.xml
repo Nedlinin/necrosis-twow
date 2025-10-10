@@ -7,6 +7,12 @@
 	<Script file="Localization-functions-de.lua"/>
 	<Script file="Localization-dialog-de.lua"/>
 	<Script file="Speech.lua"/>
+	<Script file="NecrosisMenus.lua"/>
+	<Script file="NecrosisUtils.lua"/>
+	<Script file="NecrosisState.lua"/>
+	<Script file="NecrosisInventory.lua"/>
+	<Script file="NecrosisEvents.lua"/>
+	<Script file="NecrosisSpellTimerEngine.lua"/>
 	<Script file="Necrosis.lua"/>
 	<Script file="NecrosisInitialize.lua"/>
 	<Script file="NecrosisMessage.lua"/>

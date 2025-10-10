@@ -236,6 +236,7 @@ function Necrosis_Localization_Dialog_En()
 		["Help"] = {
 			"/necro recall -- Center Necrosis and all buttons in the middle of the screen",
 			"/necro sm -- Replace Soulstoning and summoning messages with a short raid-ready version",
+			"/necro diag -- Toggle diagnostics dump",
 		},
 		["EquipMessage"] = "Equip ",
 		["SwitchMessage"] = " instead of ",
@@ -272,6 +273,7 @@ function Necrosis_Localization_Dialog_En()
 		["SpellMenu2"] = "|CFFB700B7P|CFFFF00FFl|CFFFF50FFa|CFFFF99FFy|CFFFFC4FFe|CFFFF99FFr :",
 		["TimerMenu"] = "|CFFB700B7G|CFFFF00FFr|CFFFF50FFa|CFFFF99FFp|CFFFFC4FFh|CFFFF99FFi|CFFFF50FFc|CFFFF00FFa|CFFB700B7l T|CFFFF00FFi|CFFFF50FFm|CFFFF99FFe|CFFFFC4FFrs :",
 		["TimerColor"] = "Show white instead of yellow timer texts",
+		["TimerDebug"] = "Enable timer debug logging",
 		["TimerDirection"] = "Timers grow upwards",
 		["TranseWarning"] = "Alert me when I enter a Trance State",
 		["SpellTime"] = "Turn on the spell durations indicator",

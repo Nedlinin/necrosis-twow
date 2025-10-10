@@ -4,7 +4,15 @@ Core addon behavior resides in `Necrosis.lua`, `NecrosisInitialize.lua`, and sup
 
 ## Build, Test, and Development Commands
 No build step is required; the addon loads directly from the repository folder. 
+You should always make a plan before modifying code: ask the user to review the plan before proceeding with modifications. If the changes are not trivial, write out your plan to the "PLAN.md" file (using Markdown syntax).
+If the PLAN.md file already exists, append to the top of the file new data; this will allow it to act as a log of modifications we agreed to perform.
+You should never make a code modification on a new topic without making a plan and confirming it with the user first.
+Don't attempt your own file formatting, instead run stylua to format the file.
 It is worth testing lua changes with luac (use Lua 5.0 to match the WoW 1.12 client) when finalizing everything.
+If you ever run into a place where you could make divergent choices and aren't highly confident in the choice, detail it to the user and ask the user before proceeding.
+Pay special attention to globals possibly being nil when accessed for the first time; ensure they are lazily evaluated or simply set to non-nil.
+Pay special attention to file load order (be that in the .xml file Script blocks or the .toc file).
+Pay special attention to the definition ordering of variables and functions, ensuring they are declared before use.
 
 ## Coding Style & Naming Conventions
 UTF-8 encoding to preserve accented characters. Table keys and globals use UpperCamelCase (`NecrosisButton`, `StoneMenuPos`), while event handlers keep the legacy `Necrosis_OnEvent` form. Favor double quotes for strings to match existing files, and extend configuration tables rather than introducing globals.
@@ -12,6 +20,7 @@ The code should follow WoW API for client version 1.12.  This is running on the 
 Use stylua to format all .lua files.  The configuration for stylua is in the root of the repository in a file named stylua.toml.
 
 ## Testing Guidelines
+It is worth testing lua changes with luac (use Lua 5.0 to match the WoW 1.12 client) when finalizing everything.
 Manual verification is expected. After copying the addon into TurtleWoW, test core flows: shard count updates, stone creation/use cooldowns, graphical timers, and localized dialogs. Capture screenshots when UI changes touch `Necrosis.xml` or `UI/` assets. If you introduce saved variables, confirm they persist by relogging. Keep combat log open to spot Lua errors; `/console scriptErrors 1` helps surface them.
 
 ## Commit & Pull Request Guidelines
