@@ -62,6 +62,16 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
+				<FontString name="NecrosisTimerDebug_Option" inherits="GameFontNormalSmall">
+					<Color r="1.0" g="1.0" b="1.0" a="1"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="NecrosisTimerMenu" relativeFrom="TOPLEFT">
+							<Offset>
+								<AbsDimension x="60" y="-175"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
 				<FontString name="NecrosisTimerDirection_Option" inherits="GameFontNormalSmall">
 					<Color r="1.0" g="1.0" b="1.0" a="1"/>
 					<Anchors>
@@ -156,6 +166,23 @@
 				<Scripts>
 					<OnClick>
 						NecrosisConfig.Yellow = not this:GetChecked();
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+			<CheckButton name="NecrosisTimerDebug_Button" enableMouse="true" inherits="UICheckButtonTemplate" checked="false">
+				<Size>
+					<AbsDimension x="24" y="24"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="NecrosisTimerMenu" relativeFrom="TOPLEFT">
+						<Offset>
+							<AbsDimension x="30" y="-170"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						Necrosis_SetTimerDebug(this:GetChecked());
 					</OnClick>
 				</Scripts>
 			</CheckButton>

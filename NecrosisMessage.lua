@@ -62,7 +62,7 @@ end
 -- ... AND COLORAMA WAS BORN!
 ------------------------------------------------------------------------------------------------------
 
-local NECROSIS_COLOR_CODES = {
+NECROSIS_COLOR_CODES = {
 	white = "|CFFFFFFFF",
 	lightBlue = "|CFF99CCFF",
 	brightGreen = "|CFF00FF00",
@@ -97,27 +97,27 @@ end
 
 -- Insert color codes into timers based on remaining duration
 function NecrosisTimerColor(percent)
-	local color = "<brightGreen>"
+	local color = "brightGreen"
 	if percent < 10 then
-		color = "<red>"
+		color = "red"
 	elseif percent < 20 then
-		color = "<redOrange>"
+		color = "redOrange"
 	elseif percent < 30 then
-		color = "<darkOrange>"
+		color = "darkOrange"
 	elseif percent < 40 then
-		color = "<dirtyOrange>"
+		color = "dirtyOrange"
 	elseif percent < 50 then
-		color = "<darkYellow>"
+		color = "darkYellow"
 	elseif percent < 60 then
-		color = "<lightYellow>"
+		color = "lightYellow"
 	elseif percent < 70 then
-		color = "<yellowGreen>"
+		color = "yellowGreen"
 	elseif percent < 80 then
-		color = "<lightGreen1>"
+		color = "lightGreen1"
 	elseif percent < 90 then
-		color = "<lightGreen2>"
+		color = "lightGreen2"
 	end
-	return color
+	return NECROSIS_COLOR_CODES[color] or NECROSIS_COLOR_CODES.brightGreen
 end
 
 ------------------------------------------------------------------------------------------------------

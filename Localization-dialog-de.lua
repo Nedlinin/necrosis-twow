@@ -236,6 +236,7 @@ function Necrosis_Localization_Dialog_De()
 		["Help"] = {
 			"/necro recall -- Zentriere Necrosis und alle Buttons in der Mitte des Bildschirms",
 			"/necro sm -- Ersetze Seelenstein- und Beschw\195\182rungs-Zufallsnachrichten durch eine kurze, raidgeeignete Version",
+			"/necro diag -- Diagnostik umschalten",
 		},
 		["EquipMessage"] = "Ausr\195\188ste ",
 		["SwitchMessage"] = " anstelle von ",
@@ -277,6 +278,7 @@ function Necrosis_Localization_Dialog_De()
 		["TranceButtonView"] = "Zeige versteckte Buttons um sie zu verschieben",
 		["GraphicalTimer"] = "Verwende graphische Timer anstelle von Texttimern",
 		["TimerColor"] = "Zeige wei\195\159en Text in Timern anstelle von gelbem Text",
+		["TimerDebug"] = "Timer-Debug-Protokollierung aktivieren",
 		["TimerDirection"] = "Neue Timer oberhalb der bestehenden Timer anzeigen",
 		["ButtonLock"] = "Sperre die Buttons um die Necrosis Sph\195\164re",
 		["MainLock"] = "Sperre die Buttons und die Necrosis Sph\195\164re",

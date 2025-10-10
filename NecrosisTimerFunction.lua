@@ -18,6 +18,9 @@
 SpellTimer = {}
 
 local TIMER_TYPE = NECROSIS_TIMER_TYPE
+local COLOR_CODES = NECROSIS_COLOR_CODES or {}
+local COLOR_WHITE = COLOR_CODES.white or ""
+local COLOR_CLOSE = COLOR_CODES.close or ""
 
 local function Necrosis_ResetTimerDisplayCache(timer)
 	if not timer then
@@ -456,21 +459,19 @@ function Necrosis_DisplayTimer(
 		needsSuffixUpdate = true
 	end
 	if needsSuffixUpdate then
-		local color = NecrosisTimerColor(percent)
-		local suffix = " - <close>" .. color .. displayName .. "<close><white>"
+		local colorCode = NecrosisTimerColor(percent) or ""
+		local suffix = " - " .. COLOR_CLOSE .. colorCode .. displayName .. COLOR_CLOSE
 		if showTarget then
-			suffix = suffix .. " - " .. targetName .. "<close>\n"
-		else
-			suffix = suffix .. "<close>\n"
+			suffix = suffix .. COLOR_WHITE .. " - " .. targetName .. COLOR_CLOSE
 		end
-		timer.cachedDisplaySuffix = suffix
+		timer.cachedDisplaySuffix = suffix .. "\n"
 		timer.cachedPercentBucket = percentBucket
 		timer.cachedDisplayName = displayName
 		timer.cachedShowTarget = showTarget
 		timer.cachedTarget = showTarget and targetName or ""
 	end
 	if buildText then
-		textBuffer[table.getn(textBuffer) + 1] = "<white>" .. timeText .. (timer.cachedDisplaySuffix or "<close>\n")
+		textBuffer[table.getn(textBuffer) + 1] = COLOR_WHITE .. timeText .. (timer.cachedDisplaySuffix or "\n")
 	end
 
 	local timerLabel = timeText

@@ -236,6 +236,7 @@ function Necrosis_Localization_Dialog_Fr()
 		["Help"] = {
 			"/necro recall -- Centre Necrosis and tous les boutons au centre de l'écran",
 			"/necro sm -- Remplace les messages de pierre d'\195\162me et d'invocation par des versions courtes spéciales raid",
+			"/necro diag -- Active le diagnostic",
 		},
 		["EquipMessage"] = "Equipe ",
 		["SwitchMessage"] = " \195\160 la place de ",
@@ -276,6 +277,7 @@ function Necrosis_Localization_Dialog_Fr()
 		["AntiFearWarning"] = "M'alerter quand ma cible \195\160 un 'anti fear'",
 		["GraphicalTimer"] = "Affichage des timers sous forme graphique",
 		["TimerColor"] = "Affiche le texte des timers en blanc",
+		["TimerDebug"] = "Activer le journal de débogage des minuteries",
 		["TimerDirection"] = "Ajouter les timers en haut des pr\195\169c\195\169dents",
 		["TranceButtonView"] = "Affichage des boutons cach\195\169s pour les d\195\169placer",
 		["ButtonLock"] = "Verrouiller les boutons sur la sphere Necrosis",

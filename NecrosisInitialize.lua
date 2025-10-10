@@ -76,6 +76,124 @@ local function Necrosis_ResetDefaultAnchors()
 	NecrosisSpellTimerButton:SetPoint("CENTER", "UIParent", "CENTER", 120, 340)
 end
 
+local LANGUAGE_SLIDER_INDEX = { deDE = 3, enUS = 2 }
+local COLOR_SLIDER_INDEX = { Rose = 1, Bleu = 2, Orange = 3, Turquoise = 4, Violet = 5 }
+local LANGUAGE_SLIDER_LABEL = "Langue / Language / Sprache"
+
+local function sliderValueAngle(config)
+	return config.NecrosisAngle or 0
+end
+
+local function sliderValueBag(config)
+	local container = config.SoulshardContainer or 4
+	return 4 - container
+end
+
+local function sliderValueLanguage(config)
+	return LANGUAGE_SLIDER_INDEX[config.NecrosisLanguage] or 1
+end
+
+local function sliderValueCountType(config)
+	return config.CountType or 0
+end
+
+local function sliderValueCircle(config)
+	return config.Circle or 0
+end
+
+local function sliderValueShadowScale(config)
+	return config.ShadowTranceScale or 100
+end
+
+local function sliderValueColor(config)
+	return COLOR_SLIDER_INDEX[config.NecrosisColor] or 6
+end
+
+local function sliderValueButtonScale(config)
+	return config.NecrosisButtonScale or 100
+end
+
+local function sliderValueBanishScale(config)
+	return config.BanishScale or 100
+end
+
+local OPTION_SLIDER_CONFIG = {
+	{
+		sliderName = "NecrosisButtonRotate_Slider",
+		lowLabelName = "NecrosisButtonRotate_SliderLow",
+		highLabelName = "NecrosisButtonRotate_SliderHigh",
+		getValue = sliderValueAngle,
+		lowText = "0",
+		highText = "360",
+	},
+	{
+		sliderName = "NecrosisLanguage_Slider",
+		lowLabelName = "NecrosisLanguage_SliderLow",
+		highLabelName = "NecrosisLanguage_SliderHigh",
+		labelName = "NecrosisLanguage_SliderText",
+		labelText = LANGUAGE_SLIDER_LABEL,
+		getValue = sliderValueLanguage,
+		lowText = "",
+		highText = "",
+	},
+	{
+		sliderName = "NecrosisBag_Slider",
+		lowLabelName = "NecrosisBag_SliderLow",
+		highLabelName = "NecrosisBag_SliderHigh",
+		getValue = sliderValueBag,
+		lowText = "5",
+		highText = "1",
+	},
+	{
+		sliderName = "NecrosisCountType_Slider",
+		lowLabelName = "NecrosisCountType_SliderLow",
+		highLabelName = "NecrosisCountType_SliderHigh",
+		getValue = sliderValueCountType,
+		lowText = "",
+		highText = "",
+	},
+	{
+		sliderName = "NecrosisCircle_Slider",
+		lowLabelName = "NecrosisCircle_SliderLow",
+		highLabelName = "NecrosisCircle_SliderHigh",
+		getValue = sliderValueCircle,
+		lowText = "",
+		highText = "",
+	},
+	{
+		sliderName = "ShadowTranceScale_Slider",
+		lowLabelName = "ShadowTranceScale_SliderLow",
+		highLabelName = "ShadowTranceScale_SliderHigh",
+		getValue = sliderValueShadowScale,
+		lowText = "50%",
+		highText = "150%",
+	},
+	{
+		sliderName = "NecrosisColor_Slider",
+		lowLabelName = "NecrosisColor_SliderLow",
+		highLabelName = "NecrosisColor_SliderHigh",
+		getValue = sliderValueColor,
+		lowText = "",
+		highText = "",
+	},
+	{
+		sliderName = "NecrosisButtonScale_Slider",
+		lowLabelName = "NecrosisButtonScale_SliderLow",
+		highLabelName = "NecrosisButtonScale_SliderHigh",
+		getValue = sliderValueButtonScale,
+		lowText = "50 %",
+		highText = "150 %",
+	},
+	{
+		sliderName = "NecrosisBanishScale_Slider",
+		lowLabelName = "NecrosisBanishScale_SliderLow",
+		highLabelName = "NecrosisBanishScale_SliderHigh",
+		getValue = sliderValueBanishScale,
+		lowText = "100 %",
+		highText = "200 %",
+	},
+}
+
 function Necrosis_Initialize()
 	Necrosis_Localization_Dialog_En()
 	-- Initialize localized text (original / French / German)
@@ -150,155 +268,106 @@ function Necrosis_Initialize()
 		Necrosis_CreateMenu()
 
 		-- Read configuration from SavedVariables.lua and populate the runtime variables
-		if NecrosisConfig.SoulshardSort then
-			NecrosisSoulshardSort_Button:SetChecked(1)
-		end
-		if NecrosisConfig.SoulshardDestroy then
-			NecrosisSoulshardDestroy_Button:SetChecked(1)
-		end
-		if NecrosisConfig.ShadowTranceAlert then
-			NecrosisShadowTranceAlert_Button:SetChecked(1)
-		end
-		if NecrosisConfig.ShowSpellTimers then
-			NecrosisShowSpellTimers_Button:SetChecked(1)
-		end
-		if NecrosisConfig.AntiFearAlert then
-			NecrosisAntiFearAlert_Button:SetChecked(1)
-		end
-		if NecrosisConfig.NecrosisLockServ then
-			NecrosisIconsLock_Button:SetChecked(1)
-		end
-		if NecrosisConfig.StonePosition[StonePos.Healthstone] then
-			NecrosisShowHealthStone_Button:SetChecked(1)
-		end
-		if NecrosisConfig.StonePosition[StonePos.Spellstone] then
-			NecrosisShowSpellstone_Button:SetChecked(1)
-		end
-		if NecrosisConfig.StonePosition[StonePos.Soulstone] then
-			NecrosisShowSoulstone_Button:SetChecked(1)
-		end
-		if NecrosisConfig.StonePosition[StonePos.BuffMenu] then
-			NecrosisShowBuffMenu_Button:SetChecked(1)
-		end
-		if NecrosisConfig.StonePosition[StonePos.Mount] then
-			NecrosisShowMount_Button:SetChecked(1)
-		end
-		if NecrosisConfig.StonePosition[StonePos.PetMenu] then
-			NecrosisShowPetMenu_Button:SetChecked(1)
-		end
-		if NecrosisConfig.StonePosition[StonePos.CurseMenu] then
-			NecrosisShowCurseMenu_Button:SetChecked(1)
-		end
-		if NecrosisConfig.StonePosition[StonePos.StoneMenu] then
-			NecrosisShowStoneMenu_Button:SetChecked(1)
-		end
-		if NecrosisConfig.NecrosisToolTip then
-			NecrosisShowTooltips_Button:SetChecked(1)
-		end
-		if NecrosisConfig.Sound then
-			NecrosisSound_Button:SetChecked(1)
-		end
-		if NecrosisConfig.ShowCount then
-			NecrosisShowCount_Button:SetChecked(1)
-		end
-		if NecrosisConfig.BuffMenuPos == -34 then
-			NecrosisBuffMenu_Button:SetChecked(1)
-		end
-		if NecrosisConfig.PetMenuPos == -34 then
-			NecrosisPetMenu_Button:SetChecked(1)
-		end
-		if NecrosisConfig.CurseMenuPos == -34 then
-			NecrosisCurseMenu_Button:SetChecked(1)
-		end
-		if NecrosisConfig.StoneMenuPos == -34 then
-			NecrosisStoneMenu_Button:SetChecked(1)
-		end
-		if NecrosisConfig.NoDragAll then
-			NecrosisLock_Button:SetChecked(1)
-		end
-		if NecrosisConfig.SpellTimerPos == -1 then
-			NecrosisSTimer_Button:SetChecked(1)
-		end
-		if NecrosisConfig.ChatMsg then
-			NecrosisShowMessage_Button:SetChecked(1)
-		end
-		if NecrosisConfig.DemonSummon then
-			NecrosisShowDemonSummon_Button:SetChecked(1)
-		end
-		if NecrosisConfig.SteedSummon then
-			NecrosisShowSteedSummon_Button:SetChecked(1)
-		end
-		if NecrosisConfig.RitualMessage then
-			NecrosisShowRitualSummon_Button:SetChecked(1)
-		end
-		if not NecrosisConfig.ChatType then
-			NecrosisChatType_Button:SetChecked(1)
-		end
-		if NecrosisConfig.Graphical then
-			NecrosisGraphicalTimer_Button:SetChecked(1)
-		end
-		if not NecrosisConfig.Yellow then
-			NecrosisTimerColor_Button:SetChecked(1)
-		end
-		if NecrosisConfig.SensListe == -1 then
-			NecrosisTimerDirection_Button:SetChecked(1)
+		local function shouldCheck(binding)
+			if binding.condition then
+				return binding.condition()
+			end
+			local value = NecrosisConfig
+			if binding.path then
+				for index = 1, table.getn(binding.path), 1 do
+					if not value then
+						return false
+					end
+					value = value[binding.path[index]]
+				end
+			else
+				return false
+			end
+			if binding.expected ~= nil then
+				return value == binding.expected
+			end
+			return not not value
 		end
 
+		local checkboxBindings = {
+			{ frame = "NecrosisSoulshardSort_Button", path = { "SoulshardSort" } },
+			{ frame = "NecrosisSoulshardDestroy_Button", path = { "SoulshardDestroy" } },
+			{ frame = "NecrosisShadowTranceAlert_Button", path = { "ShadowTranceAlert" } },
+			{ frame = "NecrosisShowSpellTimers_Button", path = { "ShowSpellTimers" } },
+			{ frame = "NecrosisAntiFearAlert_Button", path = { "AntiFearAlert" } },
+			{ frame = "NecrosisIconsLock_Button", path = { "NecrosisLockServ" } },
+			{ frame = "NecrosisShowHealthStone_Button", path = { "StonePosition", StonePos.Healthstone } },
+			{ frame = "NecrosisShowSpellstone_Button", path = { "StonePosition", StonePos.Spellstone } },
+			{ frame = "NecrosisShowSoulstone_Button", path = { "StonePosition", StonePos.Soulstone } },
+			{ frame = "NecrosisShowBuffMenu_Button", path = { "StonePosition", StonePos.BuffMenu } },
+			{ frame = "NecrosisShowMount_Button", path = { "StonePosition", StonePos.Mount } },
+			{ frame = "NecrosisShowPetMenu_Button", path = { "StonePosition", StonePos.PetMenu } },
+			{ frame = "NecrosisShowCurseMenu_Button", path = { "StonePosition", StonePos.CurseMenu } },
+			{ frame = "NecrosisShowStoneMenu_Button", path = { "StonePosition", StonePos.StoneMenu } },
+			{ frame = "NecrosisShowTooltips_Button", path = { "NecrosisToolTip" } },
+			{ frame = "NecrosisSound_Button", path = { "Sound" } },
+			{ frame = "NecrosisShowCount_Button", path = { "ShowCount" } },
+			{ frame = "NecrosisShowMessage_Button", path = { "ChatMsg" } },
+			{ frame = "NecrosisShowDemonSummon_Button", path = { "DemonSummon" } },
+			{ frame = "NecrosisShowSteedSummon_Button", path = { "SteedSummon" } },
+			{ frame = "NecrosisShowRitualSummon_Button", path = { "RitualMessage" } },
+			{ frame = "NecrosisChatType_Button", path = { "ChatType" }, expected = false },
+			{ frame = "NecrosisGraphicalTimer_Button", path = { "Graphical" } },
+			{ frame = "NecrosisTimerColor_Button", path = { "Yellow" }, expected = false },
+			{ frame = "NecrosisTimerDirection_Button", path = { "SensListe" }, expected = -1 },
+			{ frame = "NecrosisTimerDebug_Button", path = { "DebugTimers" } },
+			{ frame = "NecrosisBuffMenu_Button", path = { "BuffMenuPos" }, expected = -34 },
+			{ frame = "NecrosisPetMenu_Button", path = { "PetMenuPos" }, expected = -34 },
+			{ frame = "NecrosisCurseMenu_Button", path = { "CurseMenuPos" }, expected = -34 },
+			{ frame = "NecrosisStoneMenu_Button", path = { "StoneMenuPos" }, expected = -34 },
+			{ frame = "NecrosisLock_Button", path = { "NoDragAll" } },
+			{ frame = "NecrosisSTimer_Button", path = { "SpellTimerPos" }, expected = -1 },
+		}
+
+		for index = 1, table.getn(checkboxBindings), 1 do
+			local binding = checkboxBindings[index]
+			if shouldCheck(binding) then
+				local button = getglobal(binding.frame)
+				if button then
+					button:SetChecked(1)
+				end
+			end
+		end
 		-- Slider settings
-		NecrosisButtonRotate_Slider:SetValue(NecrosisConfig.NecrosisAngle)
-		NecrosisButtonRotate_SliderLow:SetText("0")
-		NecrosisButtonRotate_SliderHigh:SetText("360")
-
-		if NecrosisConfig.NecrosisLanguage == "deDE" then
-			NecrosisLanguage_Slider:SetValue(3)
-		elseif NecrosisConfig.NecrosisLanguage == "enUS" then
-			NecrosisLanguage_Slider:SetValue(2)
-		else
-			NecrosisLanguage_Slider:SetValue(1)
+		for index = 1, table.getn(OPTION_SLIDER_CONFIG), 1 do
+			local entry = OPTION_SLIDER_CONFIG[index]
+			local slider = getglobal(entry.sliderName)
+			if slider and entry.getValue then
+				local value = entry.getValue(NecrosisConfig)
+				if value ~= nil then
+					slider:SetValue(value)
+				end
+			end
+			if entry.lowLabelName and entry.lowText ~= nil then
+				local lowLabel = getglobal(entry.lowLabelName)
+				if lowLabel then
+					lowLabel:SetText(entry.lowText)
+				end
+			end
+			if entry.highLabelName and entry.highText ~= nil then
+				local highLabel = getglobal(entry.highLabelName)
+				if highLabel then
+					highLabel:SetText(entry.highText)
+				end
+			end
+			if entry.labelName and entry.labelText then
+				local label = getglobal(entry.labelName)
+				if label then
+					label:SetText(entry.labelText)
+				end
+			end
 		end
-		NecrosisLanguage_SliderText:SetText("Langue / Language / Sprache")
-		NecrosisLanguage_SliderLow:SetText("")
-		NecrosisLanguage_SliderHigh:SetText("")
 
-		NecrosisBag_Slider:SetValue(4 - NecrosisConfig.SoulshardContainer)
-		NecrosisBag_SliderLow:SetText("5")
-		NecrosisBag_SliderHigh:SetText("1")
+		Necrosis_SetTimerDebug(NecrosisConfig.DebugTimers)
 
-		NecrosisCountType_Slider:SetValue(NecrosisConfig.CountType)
-		NecrosisCountType_SliderLow:SetText("")
-		NecrosisCountType_SliderHigh:SetText("")
-
-		NecrosisCircle_Slider:SetValue(NecrosisConfig.Circle)
-		NecrosisCircle_SliderLow:SetText("")
-		NecrosisCircle_SliderHigh:SetText("")
-
-		ShadowTranceScale_Slider:SetValue(NecrosisConfig.ShadowTranceScale)
-		ShadowTranceScale_SliderLow:SetText("50%")
-		ShadowTranceScale_SliderHigh:SetText("150%")
-
-		if NecrosisConfig.NecrosisColor == "Rose" then
-			NecrosisColor_Slider:SetValue(1)
-		elseif NecrosisConfig.NecrosisColor == "Bleu" then
-			NecrosisColor_Slider:SetValue(2)
-		elseif NecrosisConfig.NecrosisColor == "Orange" then
-			NecrosisColor_Slider:SetValue(3)
-		elseif NecrosisConfig.NecrosisColor == "Turquoise" then
-			NecrosisColor_Slider:SetValue(4)
-		elseif NecrosisConfig.NecrosisColor == "Violet" then
-			NecrosisColor_Slider:SetValue(5)
-		else
-			NecrosisColor_Slider:SetValue(6)
+		if NecrosisConfig.DiagnosticsEnabled then
+			Necrosis_DumpDiagnostics()
 		end
-		NecrosisColor_SliderLow:SetText("")
-		NecrosisColor_SliderHigh:SetText("")
-
-		NecrosisButtonScale_Slider:SetValue(NecrosisConfig.NecrosisButtonScale)
-		NecrosisButtonScale_SliderLow:SetText("50 %")
-		NecrosisButtonScale_SliderHigh:SetText("150 %")
-
-		NecrosisBanishScale_Slider:SetValue(NecrosisConfig.BanishScale)
-		NecrosisBanishScale_SliderLow:SetText("100 %")
-		NecrosisBanishScale_SliderHigh:SetText("200 %")
 
 		-- Size the stone and buttons based on the saved settings
 		NecrosisButton:SetScale(NecrosisConfig.NecrosisButtonScale / 100)
@@ -397,6 +466,7 @@ function Necrosis_LanguageInitialize()
 	NecrosisGraphicalTimer_Option:SetText(NECROSIS_CONFIGURATION.GraphicalTimer)
 	NecrosisTimerColor_Option:SetText(NECROSIS_CONFIGURATION.TimerColor)
 	NecrosisTimerDirection_Option:SetText(NECROSIS_CONFIGURATION.TimerDirection)
+	NecrosisTimerDebug_Option:SetText(NECROSIS_CONFIGURATION.TimerDebug)
 
 	NecrosisLock_Option:SetText(NECROSIS_CONFIGURATION.MainLock)
 	NecrosisBuffMenu_Option:SetText(NECROSIS_CONFIGURATION.BuffMenu)
@@ -452,6 +522,8 @@ function Necrosis_SlashHandler(arg1)
 			NECROSIS_INVOCATION_MESSAGES = NECROSIS_SHORT_MESSAGES[2]
 			Necrosis_Msg("Short Messages : <brightGreen>On", "USER")
 		end
+	elseif string.find(string.lower(arg1), "diag") then
+		Necrosis_ToggleDiagnostics()
 	elseif string.find(string.lower(arg1), "cast") then
 		NecrosisSpellCast(string.lower(arg1))
 	else
@@ -463,3 +535,8 @@ function Necrosis_SlashHandler(arg1)
 		Necrosis_Toggle()
 	end
 end
+
+SlashCmdList = SlashCmdList or {}
+SLASH_NECRO1 = "/necro"
+SLASH_NECRO2 = "/necrosis"
+SlashCmdList["NECRO"] = Necrosis_SlashHandler
