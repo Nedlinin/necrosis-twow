@@ -72,12 +72,14 @@ function Necrosis_DebugPrint(msg)
 		DEFAULT_CHAT_FRAME:AddMessage(tostring(msg))
 	end
 end
-LastCast = {
-	Demon = 0,
-	Buff = 0,
-	Curse = { id = 0, click = "LeftButton" },
-	Stone = { id = 0, click = "LeftButton" },
-}
+LastCast = LastCast
+	or {
+		Demon = 0,
+		Buff = 0,
+		Curse = { id = 0, click = "LeftButton" },
+		Stone = { id = 0, click = "LeftButton" },
+	}
+
 local Loaded = false
 
 -- Detect mod initialization
@@ -102,6 +104,93 @@ local function clear_tables(t)
 			t[k] = nil
 		end
 	end
+end
+
+local UpdateDiagnostics = {
+	lastLogTime = 0,
+	frameCount = 0,
+	elapsedTotal = 0,
+	helpers = {},
+}
+
+local function Necrosis_LogDiagnostics(message)
+	if DEFAULT_CHAT_FRAME then
+		DEFAULT_CHAT_FRAME:AddMessage(message)
+	end
+end
+
+function Necrosis_RecordHelperDiag(name, beforeMem)
+	if not (NecrosisConfig and NecrosisConfig.DiagnosticsEnabled) then
+		return
+	end
+	local afterMem = gcinfo()
+	local delta = afterMem - beforeMem
+	local helper = UpdateDiagnostics.helpers[name]
+	if not helper then
+		helper = { calls = 0, mem = 0 }
+		UpdateDiagnostics.helpers[name] = helper
+	end
+	helper.calls = helper.calls + 1
+	helper.mem = helper.mem + delta
+end
+
+function Necrosis_TrackUpdateDiagnostics(elapsed)
+	if not (NecrosisConfig and NecrosisConfig.DiagnosticsEnabled) then
+		UpdateDiagnostics.lastLogTime = GetTime()
+		UpdateDiagnostics.frameCount = 0
+		UpdateDiagnostics.elapsedTotal = 0
+		UpdateDiagnostics.helpers = {}
+		return
+	end
+
+	elapsed = elapsed or 0
+	local now = GetTime()
+	if UpdateDiagnostics.lastLogTime == 0 then
+		UpdateDiagnostics.lastLogTime = now
+	end
+	UpdateDiagnostics.frameCount = UpdateDiagnostics.frameCount + 1
+	UpdateDiagnostics.elapsedTotal = UpdateDiagnostics.elapsedTotal + elapsed
+
+	if (now - UpdateDiagnostics.lastLogTime) < 5 then
+		return
+	end
+
+	local avgElapsed = 0
+	if UpdateDiagnostics.frameCount > 0 then
+		avgElapsed = UpdateDiagnostics.elapsedTotal / UpdateDiagnostics.frameCount
+	end
+
+	local memUsage = gcinfo()
+	local pendingScan = BagState and BagState.pending and "true" or "false"
+	local timerEngine = _G.TimerEngine
+	local segmentCount = timerEngine and timerEngine.textSegments and table.getn(timerEngine.textSegments) or 0
+	local timerCount = SpellTimer and table.getn(SpellTimer) or 0
+
+	local message = string.format(
+		"|cffff7f00Necrosis|r OnUpdate %d frames, avg %.3f ms, mem %.1f KB, bagPending=%s, segments=%d, timers=%d",
+		UpdateDiagnostics.frameCount,
+		avgElapsed * 1000,
+		memUsage,
+		pendingScan,
+		segmentCount,
+		timerCount
+	)
+	Necrosis_LogDiagnostics(message)
+
+	for name, data in pairs(UpdateDiagnostics.helpers) do
+		local avgMem = 0
+		if data.calls > 0 then
+			avgMem = data.mem / data.calls
+		end
+		Necrosis_LogDiagnostics(
+			string.format("  - %s: calls=%d, total=%.3f KB, avg=%.3f KB", name, data.calls, data.mem, avgMem)
+		)
+	end
+
+	UpdateDiagnostics.lastLogTime = now
+	UpdateDiagnostics.frameCount = 0
+	UpdateDiagnostics.elapsedTotal = 0
+	UpdateDiagnostics.helpers = {}
 end
 
 local ICON_BASE_PATH = "Interface\\AddOns\\Necrosis\\UI\\"

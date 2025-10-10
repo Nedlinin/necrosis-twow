@@ -212,7 +212,7 @@ function Necrosis_BagExplore()
 	BagState.pending = false
 	BagState.nextScanTime = 0
 	if needsRescan then
-		Necrosis_RequestBagScan(0.5)
+		Necrosis_RequestBagScan(0.2)
 	end
 
 	if NecrosisConfig.Circle == 1 then

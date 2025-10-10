@@ -252,20 +252,80 @@ function Necrosis_OnUpdate(self, elapsed)
 	end
 
 	elapsed = elapsed or 0
-	Necrosis_UpdateTimerEventRegistration()
+	Necrosis_TrackUpdateDiagnostics(elapsed)
 
+	local diagActive = NecrosisConfig and NecrosisConfig.DiagnosticsEnabled
 	local curTime = GetTime()
 
-	Necrosis_UpdateSoulShardSorting(elapsed)
-	Necrosis_ProcessBagUpdates(curTime)
-	Necrosis_UpdateTrackedBuffTimers(elapsed, curTime)
-	Necrosis_UpdateMenus(curTime)
-	Necrosis_UpdateShadowTrance(curTime)
-	Necrosis_UpdateAntiFear(curTime)
-	Necrosis_HandleShardCount()
+	local before = diagActive and gcinfo()
+	Necrosis_UpdateTimerEventRegistration()
+	if before then
+		Necrosis_RecordHelperDiag("UpdateTimerEventRegistration", before)
+	end
 
+	before = diagActive and gcinfo()
+	Necrosis_UpdateSoulShardSorting(elapsed)
+	if before then
+		Necrosis_RecordHelperDiag("UpdateSoulShardSorting", before)
+	end
+
+	before = diagActive and gcinfo()
+	Necrosis_ProcessBagUpdates(curTime)
+	if before then
+		Necrosis_RecordHelperDiag("ProcessBagUpdates", before)
+	end
+
+	before = diagActive and gcinfo()
+	Necrosis_UpdateTrackedBuffTimers(elapsed, curTime)
+	if before then
+		Necrosis_RecordHelperDiag("UpdateTrackedBuffTimers", before)
+	end
+
+	before = diagActive and gcinfo()
+	Necrosis_UpdateMenus(curTime)
+	if before then
+		Necrosis_RecordHelperDiag("UpdateMenus", before)
+	end
+
+	before = diagActive and gcinfo()
+	Necrosis_UpdateShadowTrance(curTime)
+	if before then
+		Necrosis_RecordHelperDiag("UpdateShadowTrance", before)
+	end
+
+	before = diagActive and gcinfo()
+	Necrosis_UpdateAntiFear(curTime)
+	if before then
+		Necrosis_RecordHelperDiag("UpdateAntiFear", before)
+	end
+
+	before = diagActive and gcinfo()
+	Necrosis_HandleShardCount()
+	if before then
+		Necrosis_RecordHelperDiag("HandleShardCount", before)
+	end
+
+	before = diagActive and gcinfo()
 	local shouldUpdate = Necrosis_ShouldUpdateSpellState(curTime)
+	if before then
+		Necrosis_RecordHelperDiag("ShouldUpdateSpellState", before)
+	end
+
+	before = diagActive and gcinfo()
 	Necrosis_HandleTradingAndIcons(shouldUpdate)
+	if before then
+		Necrosis_RecordHelperDiag("HandleTradingAndIcons", before)
+	end
+
+	before = diagActive and gcinfo()
 	Necrosis_UpdateSpellTimers(curTime, shouldUpdate)
+	if before then
+		Necrosis_RecordHelperDiag("UpdateSpellTimers", before)
+	end
+
+	before = diagActive and gcinfo()
 	Necrosis_UpdateTimerDisplay()
+	if before then
+		Necrosis_RecordHelperDiag("UpdateTimerDisplay", before)
+	end
 end

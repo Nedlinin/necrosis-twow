@@ -342,11 +342,11 @@ function Necrosis_SortTimers(SpellTimer)
 			return true
 		end
 		local leftTime = left.TimeMax
-		if not leftTime or leftTime <= 0 then
+		if type(leftTime) ~= "number" or leftTime <= 0 then
 			leftTime = math.huge
 		end
 		local rightTime = right.TimeMax
-		if not rightTime or rightTime <= 0 then
+		if type(rightTime) ~= "number" or rightTime <= 0 then
 			rightTime = math.huge
 		end
 		if leftTime == rightTime then
