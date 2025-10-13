@@ -97,15 +97,16 @@
 					</Anchor>
 				</Anchors>
 				<Scripts>
-					<OnClick>
-						if (this:GetChecked()) then
-							NecrosisConfig.ShowSpellTimers = true;
-						else
-							NecrosisConfig.ShowSpellTimers = false;
-						end
-					</OnClick>
-				</Scripts>
-			</CheckButton>
+				<OnClick>
+					if (this:GetChecked()) then
+						NecrosisConfig.ShowSpellTimers = true;
+					else
+						NecrosisConfig.ShowSpellTimers = false;
+					end
+					Necrosis_HandleSpellTimerPreference();
+				</OnClick>
+			</Scripts>
+		</CheckButton>
 			<CheckButton name="NecrosisSTimer_Button" enableMouse="true" inherits="UICheckButtonTemplate" checked="false">
 				<Size>
 					<AbsDimension x="24" y="24"/>

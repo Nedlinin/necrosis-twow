@@ -71,7 +71,7 @@ local function Necrosis_IsTimerDebugEnabled()
 	if DEBUG_TIMER_EVENTS then
 		return true
 	end
-	if type(NecrosisConfig) == "table" and NecrosisConfig.DebugTimers then
+	if type(NecrosisConfig) == "table" and (NecrosisConfig.DebugTimers or NecrosisConfig.DiagnosticsEnabled) then
 		return true
 	end
 	return false
@@ -102,6 +102,35 @@ function Necrosis_DebugPrint(...)
 	end
 end
 
+local wipe_table = NecrosisUtils and NecrosisUtils.WipeTable
+local function wipe_helper_table(t)
+	if not t then
+		return
+	end
+	if wipe_table then
+		wipe_table(t)
+	else
+		for key in pairs(t) do
+			t[key] = nil
+		end
+	end
+end
+
+local function trim_string(value)
+	if not value then
+		return nil
+	end
+	return (string.gsub(value, "^%s*(.-)%s*$", "%1"))
+end
+
+local function normalize_spell_name(name)
+	if not name or name == "" then
+		return name
+	end
+	local trimmed = string.gsub(name, "%s*%(.*%)$", "")
+	return trim_string(trimmed)
+end
+
 local Loaded = false
 
 -- Detect mod initialization
@@ -115,9 +144,80 @@ local SpellCastTime = 0
 
 local TIMER_TYPE = NECROSIS_TIMER_TYPE
 local InventoryConfig = NecrosisInventoryConfig
+local Timers = Necrosis.Timers
+local Spells = Necrosis.Spells
+local Loc = Necrosis.Loc
+local SpellIndex = Spells.Index
 
 local function getTimerService()
 	return NecrosisTimerService
+end
+
+local function hasSpell(index)
+	return Spells:HasID(index)
+end
+
+local function getSpellId(index)
+	return Spells:GetID(index)
+end
+
+local function getSpellNameByIndex(index)
+	return Spells:GetName(index)
+end
+
+local function getSpellMana(index)
+	return Spells:GetMana(index)
+end
+
+local function getSpellType(index)
+	return Spells:GetType(index)
+end
+
+local function getSpellLength(index)
+	return Spells:GetLength(index)
+end
+
+local function castSpellByIndex(index)
+	local spellId = getSpellId(index)
+	if spellId then
+		CastSpell(spellId, "spell")
+		return true
+	end
+	return false
+end
+
+local function getTooltipData(section)
+	return Loc:GetTooltip(section) or {}
+end
+
+local function getTooltipField(section, key)
+	if section ~= nil then
+		local tooltip = Loc:GetTooltip(section)
+		if type(tooltip) == "table" then
+			return tooltip[key]
+		end
+		return nil
+	end
+	return Loc:GetTooltipNested(nil, { key })
+end
+
+local function getTooltipNested(section, keys)
+	return Loc:GetTooltipNested(section, keys)
+end
+
+local function getMessage(section, key)
+	return Loc:GetMessage(section, key)
+end
+
+local function getMessageNested(path)
+	return Loc:GetMessageNested(path)
+end
+
+local function sendMessage(section, key, channel)
+	local text = getMessage(section, key)
+	if text then
+		Necrosis_Msg(text, channel or "USER")
+	end
 end
 
 local function getState(slice)
@@ -138,6 +238,48 @@ local AntiFearState = getState("antiFear")
 local ShadowState = getState("shadowTrance")
 local MessageState = getState("messages")
 local StoneInventory = getInventory("stones")
+
+NecrosisSpellTimersEnabled = NecrosisSpellTimersEnabled ~= false
+
+local function Necrosis_UpdateTimerFeatureState(enabled)
+	enabled = not not enabled
+	if NecrosisSpellTimersEnabled == enabled then
+		return
+	end
+	NecrosisSpellTimersEnabled = enabled
+	if enabled then
+		if NecrosisSpellTimerButton then
+			ShowUIPanel(NecrosisSpellTimerButton)
+		end
+		if type(Timers) == "table" and Timers.MarkTextDirty then
+			Timers:MarkTextDirty()
+		end
+		if type(Necrosis_MarkTrackedBuffsDirty) == "function" then
+			Necrosis_MarkTrackedBuffsDirty()
+		end
+	else
+		if type(Timers) == "table" and Timers.RemoveAllTimers then
+			Timers:RemoveAllTimers()
+		end
+		if NecrosisListSpells then
+			NecrosisListSpells:SetText("")
+		end
+		if NecrosisSpellTimerButton then
+			HideUIPanel(NecrosisSpellTimerButton)
+		end
+	end
+	if type(Necrosis_UpdateTimerEventRegistration) == "function" then
+		Necrosis_UpdateTimerEventRegistration()
+	end
+	if type(Necrosis_UpdateTimerDisplay) == "function" then
+		Necrosis_UpdateTimerDisplay()
+	end
+end
+
+function Necrosis_HandleSpellTimerPreference()
+	local enabled = NecrosisConfig and NecrosisConfig.ShowSpellTimers
+	Necrosis_UpdateTimerFeatureState(enabled and true or false)
+end
 
 -- Clears contents but preserves subtable objects
 local function clear_tables(t)
@@ -185,7 +327,7 @@ function Necrosis_TrackUpdateDiagnostics(elapsed)
 		UpdateDiagnostics.lastLogTime = GetTime()
 		UpdateDiagnostics.frameCount = 0
 		UpdateDiagnostics.elapsedTotal = 0
-		UpdateDiagnostics.helpers = {}
+		wipe_helper_table(UpdateDiagnostics.helpers)
 		return
 	end
 
@@ -210,8 +352,7 @@ function Necrosis_TrackUpdateDiagnostics(elapsed)
 	local pendingScan = BagState and BagState.pending and "true" or "false"
 	local timerEngine = _G.TimerEngine
 	local segmentCount = timerEngine and timerEngine.textSegments and table.getn(timerEngine.textSegments) or 0
-	local service = getTimerService()
-	local timerCount = service and service:GetTimerCount() or 0
+	local timerCount = Timers:GetTimerCount()
 
 	local message = string.format(
 		"|cffff7f00Necrosis|r OnUpdate %d frames, avg %.3f ms, mem %.1f KB, bagPending=%s, segments=%d, timers=%d",
@@ -237,7 +378,7 @@ function Necrosis_TrackUpdateDiagnostics(elapsed)
 	UpdateDiagnostics.lastLogTime = now
 	UpdateDiagnostics.frameCount = 0
 	UpdateDiagnostics.elapsedTotal = 0
-	UpdateDiagnostics.helpers = {}
+	wipe_helper_table(UpdateDiagnostics.helpers)
 end
 
 local ICON_BASE_PATH = "Interface\\AddOns\\Necrosis\\UI\\"
@@ -359,10 +500,11 @@ end
 
 local MENU_BUTTON_COUNT = 9
 
-local function Necrosis_OnBagUpdate()
+local function Necrosis_OnBagUpdate(_, bagId)
 	if NecrosisConfig.SoulshardSort then
 		SoulshardState.pendingSortCheck = true
 	end
+	Necrosis_FlagBagDirty(bagId)
 	Necrosis_RequestBagScan(0)
 end
 
@@ -371,29 +513,58 @@ local function Necrosis_HandleSelfBuffCast(spellIndex, activeSpellName, playerNa
 		return false
 	end
 
-	local data = NECROSIS_SPELL_TABLE[spellIndex]
+	local data = Spells:Get(spellIndex)
 	if not data or not data.Name then
-		if DEBUG_TIMER_EVENTS then
-			Necrosis_DebugPrint("Buff timer", "no spell data", spellIndex)
+		if Necrosis_IsTimerDebugEnabled() then
+			Necrosis_DebugPrint("BuffCast", "no spell data", spellIndex)
 		end
 		return false
 	end
 
-	if data.Name ~= activeSpellName then
-		if DEBUG_TIMER_EVENTS then
-			Necrosis_DebugPrint("Buff timer", "spell mismatch", activeSpellName or "nil", "!=", data.Name)
+	local debugEnabled = Necrosis_IsTimerDebugEnabled()
+	local normalizedDataName = normalize_spell_name(data.Name)
+	local normalizedActive = normalize_spell_name(activeSpellName)
+	if normalizedActive ~= normalizedDataName then
+		local fallback = normalize_spell_name(SpellCastName)
+		if fallback == normalizedDataName then
+			normalizedActive = fallback
+			if debugEnabled then
+				Necrosis_DebugPrint("BuffCast", "adjust", activeSpellName or "nil", "=>", fallback or "nil")
+			end
+		else
+			if debugEnabled then
+				Necrosis_DebugPrint(
+					"BuffCast",
+					"mismatch",
+					normalizedActive or activeSpellName or "nil",
+					"!=",
+					normalizedDataName
+				)
+			end
+			return false
 		end
-		return false
 	end
 
 	local duration = data.Length or 0
 	if duration <= 0 then
+		if debugEnabled then
+			Necrosis_DebugPrint("BuffCast", normalizedDataName, "missing duration")
+		end
 		return false
 	end
 
 	local expiry = floor(currentTime + duration)
 
-	return Necrosis_TouchSelfBuffTimer(
+	if debugEnabled then
+		Necrosis_DebugPrint(
+			"BuffCast",
+			normalizedDataName,
+			string.format("duration=%d", duration),
+			string.format("expiry=%d", expiry)
+		)
+	end
+
+	local ensured = Necrosis_TouchSelfBuffTimer(
 		spellIndex,
 		data.Name,
 		playerName,
@@ -401,9 +572,15 @@ local function Necrosis_HandleSelfBuffCast(spellIndex, activeSpellName, playerNa
 		expiry,
 		data.Type,
 		duration,
-		false,
+		nil,
 		currentTime
 	)
+
+	if debugEnabled then
+		Necrosis_DebugPrint("BuffCast", normalizedDataName, ensured and "ensure" or "skip")
+	end
+
+	return ensured
 end
 
 local function Necrosis_CountTableEntries(tbl)
@@ -495,11 +672,10 @@ function Necrosis_DumpDiagnostics()
 		Necrosis_PrintDiagnostic("  Soulstone queued for target notification")
 	end
 
-	local service = getTimerService()
-	local timerCount = service and service:GetTimerCount() or 0
-	if service and timerCount > 0 then
+	local timerCount = Timers:GetTimerCount()
+	if timerCount > 0 then
 		Necrosis_PrintDiagnostic(string.format("  SpellTimers: %d entries", timerCount))
-		service:IterateTimers(function(timer)
+		Timers:IterateTimers(function(timer)
 			if timer then
 				Necrosis_PrintDiagnostic("    " .. Necrosis_FormatTimerEntry(timer))
 			end
@@ -588,15 +764,22 @@ local function Necrosis_OnTargetChanged()
 	if NecrosisConfig.AntiFearAlert and AntiFearState.currentTargetImmune then
 		AntiFearState.currentTargetImmune = false
 	end
+	if type(Necrosis_RebuildTargetAuraCache) == "function" then
+		Necrosis_RebuildTargetAuraCache()
+	end
+	AntiFearState.statusDirty = true
 end
 
 local function Necrosis_HandleSelfFearDamage(message)
 	if not NecrosisConfig.AntiFearAlert or not message then
 		return
 	end
+	local fearName = Spells:GetName(13)
+	local banishName = Spells:GetName(19)
 	for spell, creatureName in string.gfind(message, NECROSIS_ANTI_FEAR_SRCH) do
-		if spell == NECROSIS_SPELL_TABLE[13].Name or spell == NECROSIS_SPELL_TABLE[19].Name then
+		if spell == fearName or spell == banishName then
 			AntiFearState.currentTargetImmune = true
+			AntiFearState.statusDirty = true
 			break
 		end
 	end
@@ -610,10 +793,7 @@ end
 
 local function Necrosis_OnCombatEnd()
 	CombatState.inCombat = false
-	local service = getTimerService()
-	if service then
-		service:RemoveCombatTimers()
-	end
+	Timers:RemoveCombatTimers()
 end
 
 function Necrosis_OnLoad()
@@ -624,8 +804,9 @@ function Necrosis_OnLoad()
 	if NecrosisButton then
 		NecrosisButton:RegisterEvent("PLAYER_ENTERING_WORLD")
 		NecrosisButton:RegisterEvent("PLAYER_LEAVING_WORLD")
-		if type(NECROSIS_EVENT_HANDLERS) == "table" then
-			for eventName in pairs(NECROSIS_EVENT_HANDLERS) do
+		local events = Necrosis.Events
+		if events and events.Iterate then
+			for eventName in events:Iterate() do
 				NecrosisButton:RegisterEvent(eventName)
 			end
 		end
@@ -660,12 +841,13 @@ end
 
 function Necrosis_ChangeDemon()
 	local timerService = getTimerService()
+	local enslaveName = Spells:GetName(10)
 	-- If the new demon is enslaved, start a five-minute timer
-	if Necrosis_UnitHasEffect("pet", NECROSIS_SPELL_TABLE[10].Name) then
+	if enslaveName and Necrosis_UnitHasEffect("pet", enslaveName) then
 		if not DemonEnslaved then
 			DemonEnslaved = true
 			if timerService then
-				timerService:EnsureSpellIndexTimer(10, nil, nil, nil, nil, nil)
+				Timers:EnsureSpellIndexTimer(SpellIndex.ENSLAVE_DEMON, nil, nil, nil, nil, nil)
 			end
 		end
 	else
@@ -673,12 +855,15 @@ function Necrosis_ChangeDemon()
 		if DemonEnslaved then
 			DemonEnslaved = false
 			if timerService then
-				timerService:RemoveTimerByName(NECROSIS_SPELL_TABLE[10].Name)
+				Timers:RemoveTimerByName(enslaveName)
 			end
 			if NecrosisConfig.Sound then
 				PlaySoundFile(NECROSIS_SOUND.EnslaveEnd)
 			end
-			Necrosis_Msg(NECROSIS_MESSAGE.Information.EnslaveBreak, "USER")
+			local message = Loc:GetMessage("Information", "EnslaveBreak")
+			if message then
+				Necrosis_Msg(message, "USER")
+			end
 		end
 	end
 
@@ -705,13 +890,22 @@ end
 function Necrosis_SelfEffect(action)
 	Necrosis_DebugPrint("SelfEffect", action, arg1 or "nil")
 	local timerService = getTimerService()
+	local felsteedName = Spells:GetName(1)
+	local dreadsteedName = Spells:GetName(2)
+	local dominationName = Spells:GetName(15)
+	local amplifyName = Spells:GetName(42)
+	local demonArmorName = Spells:GetName(31)
+	local demonSkinName = Spells:GetName(36)
 	if action == "BUFF" then
 		-- Insert a timer when the Warlock gains Demon Sacrifice
 		if arg1 == NECROSIS_TRANSLATION.SacrificeGain and timerService then
-			timerService:EnsureSpellIndexTimer(17, nil, nil, nil, nil, nil)
+			Timers:EnsureSpellIndexTimer(SpellIndex.SACRIFICE, nil, nil, nil, nil, nil)
 		end
 		-- Update the mount button when the Warlock mounts
-		if string.find(arg1, NECROSIS_SPELL_TABLE[1].Name) or string.find(arg1, NECROSIS_SPELL_TABLE[2].Name) then
+		if
+			(felsteedName and string.find(arg1, felsteedName))
+			or (dreadsteedName and string.find(arg1, dreadsteedName))
+		then
 			MountState.active = true
 			if
 				NecrosisConfig.SteedSummon
@@ -741,37 +935,29 @@ function Necrosis_SelfEffect(action)
 			Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 2)
 		end
 		-- Update the Corrupted Domination button when active and start the cooldown timer
-		if string.find(arg1, NECROSIS_SPELL_TABLE[15].Name) and NECROSIS_SPELL_TABLE[15].ID ~= nil then
+		if dominationName and Spells:HasID(15) and string.find(arg1, dominationName) then
 			DominationUp = true
 			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 2)
 		end
 		-- Update the Amplify Curse button when active and start the cooldown timer
-		if string.find(arg1, NECROSIS_SPELL_TABLE[42].Name) and NECROSIS_SPELL_TABLE[42].ID ~= nil then
+		if amplifyName and Spells:HasID(42) and string.find(arg1, amplifyName) then
 			AmplifyUp = true
 			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 2)
 		end
 		-- Track Demon Armor/Skin on the player
 		local playerName = UnitName("player") or ""
-		if NECROSIS_SPELL_TABLE[31].Name and string.find(arg1, NECROSIS_SPELL_TABLE[31].Name) then
-			local skip = Necrosis_WasBuffRecentlyRefreshed(NECROSIS_SPELL_TABLE[31].Name)
-			if DEBUG_TIMER_EVENTS then
-				Necrosis_DebugPrint("SelfEffect", "Demon Armor aura", "skip=", skip)
-			end
-			if not skip and timerService then
-				timerService:EnsureSpellIndexTimer(31, playerName, nil, nil, nil, nil)
-				if DEBUG_TIMER_EVENTS then
+		if demonArmorName and string.find(arg1, demonArmorName) then
+			if timerService then
+				Timers:EnsureSpellIndexTimer(SpellIndex.DEMON_ARMOR, playerName, nil, nil, nil, nil)
+				if Necrosis_IsTimerDebugEnabled() then
 					Necrosis_DebugPrint("SelfEffect", "Inserted Demon Armor timer (log)")
 				end
 			end
 			LastRefreshedBuffName = nil
-		elseif NECROSIS_SPELL_TABLE[36].Name and string.find(arg1, NECROSIS_SPELL_TABLE[36].Name) then
-			local skip = Necrosis_WasBuffRecentlyRefreshed(NECROSIS_SPELL_TABLE[36].Name)
-			if DEBUG_TIMER_EVENTS then
-				Necrosis_DebugPrint("SelfEffect", "Demon Skin aura", "skip=", skip)
-			end
-			if not skip and timerService then
-				timerService:EnsureSpellIndexTimer(36, playerName, nil, nil, nil, nil)
-				if DEBUG_TIMER_EVENTS then
+		elseif demonSkinName and string.find(arg1, demonSkinName) then
+			if timerService then
+				Timers:EnsureSpellIndexTimer(SpellIndex.DEMON_SKIN, playerName, nil, nil, nil, nil)
+				if Necrosis_IsTimerDebugEnabled() then
 					Necrosis_DebugPrint("SelfEffect", "Inserted Demon Skin timer (log)")
 				end
 			end
@@ -779,33 +965,37 @@ function Necrosis_SelfEffect(action)
 		else
 			local trackedConfig = Necrosis_FindTrackedBuffConfigByName(arg1)
 			if trackedConfig and not trackedConfig.spellIndex then
-				Necrosis_RefreshSelfBuffTimer(trackedConfig, playerName, GetTime())
+				local debugTimersEnabled = Necrosis_IsTimerDebugEnabled()
+				Necrosis_RefreshSelfBuffTimer(trackedConfig, playerName, GetTime(), nil, debugTimersEnabled)
 				LastRefreshedBuffName = nil
 			end
 		end
 	else
 		-- Update the mount button when the Warlock dismounts
-		if string.find(arg1, NECROSIS_SPELL_TABLE[1].Name) or string.find(arg1, NECROSIS_SPELL_TABLE[2].Name) then
+		if
+			(felsteedName and string.find(arg1, felsteedName))
+			or (dreadsteedName and string.find(arg1, dreadsteedName))
+		then
 			MountState.active = false
 			MountState.notify = true
 			Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 1)
 		end
 		-- Change the Domination button when the Warlock is no longer under its effect
-		if string.find(arg1, NECROSIS_SPELL_TABLE[15].Name) and NECROSIS_SPELL_TABLE[15].ID ~= nil then
+		if dominationName and Spells:HasID(15) and string.find(arg1, dominationName) then
 			DominationUp = false
 			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 3)
 		end
 		-- Change the Amplify Curse button when the Warlock leaves its effect
-		if string.find(arg1, NECROSIS_SPELL_TABLE[42].Name) and NECROSIS_SPELL_TABLE[42].ID ~= nil then
+		if amplifyName and Spells:HasID(42) and string.find(arg1, amplifyName) then
 			AmplifyUp = false
 			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 3)
 		end
 		-- Remove tracked buff timers when they fade
 		if not Necrosis_RemoveTrackedBuffTimerForMessage(arg1) and timerService then
-			if NECROSIS_SPELL_TABLE[31].Name and string.find(arg1, NECROSIS_SPELL_TABLE[31].Name) then
-				timerService:RemoveTimerByName(NECROSIS_SPELL_TABLE[31].Name)
-			elseif NECROSIS_SPELL_TABLE[36].Name and string.find(arg1, NECROSIS_SPELL_TABLE[36].Name) then
-				timerService:RemoveTimerByName(NECROSIS_SPELL_TABLE[36].Name)
+			if demonArmorName and string.find(arg1, demonArmorName) then
+				Timers:RemoveTimerByName(demonArmorName)
+			elseif demonSkinName and string.find(arg1, demonSkinName) then
+				Timers:RemoveTimerByName(demonSkinName)
 			end
 		end
 	end
@@ -817,6 +1007,10 @@ end
 function Necrosis_SpellManagement()
 	local SortActif = false
 	local timerService = getTimerService()
+	local soulstoneName = Spells:GetName(11)
+	local demonArmorName = Spells:GetName(31)
+	local demonSkinName = Spells:GetName(36)
+	local shadowWardName = Spells:GetName(43)
 	Necrosis_DebugPrint(
 		"Necrosis_SpellManagement",
 		"SpellCastName=",
@@ -826,7 +1020,7 @@ function Necrosis_SpellManagement()
 	)
 	if SpellCastName then
 		-- If the spell was Soulstone Resurrection, start its timer
-		if SpellCastName == NECROSIS_SPELL_TABLE[11].Name then
+		if SpellCastName == soulstoneName then
 			if SpellTargetName == UnitName("player") then
 				SpellTargetName = ""
 			end
@@ -836,7 +1030,7 @@ function Necrosis_SpellManagement()
 				SoulstoneAdvice = true
 			end
 			if timerService then
-				timerService:EnsureSpellIndexTimer(11, SpellTargetName, nil, nil, nil, nil)
+				Timers:EnsureSpellIndexTimer(SpellIndex.SOULSTONE_RESURRECTION, SpellTargetName, nil, nil, nil, nil)
 			end
 		-- If the spell was Ritual of Summoning, send an informational message to players
 		elseif
@@ -861,60 +1055,77 @@ function Necrosis_SpellManagement()
 					Necrosis_Msg(Necrosis_MsgReplace(lines[i], SpellTargetName), "WORLD")
 				end
 			end
-		elseif StoneIDInSpellTable[5] ~= 0 and SpellCastName == NECROSIS_SPELL_TABLE[StoneIDInSpellTable[5]].Name then -- Create Felstone
+		elseif StoneIDInSpellTable[5] ~= 0 and SpellCastName == Spells:GetName(StoneIDInSpellTable[5]) then -- Create Felstone
 			LastCast.Stone.id = 1
 			LastCast.Stone.click = "LeftButton"
-		elseif StoneIDInSpellTable[6] ~= 0 and SpellCastName == NECROSIS_SPELL_TABLE[StoneIDInSpellTable[6]].Name then -- Create Wrathstone
+		elseif StoneIDInSpellTable[6] ~= 0 and SpellCastName == Spells:GetName(StoneIDInSpellTable[6]) then -- Create Wrathstone
 			LastCast.Stone.id = 2
 			LastCast.Stone.click = "LeftButton"
-		elseif StoneIDInSpellTable[7] ~= 0 and SpellCastName == NECROSIS_SPELL_TABLE[StoneIDInSpellTable[7]].Name then -- Create Voidstone
+		elseif StoneIDInSpellTable[7] ~= 0 and SpellCastName == Spells:GetName(StoneIDInSpellTable[7]) then -- Create Voidstone
 			LastCast.Stone.id = 3
 			LastCast.Stone.click = "LeftButton"
-		elseif StoneIDInSpellTable[4] ~= 0 and SpellCastName == NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]].Name then -- Create Firestone
+		elseif StoneIDInSpellTable[4] ~= 0 and SpellCastName == Spells:GetName(StoneIDInSpellTable[4]) then -- Create Firestone
 			LastCast.Stone.id = 4
 			LastCast.Stone.click = "LeftButton"
 		-- For other spells, attempt to create a timer if applicable
-		elseif SpellCastName == NECROSIS_SPELL_TABLE[31].Name or SpellCastName == NECROSIS_SPELL_TABLE[36].Name then
-			local playerName = UnitName("player") or ""
-			local spellIndex = SpellCastName == NECROSIS_SPELL_TABLE[31].Name and 31 or 36
-			local duration = NECROSIS_SPELL_TABLE[spellIndex].Length or 0
-			local expiry = floor(GetTime() + duration)
-			local updated = false
+		elseif SpellCastName == demonArmorName or SpellCastName == demonSkinName then
 			if timerService then
-				updated = timerService:UpdateTimerEntry(
-					SpellCastName,
-					playerName,
-					duration,
-					expiry,
-					NECROSIS_SPELL_TABLE[spellIndex].Type
-				)
-			end
-			if not updated then
-				if timerService and timerService.EnsureSpellIndexTimer then
-					timerService:EnsureSpellIndexTimer(spellIndex, playerName, nil, nil, nil, nil)
+				local playerName = UnitName("player") or ""
+				local now = GetTime()
+				local armorIndex = SpellIndex and SpellIndex.DEMON_ARMOR or 31
+				local skinIndex = SpellIndex and SpellIndex.DEMON_SKIN or 36
+				local spellIndex = SpellCastName == demonArmorName and armorIndex or skinIndex
+				local castName = SpellCastName
+				if not castName or castName == "" then
+					castName = spellIndex == armorIndex and demonArmorName or demonSkinName
 				end
-			elseif DEBUG_TIMER_EVENTS then
-				Necrosis_DebugPrint("Timer refreshed", SpellCastName, duration)
+				local handled = Necrosis_HandleSelfBuffCast(spellIndex, castName, playerName, now)
+				if not handled then
+					local spellData = Spells:Get(spellIndex)
+					local duration = (spellData and spellData.Length) or 0
+					local expiry = duration > 0 and floor(now + duration) or nil
+					local timerType = spellData and spellData.Type
+					local updated = Timers:UpdateTimerEntry(castName, playerName, duration, expiry, timerType)
+					if not updated then
+						Timers:EnsureSpellIndexTimer(spellIndex, playerName, duration, timerType, duration, expiry)
+					elseif DEBUG_TIMER_EVENTS then
+						Necrosis_DebugPrint("Timer refreshed", castName, duration)
+					end
+				end
+			end
+		elseif shadowWardName and SpellCastName == shadowWardName then
+			if timerService then
+				local playerName = UnitName("player") or ""
+				local spellIndex = SpellIndex.SHADOW_WARD
+				local spellData = Spells:Get(spellIndex)
+				local duration = (spellData and spellData.Length) or 0
+				local expiry = duration > 0 and floor(GetTime() + duration) or nil
+				local timerType = Spells:GetType(spellIndex)
+				local updated = Timers:UpdateTimerEntry(shadowWardName, playerName, duration, expiry, timerType)
+				if not updated then
+					Timers:EnsureSpellIndexTimer(spellIndex, playerName, duration, timerType, duration, expiry)
+				elseif DEBUG_TIMER_EVENTS then
+					Necrosis_DebugPrint("Timer refreshed", shadowWardName, duration)
+				end
 			end
 		else
-			for spell = 1, table.getn(NECROSIS_SPELL_TABLE), 1 do
-				if SpellCastName == NECROSIS_SPELL_TABLE[spell].Name and not (spell == 10) then
-					-- If the timer already exists on the target, refresh it
-					local spellData = NECROSIS_SPELL_TABLE[spell]
+			if timerService then
+				Spells:Iterate(function(spellData, spell)
+					if not spellData or not spellData.Name or SpellCastName ~= spellData.Name or spell == 10 then
+						return true
+					end
+
 					if spellData.Type ~= 4 and spell ~= 16 then
 						if not (spell == 9 and Necrosis_UnitHasEffect("target", SpellCastName)) then
 							local refreshDuration = spellData.Length
 							if spell == 9 and SpellCastRank == 1 then
 								refreshDuration = 20
 							end
-							local refreshed = false
-							if timerService then
-								refreshed = timerService:UpdateTimer(SpellCastName, SpellTargetName, function(timer)
-									timer.Time = refreshDuration
-									timer.TimeMax = floor(GetTime() + refreshDuration)
-									return true
-								end)
-							end
+							local refreshed = Timers:UpdateTimer(SpellCastName, SpellTargetName, function(timer)
+								timer.Time = refreshDuration
+								timer.TimeMax = floor(GetTime() + refreshDuration)
+								return true
+							end)
 							if refreshed then
 								SortActif = true
 							end
@@ -922,44 +1133,40 @@ function Necrosis_SpellManagement()
 					end
 
 					if spell == 9 then
-						if timerService then
-							timerService:IterateTimers(function(timer, index)
-								if timer.Name == SpellCastName and timer.Target ~= SpellTargetName then
-									timerService:RemoveTimerByIndex(index)
-									SortActif = false
-									return false
-								end
-							end)
-						end
+						Timers:IterateTimers(function(timer, index)
+							if timer.Name == SpellCastName and timer.Target ~= SpellTargetName then
+								Timers:RemoveTimerByIndex(index)
+								SortActif = false
+								return false
+							end
+						end)
 					end
 
 					if spell == 13 then
-						if timerService then
-							timerService:IterateTimers(function(timer, index)
-								if timer.Name == SpellCastName then
-									timerService:RemoveTimerByIndex(index)
-									SortActif = false
-									return false
-								end
-							end)
-						end
+						Timers:IterateTimers(function(timer, index)
+							if timer.Name == SpellCastName then
+								Timers:RemoveTimerByIndex(index)
+								SortActif = false
+								return false
+							end
+						end)
 					end
 
 					if (spellData.Type == 4) or (spell == 16) then
-						if timerService then
-							timerService:IterateTimers(function(timer, index)
-								if NECROSIS_SPELL_TABLE[16] and timer.Name == NECROSIS_SPELL_TABLE[16].Name then
-									timerService:UpdateTimer(timer.Name, timer.Target, function(updateTarget)
-										updateTarget.Target = ""
-										return false
-									end)
-								end
-								if timer.Type == 4 and timer.Target == SpellTargetName then
-									timerService:RemoveTimerByIndex(index)
+						local banishData = Spells:Get(SpellIndex.CURSE_OF_DOOM)
+						local banishName = banishData and banishData.Name
+						Timers:IterateTimers(function(timer, index)
+							if banishName and timer.Name == banishName then
+								Timers:UpdateTimer(timer.Name, timer.Target, function(updateTarget)
+									updateTarget.Target = ""
 									return false
-								end
-							end)
-						end
+								end)
+							end
+							if timer.Type == 4 and timer.Target == SpellTargetName then
+								Timers:RemoveTimerByIndex(index)
+								return false
+							end
+						end)
 						SortActif = false
 					end
 
@@ -972,12 +1179,12 @@ function Necrosis_SpellManagement()
 							end
 						end
 
-						if timerService then
-							timerService:EnsureSpellIndexTimer(spell, SpellTargetName, nil, nil, nil, nil)
-						end
-						break
+						Timers:EnsureSpellIndexTimer(spell, SpellTargetName, nil, nil, nil, nil)
+						return false
 					end
-				end
+
+					return true
+				end)
 			end
 		end
 	end
@@ -993,8 +1200,9 @@ end
 -- Right-clicking Necrosis toggles both configuration panels
 function Necrosis_Toggle(button)
 	if button == "LeftButton" then
-		if NECROSIS_SPELL_TABLE[41].ID then
-			CastSpell(NECROSIS_SPELL_TABLE[41].ID, "spell")
+		local demonButtonId = getSpellId(41)
+		if demonButtonId then
+			CastSpell(demonButtonId, "spell")
 		end
 		return
 	elseif NecrosisGeneralFrame:IsVisible() then
@@ -1028,11 +1236,11 @@ end
 
 -- Function that toggles between graphical and text timers
 function Necrosis_HideGraphTimer()
-	local service = getTimerService()
+	local timerSlots = Timers:GetTimerSlots()
 	for i = 1, 50, 1 do
 		local elements = { "Text", "Bar", "Texture", "OutText" }
 		if NecrosisConfig.Graphical then
-			if service and service.timerSlots and service.timerSlots[i] then
+			if timerSlots and timerSlots[i] then
 				for j = 1, 4, 1 do
 					frameName = "NecrosisTimer" .. i .. elements[j]
 					frameItem = getglobal(frameName)
@@ -1050,206 +1258,259 @@ function Necrosis_HideGraphTimer()
 end
 
 -- Function that manages tooltips
-function Necrosis_BuildTooltip(button, type, anchor)
+function Necrosis_BuildTooltip(button, tooltipType, anchor)
 	-- If tooltips are disabled, exit immediately!
 	if not NecrosisConfig.NecrosisToolTip then
 		return
 	end
 
 	-- Check whether Fel Domination, Shadow Ward, or Curse Amplification are active (for tooltips)
-	local start, duration, start2, duration2, start3, duration3
-	if NECROSIS_SPELL_TABLE[15].ID then
-		start, duration = GetSpellCooldown(NECROSIS_SPELL_TABLE[15].ID, BOOKTYPE_SPELL)
-	else
-		start = 1
-		duration = 1
+	local start, duration = 1, 1
+	local start2, duration2 = 1, 1
+	local start3, duration3 = 1, 1
+	local dominationId = getSpellId(15)
+	if dominationId then
+		start, duration = GetSpellCooldown(dominationId, BOOKTYPE_SPELL)
 	end
-	if NECROSIS_SPELL_TABLE[43].ID then
-		start2, duration2 = GetSpellCooldown(NECROSIS_SPELL_TABLE[43].ID, BOOKTYPE_SPELL)
-	else
-		start2 = 1
-		duration2 = 1
+	local shadowWardId = getSpellId(43)
+	if shadowWardId then
+		start2, duration2 = GetSpellCooldown(shadowWardId, BOOKTYPE_SPELL)
 	end
-	if NECROSIS_SPELL_TABLE[42].ID then
-		start3, duration3 = GetSpellCooldown(NECROSIS_SPELL_TABLE[42].ID, BOOKTYPE_SPELL)
-	else
-		start3 = 1
-		duration3 = 1
+	local amplifyId = getSpellId(42)
+	if amplifyId then
+		start3, duration3 = GetSpellCooldown(amplifyId, BOOKTYPE_SPELL)
 	end
+
+	local function addManaLine(spellIndex)
+		local mana = spellIndex and getSpellMana(spellIndex)
+		if mana then
+			GameTooltip:AddLine(mana .. " Mana")
+		end
+	end
+
+	local tooltip = getTooltipData(tooltipType)
+	local mainTooltip = getTooltipData("Main")
+	local tooltipText = tooltip.Text
+	local function addTooltipText(index)
+		if _G.type(tooltipText) == "table" then
+			local value = tooltipText[index]
+			if value then
+				GameTooltip:AddLine(value)
+			end
+		end
+	end
+	local amplifyCooldownText = getTooltipField(nil, "AmplifyCooldown")
+	local dominationCooldownText = getTooltipField(nil, "DominationCooldown")
+	local lastSpellPrefix = getTooltipField(nil, "LastSpell") or ""
 
 	-- Create the tooltips....
 	GameTooltip:SetOwner(button, anchor)
-	GameTooltip:SetText(NecrosisTooltipData[type].Label)
+	GameTooltip:SetText(tooltip.Label or "")
 	-- ..... for the main button
-	if type == "Main" then
-		GameTooltip:AddLine(NecrosisTooltipData.Main.Soulshard .. SoulshardState.count)
-		GameTooltip:AddLine(NecrosisTooltipData.Main.InfernalStone .. ComponentState.infernal)
-		GameTooltip:AddLine(NecrosisTooltipData.Main.DemoniacStone .. ComponentState.demoniac)
+	if tooltipType == "Main" then
+		GameTooltip:AddLine((mainTooltip.Soulshard or "") .. SoulshardState.count)
+		GameTooltip:AddLine((mainTooltip.InfernalStone or "") .. ComponentState.infernal)
+		GameTooltip:AddLine((mainTooltip.DemoniacStone or "") .. ComponentState.demoniac)
+		local stoneText = tooltip.Stone or {}
+		GameTooltip:AddLine((mainTooltip.Soulstone or "") .. tostring(stoneText[StoneInventory.Soulstone.onHand] or ""))
 		GameTooltip:AddLine(
-			NecrosisTooltipData.Main.Soulstone .. NecrosisTooltipData[type].Stone[StoneInventory.Soulstone.onHand]
-		)
-		GameTooltip:AddLine(
-			NecrosisTooltipData.Main.Healthstone .. NecrosisTooltipData[type].Stone[StoneInventory.Healthstone.onHand]
+			(mainTooltip.Healthstone or "") .. tostring(stoneText[StoneInventory.Healthstone.onHand] or "")
 		)
 		-- Display the demon's name, show if it is enslaved, or "None" when no demon is present
 		if DemonType then
-			GameTooltip:AddLine(NecrosisTooltipData.Main.CurrentDemon .. DemonType)
+			GameTooltip:AddLine((mainTooltip.CurrentDemon or "") .. DemonType)
 		elseif DemonEnslaved then
-			GameTooltip:AddLine(NecrosisTooltipData.Main.EnslavedDemon)
+			GameTooltip:AddLine(mainTooltip.EnslavedDemon or "")
 		else
-			GameTooltip:AddLine(NecrosisTooltipData.Main.NoCurrentDemon)
+			GameTooltip:AddLine(mainTooltip.NoCurrentDemon or "")
 		end
 	-- ..... for the stone buttons
-	elseif string.find(type, "stone") then
+	elseif string.find(tooltipType, "stone") then
 		-- Soulstone
-		if type == "Soulstone" then
+		if tooltipType == "Soulstone" then
 			-- On affiche le nom de la pierre et l'action que produira le clic sur le bouton
 			-- Also grab the cooldown
 			if StoneInventory.Soulstone.mode == 1 or StoneInventory.Soulstone.mode == 3 then
-				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[1]].Mana .. " Mana")
+				local spellIndex = StoneIDInSpellTable[1]
+				local mana = spellIndex and getSpellMana(spellIndex)
+				if mana then
+					GameTooltip:AddLine(mana .. " Mana")
+				end
 			end
 			Necrosis_MoneyToggle()
 			NecrosisTooltip:SetBagItem(StoneInventory.Soulstone.location[1], StoneInventory.Soulstone.location[2])
 			local itemName = tostring(NecrosisTooltipTextLeft6:GetText())
-			GameTooltip:AddLine(NecrosisTooltipData[type].Text[StoneInventory.Soulstone.mode])
+			addTooltipText(StoneInventory.Soulstone.mode)
 			if string.find(itemName, NECROSIS_TRANSLATION.Cooldown) then
 				GameTooltip:AddLine(itemName)
 			end
 		-- Pierre de vie
-		elseif type == "Spellstone" then
+		elseif tooltipType == "Spellstone" then
 			-- Idem
-			if StoneInventory.Spellstone.mode == 1 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]] then
-				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]].Mana .. " Mana")
+			if StoneInventory.Spellstone.mode == 1 then
+				local spellIndex = StoneIDInSpellTable[3]
+				local mana = spellIndex and getSpellMana(spellIndex)
+				if mana then
+					GameTooltip:AddLine(mana .. " Mana")
+				end
 			end
 			Necrosis_MoneyToggle()
 			NecrosisTooltip:SetBagItem(StoneInventory.Spellstone.location[1], StoneInventory.Spellstone.location[2])
-			GameTooltip:AddLine(NecrosisTooltipData[type].Text[StoneInventory.Spellstone.mode])
+			addTooltipText(StoneInventory.Spellstone.mode)
 			local itemName = tostring(NecrosisTooltipTextLeft7:GetText())
 			if string.find(itemName, NECROSIS_TRANSLATION.Cooldown) then
 				GameTooltip:AddLine(itemName)
 			end
-		elseif type == "Healthstone" then
+		elseif tooltipType == "Healthstone" then
 			-- Idem
 			if StoneInventory.Healthstone.mode == 1 then
-				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[2]].Mana .. " Mana")
+				local spellIndex = StoneIDInSpellTable[2]
+				local mana = spellIndex and getSpellMana(spellIndex)
+				if mana then
+					GameTooltip:AddLine(mana .. " Mana")
+				end
 			end
 			Necrosis_MoneyToggle()
 			NecrosisTooltip:SetBagItem(StoneInventory.Healthstone.location[1], StoneInventory.Healthstone.location[2])
 			local itemName = tostring(NecrosisTooltipTextLeft6:GetText())
-			GameTooltip:AddLine(NecrosisTooltipData[type].Text[StoneInventory.Healthstone.mode])
+			addTooltipText(StoneInventory.Healthstone.mode)
 			if string.find(itemName, NECROSIS_TRANSLATION.Cooldown) then
 				GameTooltip:AddLine(itemName)
 			end
 		-- Pierre de feu
-		elseif type == "Firestone" then
+		elseif tooltipType == "Firestone" then
 			local stoneMode = StoneInventory.Firestone.onHand and 2 or 1
-			if stoneMode == 1 and StoneIDInSpellTable[4] ~= 0 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]] then
-				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[4]].Mana .. " Mana")
+			if stoneMode == 1 then
+				local spellIndex = StoneIDInSpellTable[4]
+				local mana = spellIndex and getSpellMana(spellIndex)
+				if mana then
+					GameTooltip:AddLine(mana .. " Mana")
+				end
 			end
 			Necrosis_MoneyToggle()
 			if StoneInventory.Firestone.onHand and StoneInventory.Firestone.location[1] then
 				NecrosisTooltip:SetBagItem(StoneInventory.Firestone.location[1], StoneInventory.Firestone.location[2])
 			end
-			GameTooltip:AddLine(NecrosisTooltipData[type].Text[stoneMode])
-		elseif type == "Felstone" then
+			addTooltipText(stoneMode)
+		elseif tooltipType == "Felstone" then
 			local stoneMode = StoneInventory.Felstone.onHand and 2 or 1
-			if stoneMode == 1 and StoneIDInSpellTable[5] ~= 0 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[5]] then
-				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[5]].Mana .. " Mana")
+			if stoneMode == 1 then
+				local spellIndex = StoneIDInSpellTable[5]
+				local mana = spellIndex and getSpellMana(spellIndex)
+				if mana then
+					GameTooltip:AddLine(mana .. " Mana")
+				end
 			end
 			Necrosis_MoneyToggle()
 			if StoneInventory.Felstone.onHand and StoneInventory.Felstone.location[1] then
 				NecrosisTooltip:SetBagItem(StoneInventory.Felstone.location[1], StoneInventory.Felstone.location[2])
 			end
-			GameTooltip:AddLine(NecrosisTooltipData[type].Text[stoneMode])
-		elseif type == "Wrathstone" then
+			addTooltipText(stoneMode)
+		elseif tooltipType == "Wrathstone" then
 			local stoneMode = StoneInventory.Wrathstone.onHand and 2 or 1
-			if stoneMode == 1 and StoneIDInSpellTable[6] ~= 0 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[6]] then
-				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[6]].Mana .. " Mana")
+			if stoneMode == 1 then
+				local spellIndex = StoneIDInSpellTable[6]
+				local mana = spellIndex and getSpellMana(spellIndex)
+				if mana then
+					GameTooltip:AddLine(mana .. " Mana")
+				end
 			end
 			Necrosis_MoneyToggle()
 			if StoneInventory.Wrathstone.onHand and StoneInventory.Wrathstone.location[1] then
 				NecrosisTooltip:SetBagItem(StoneInventory.Wrathstone.location[1], StoneInventory.Wrathstone.location[2])
 			end
-			GameTooltip:AddLine(NecrosisTooltipData[type].Text[stoneMode])
-		elseif type == "Voidstone" then
+			addTooltipText(stoneMode)
+		elseif tooltipType == "Voidstone" then
 			local stoneMode = StoneInventory.Voidstone.onHand and 2 or 1
-			if stoneMode == 1 and StoneIDInSpellTable[7] ~= 0 and NECROSIS_SPELL_TABLE[StoneIDInSpellTable[7]] then
-				GameTooltip:AddLine(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[7]].Mana .. " Mana")
+			if stoneMode == 1 then
+				local spellIndex = StoneIDInSpellTable[7]
+				local mana = spellIndex and getSpellMana(spellIndex)
+				if mana then
+					GameTooltip:AddLine(mana .. " Mana")
+				end
 			end
 			Necrosis_MoneyToggle()
 			if StoneInventory.Voidstone.onHand and StoneInventory.Voidstone.location[1] then
 				NecrosisTooltip:SetBagItem(StoneInventory.Voidstone.location[1], StoneInventory.Voidstone.location[2])
 			end
-			GameTooltip:AddLine(NecrosisTooltipData[type].Text[stoneMode])
+			addTooltipText(stoneMode)
 		end
 	-- ..... for the timer button
-	elseif type == "SpellTimer" then
+	elseif tooltipType == "SpellTimer" then
 		Necrosis_MoneyToggle()
 		NecrosisTooltip:SetBagItem(StoneInventory.Hearthstone.location[1], StoneInventory.Hearthstone.location[2])
 		local itemName = tostring(NecrosisTooltipTextLeft5:GetText())
-		GameTooltip:AddLine(NecrosisTooltipData[type].Text)
+		if type(tooltipText) == "string" then
+			GameTooltip:AddLine(tooltipText)
+		end
 		if string.find(itemName, NECROSIS_TRANSLATION.Cooldown) then
 			GameTooltip:AddLine(NECROSIS_TRANSLATION.Hearth .. " - " .. itemName)
 		else
-			GameTooltip:AddLine(NecrosisTooltipData[type].Right .. GetBindLocation())
+			GameTooltip:AddLine((tooltip.Right or "") .. GetBindLocation())
 		end
 
 	-- ..... for the Shadow Trance button
-	elseif type == "ShadowTrance" then
+	elseif tooltipType == "ShadowTrance" then
 		local rank = Necrosis_FindSpellAttribute("Name", NECROSIS_NIGHTFALL.BoltName, "Rank")
-		GameTooltip:SetText(NecrosisTooltipData[type].Label .. "          |CFF808080Rank " .. rank .. "|r")
+		GameTooltip:SetText((tooltip.Label or "") .. "          |CFF808080Rank " .. rank .. "|r")
 	-- ..... for the other buffs and demons, the mana cost...
-	elseif type == "Enslave" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[35].Mana .. " Mana")
+	elseif tooltipType == "Enslave" then
+		addManaLine(SpellIndex.ENSLAVE_DEMON_EFFECT)
 		if SoulshardState.count == 0 then
-			GameTooltip:AddLine("|c00FF4444" .. NecrosisTooltipData.Main.Soulshard .. SoulshardState.count .. "|r")
+			GameTooltip:AddLine("|c00FF4444" .. (mainTooltip.Soulshard or "") .. SoulshardState.count .. "|r")
 		end
-	elseif type == "Mount" then
-		if NECROSIS_SPELL_TABLE[2].ID then
-			GameTooltip:AddLine(NECROSIS_SPELL_TABLE[2].Mana .. " Mana")
-		elseif NECROSIS_SPELL_TABLE[1].ID then
-			GameTooltip:AddLine(NECROSIS_SPELL_TABLE[1].Mana .. " Mana")
+	elseif tooltipType == "Mount" then
+		if hasSpell(SpellIndex.SUMMON_DREADSTEED) then
+			addManaLine(SpellIndex.SUMMON_DREADSTEED)
+		elseif hasSpell(SpellIndex.SUMMON_FELSTEED) then
+			addManaLine(SpellIndex.SUMMON_FELSTEED)
 		end
-	elseif type == "Armor" then
-		if NECROSIS_SPELL_TABLE[31].ID then
-			GameTooltip:AddLine(NECROSIS_SPELL_TABLE[31].Mana .. " Mana")
+	elseif tooltipType == "Armor" then
+		if hasSpell(SpellIndex.DEMON_ARMOR) then
+			addManaLine(SpellIndex.DEMON_ARMOR)
 		else
-			GameTooltip:AddLine(NECROSIS_SPELL_TABLE[36].Mana .. " Mana")
+			addManaLine(SpellIndex.DEMON_SKIN)
 		end
-	elseif type == "Invisible" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[33].Mana .. " Mana")
-	elseif type == "Aqua" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[32].Mana .. " Mana")
-	elseif type == "Kilrogg" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[34].Mana .. " Mana")
-	elseif type == "Banish" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[9].Mana .. " Mana")
-	elseif type == "Weakness" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[23].Mana .. " Mana")
+	elseif tooltipType == "Invisible" then
+		addManaLine(SpellIndex.DETECT_INVISIBILITY)
+	elseif tooltipType == "Aqua" then
+		addManaLine(SpellIndex.UNENDING_BREATH)
+	elseif tooltipType == "Kilrogg" then
+		addManaLine(SpellIndex.EYE_OF_KILROGG)
+	elseif tooltipType == "Banish" then
+		addManaLine(SpellIndex.BANISH)
+	elseif tooltipType == "Weakness" then
+		addManaLine(SpellIndex.CURSE_OF_WEAKNESS)
 		if not (start3 > 0 and duration3 > 0) then
-			GameTooltip:AddLine(NecrosisTooltipData.AmplifyCooldown)
+			if amplifyCooldownText then
+				GameTooltip:AddLine(amplifyCooldownText)
+			end
 		end
-	elseif type == "Agony" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[22].Mana .. " Mana")
+	elseif tooltipType == "Agony" then
+		addManaLine(SpellIndex.CURSE_OF_AGONY)
 		if not (start3 > 0 and duration3 > 0) then
-			GameTooltip:AddLine(NecrosisTooltipData.AmplifyCooldown)
+			if amplifyCooldownText then
+				GameTooltip:AddLine(amplifyCooldownText)
+			end
 		end
-	elseif type == "Reckless" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[24].Mana .. " Mana")
-	elseif type == "Tongues" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[25].Mana .. " Mana")
-	elseif type == "Exhaust" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[40].Mana .. " Mana")
+	elseif tooltipType == "Reckless" then
+		addManaLine(SpellIndex.CURSE_OF_RECKLESSNESS)
+	elseif tooltipType == "Tongues" then
+		addManaLine(SpellIndex.CURSE_OF_TONGUES)
+	elseif tooltipType == "Exhaust" then
+		addManaLine(SpellIndex.CURSE_OF_EXHAUSTION)
 		if not (start3 > 0 and duration3 > 0) then
-			GameTooltip:AddLine(NecrosisTooltipData.AmplifyCooldown)
+			if amplifyCooldownText then
+				GameTooltip:AddLine(amplifyCooldownText)
+			end
 		end
-	elseif type == "Elements" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[26].Mana .. " Mana")
-	elseif type == "Shadow" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[27].Mana .. " Mana")
-	elseif type == "Doom" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[16].Mana .. " Mana")
-	elseif type == "Amplify" then
+	elseif tooltipType == "Elements" then
+		addManaLine(SpellIndex.CURSE_OF_THE_ELEMENTS)
+	elseif tooltipType == "Shadow" then
+		addManaLine(SpellIndex.CURSE_OF_SHADOW)
+	elseif tooltipType == "Doom" then
+		addManaLine(SpellIndex.CURSE_OF_DOOM)
+	elseif tooltipType == "Amplify" then
 		if start3 > 0 and duration3 > 0 then
 			local seconde = duration3 - (GetTime() - start3)
 			local affiche, minute, time
@@ -1267,22 +1528,22 @@ function Necrosis_BuildTooltip(button, type, anchor)
 			end
 			GameTooltip:AddLine("Cooldown : " .. affiche)
 		end
-	elseif type == "TP" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[37].Mana .. " Mana")
+	elseif tooltipType == "TP" then
+		addManaLine(SpellIndex.RITUAL_OF_SUMMONING)
 		if SoulshardState.count == 0 then
-			GameTooltip:AddLine("|c00FF4444" .. NecrosisTooltipData.Main.Soulshard .. SoulshardState.count .. "|r")
+			GameTooltip:AddLine("|c00FF4444" .. (mainTooltip.Soulshard or "") .. SoulshardState.count .. "|r")
 		end
-	elseif type == "SoulLink" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[38].Mana .. " Mana")
-	elseif type == "ShadowProtection" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[43].Mana .. " Mana")
+	elseif tooltipType == "SoulLink" then
+		addManaLine(SpellIndex.SOUL_LINK)
+	elseif tooltipType == "ShadowProtection" then
+		addManaLine(SpellIndex.SHADOW_WARD)
 		if start2 > 0 and duration2 > 0 then
 			local seconde = duration2 - (GetTime() - start2)
 			local affiche
 			affiche = tostring(floor(seconde)) .. " sec"
 			GameTooltip:AddLine("Cooldown : " .. affiche)
 		end
-	elseif type == "Domination" then
+	elseif tooltipType == "Domination" then
 		if start > 0 and duration > 0 then
 			local seconde = duration - (GetTime() - start)
 			local affiche, minute, time
@@ -1300,56 +1561,66 @@ function Necrosis_BuildTooltip(button, type, anchor)
 			end
 			GameTooltip:AddLine("Cooldown : " .. affiche)
 		end
-	elseif type == "Imp" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[3].Mana .. " Mana")
+	elseif tooltipType == "Imp" then
+		addManaLine(SpellIndex.SUMMON_IMP)
 		if not (start > 0 and duration > 0) then
-			GameTooltip:AddLine(NecrosisTooltipData.DominationCooldown)
+			if dominationCooldownText then
+				GameTooltip:AddLine(dominationCooldownText)
+			end
 		end
-	elseif type == "Void" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[4].Mana .. " Mana")
+	elseif tooltipType == "Void" then
+		addManaLine(SpellIndex.SUMMON_VOIDWALKER)
 		if SoulshardState.count == 0 then
-			GameTooltip:AddLine("|c00FF4444" .. NecrosisTooltipData.Main.Soulshard .. SoulshardState.count .. "|r")
+			GameTooltip:AddLine("|c00FF4444" .. (mainTooltip.Soulshard or "") .. SoulshardState.count .. "|r")
 		elseif not (start > 0 and duration > 0) then
-			GameTooltip:AddLine(NecrosisTooltipData.DominationCooldown)
+			if dominationCooldownText then
+				GameTooltip:AddLine(dominationCooldownText)
+			end
 		end
-	elseif type == "Succubus" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[5].Mana .. " Mana")
+	elseif tooltipType == "Succubus" then
+		addManaLine(SpellIndex.SUMMON_SUCCUBUS)
 		if SoulshardState.count == 0 then
-			GameTooltip:AddLine("|c00FF4444" .. NecrosisTooltipData.Main.Soulshard .. SoulshardState.count .. "|r")
+			GameTooltip:AddLine("|c00FF4444" .. (mainTooltip.Soulshard or "") .. SoulshardState.count .. "|r")
 		elseif not (start > 0 and duration > 0) then
-			GameTooltip:AddLine(NecrosisTooltipData.DominationCooldown)
+			if dominationCooldownText then
+				GameTooltip:AddLine(dominationCooldownText)
+			end
 		end
-	elseif type == "Fel" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[6].Mana .. " Mana")
+	elseif tooltipType == "Fel" then
+		addManaLine(SpellIndex.SUMMON_FELHUNTER)
 		if SoulshardState.count == 0 then
-			GameTooltip:AddLine("|c00FF4444" .. NecrosisTooltipData.Main.Soulshard .. SoulshardState.count .. "|r")
+			GameTooltip:AddLine("|c00FF4444" .. (mainTooltip.Soulshard or "") .. SoulshardState.count .. "|r")
 		elseif not (start > 0 and duration > 0) then
-			GameTooltip:AddLine(NecrosisTooltipData.DominationCooldown)
+			if dominationCooldownText then
+				GameTooltip:AddLine(dominationCooldownText)
+			end
 		end
-	elseif type == "Infernal" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[8].Mana .. " Mana")
+	elseif tooltipType == "Infernal" then
+		addManaLine(SpellIndex.INFERNO)
 		if ComponentState.infernal == 0 then
-			GameTooltip:AddLine(
-				"|c00FF4444" .. NecrosisTooltipData.Main.InfernalStone .. ComponentState.infernal .. "|r"
-			)
+			GameTooltip:AddLine("|c00FF4444" .. (mainTooltip.InfernalStone or "") .. ComponentState.infernal .. "|r")
 		else
-			GameTooltip:AddLine(NecrosisTooltipData.Main.InfernalStone .. ComponentState.infernal)
+			GameTooltip:AddLine((mainTooltip.InfernalStone or "") .. ComponentState.infernal)
 		end
-	elseif type == "Doomguard" then
-		GameTooltip:AddLine(NECROSIS_SPELL_TABLE[30].Mana .. " Mana")
+	elseif tooltipType == "Doomguard" then
+		addManaLine(SpellIndex.RITUAL_OF_DOOM)
 		if ComponentState.demoniac == 0 then
-			GameTooltip:AddLine(
-				"|c00FF4444" .. NecrosisTooltipData.Main.DemoniacStone .. ComponentState.demoniac .. "|r"
-			)
+			GameTooltip:AddLine("|c00FF4444" .. (mainTooltip.DemoniacStone or "") .. ComponentState.demoniac .. "|r")
 		else
-			GameTooltip:AddLine(NecrosisTooltipData.Main.DemoniacStone .. ComponentState.demoniac)
+			GameTooltip:AddLine((mainTooltip.DemoniacStone or "") .. ComponentState.demoniac)
 		end
 	elseif (type == "Buff") and LastCast.Buff ~= 0 then
-		GameTooltip:AddLine(NecrosisTooltipData.LastSpell .. NECROSIS_SPELL_TABLE[LastCast.Buff].Name)
+		local spellName = getSpellNameByIndex(LastCast.Buff)
+		if spellName then
+			GameTooltip:AddLine(lastSpellPrefix .. spellName)
+		end
 	elseif (type == "Curse") and LastCast.Curse.id ~= 0 then
-		GameTooltip:AddLine(NecrosisTooltipData.LastSpell .. NECROSIS_SPELL_TABLE[LastCast.Curse.id].Name)
+		local spellName = getSpellNameByIndex(LastCast.Curse.id)
+		if spellName then
+			GameTooltip:AddLine(lastSpellPrefix .. spellName)
+		end
 	elseif (type == "Pet") and LastCast.Demon ~= 0 then
-		GameTooltip:AddLine(NecrosisTooltipData.LastSpell .. NECROSIS_PET_LOCAL_NAME[(LastCast.Demon - 2)])
+		GameTooltip:AddLine(lastSpellPrefix .. NECROSIS_PET_LOCAL_NAME[(LastCast.Demon - 2)])
 	elseif (type == "Stone") and LastCast.Stone.id ~= 0 then
 		local stoneName = ""
 		local stoneOnHand = false
@@ -1367,7 +1638,7 @@ function Necrosis_BuildTooltip(button, type, anchor)
 			stoneOnHand = true
 		end
 		if stoneOnHand then
-			GameTooltip:AddLine(NecrosisTooltipData.LastSpell .. stoneName)
+			GameTooltip:AddLine(lastSpellPrefix .. stoneName)
 		end
 	end
 	-- And tada, show it!
@@ -1552,37 +1823,41 @@ function Necrosis_SpellSetup()
 		end
 	end
 	-- Refresh the spell list with the new ranks
-	for spell = 1, table.getn(NECROSIS_SPELL_TABLE), 1 do
-		local name = NECROSIS_SPELL_TABLE[spell].Name
+	local totalSpellCount = table.getn(NECROSIS_SPELL_TABLE)
+	for spell = 1, totalSpellCount, 1 do
+		local spellData = Spells:Get(spell)
+		local name = spellData and spellData.Name
 		local index = currentSpellIndexByName[name]
-		if index then
+		if spellData and index then
+			local spellId = spellData.ID
 			if
-				NECROSIS_SPELL_TABLE[spell].ID ~= StoneIDInSpellTable[1]
-				and NECROSIS_SPELL_TABLE[spell].ID ~= StoneIDInSpellTable[2]
-				and NECROSIS_SPELL_TABLE[spell].ID ~= StoneIDInSpellTable[3]
-				and NECROSIS_SPELL_TABLE[spell].ID ~= StoneIDInSpellTable[4]
+				spellId ~= StoneIDInSpellTable[1]
+				and spellId ~= StoneIDInSpellTable[2]
+				and spellId ~= StoneIDInSpellTable[3]
+				and spellId ~= StoneIDInSpellTable[4]
 			then
-				NECROSIS_SPELL_TABLE[spell].ID = CurrentSpells.ID[index]
-				NECROSIS_SPELL_TABLE[spell].Rank = CurrentSpells.subName[index]
+				spellData.ID = CurrentSpells.ID[index]
+				spellData.Rank = CurrentSpells.subName[index]
 			end
 		end
 	end
 
 	-- Update each spell duration based on its rank
-	for index = 1, table.getn(NECROSIS_SPELL_TABLE), 1 do
+	for index = 1, totalSpellCount, 1 do
+		local spellData = Spells:Get(index)
 		if index == 9 then -- si Bannish
-			if NECROSIS_SPELL_TABLE[index].ID ~= nil then
-				NECROSIS_SPELL_TABLE[index].Length = NECROSIS_SPELL_TABLE[index].Rank * 10 + 10
+			if spellData and spellData.ID ~= nil then
+				spellData.Length = spellData.Rank * 10 + 10
 			end
 		end
 		if index == 13 then -- si Fear
-			if NECROSIS_SPELL_TABLE[index].ID ~= nil then
-				NECROSIS_SPELL_TABLE[index].Length = NECROSIS_SPELL_TABLE[index].Rank * 5 + 5
+			if spellData and spellData.ID ~= nil then
+				spellData.Length = spellData.Rank * 5 + 5
 			end
 		end
 		if index == 14 then -- si Corruption
-			if NECROSIS_SPELL_TABLE[index].ID ~= nil and NECROSIS_SPELL_TABLE[index].Rank <= 2 then
-				NECROSIS_SPELL_TABLE[index].Length = NECROSIS_SPELL_TABLE[index].Rank * 3 + 9
+			if spellData and spellData.ID ~= nil and spellData.Rank <= 2 then
+				spellData.Length = spellData.Rank * 3 + 9
 			end
 		end
 	end
@@ -1590,31 +1865,37 @@ function Necrosis_SpellSetup()
 	for spellID = 1, MAX_SPELLS, 1 do
 		local spellName, subSpellName = GetSpellName(spellID, "spell")
 		if spellName then
-			for index = 1, table.getn(NECROSIS_SPELL_TABLE), 1 do
-				if NECROSIS_SPELL_TABLE[index].Name == spellName then
+			for index = 1, totalSpellCount, 1 do
+				local spellData = Spells:Get(index)
+				if spellData and spellData.Name == spellName then
 					Necrosis_MoneyToggle()
 					NecrosisTooltip:SetSpell(spellID, 1)
 					local _, _, ManaCost = string.find(NecrosisTooltipTextLeft2:GetText(), "(%d+)")
-					if not NECROSIS_SPELL_TABLE[index].ID then
-						NECROSIS_SPELL_TABLE[index].ID = spellID
+					if not spellData.ID then
+						spellData.ID = spellID
 					end
-					NECROSIS_SPELL_TABLE[index].Mana = tonumber(ManaCost)
+					spellData.Mana = tonumber(ManaCost)
 				end
 			end
 		end
 	end
-	MountState.available = not not (NECROSIS_SPELL_TABLE[1].ID or NECROSIS_SPELL_TABLE[2].ID)
+	MountState.available = not not (hasSpell(SpellIndex.SUMMON_FELSTEED) or hasSpell(SpellIndex.SUMMON_DREADSTEED))
 
 	-- Insert the highest known rank of Detect Invisibility
 	if Invisible >= 1 then
-		NECROSIS_SPELL_TABLE[33].ID = InvisibleID
-		NECROSIS_SPELL_TABLE[33].Rank = 0
-		NECROSIS_SPELL_TABLE[33].CastTime = 0
-		NECROSIS_SPELL_TABLE[33].Length = 0
+		local detectData = Spells:Get(SpellIndex.DETECT_INVISIBILITY)
+		if detectData then
+			detectData.ID = InvisibleID
+			detectData.Rank = 0
+			detectData.CastTime = 0
+			detectData.Length = 0
+		end
 		Necrosis_MoneyToggle()
 		NecrosisTooltip:SetSpell(InvisibleID, 1)
 		local _, _, ManaCost = string.find(NecrosisTooltipTextLeft2:GetText(), "(%d+)")
-		NECROSIS_SPELL_TABLE[33].Mana = tonumber(ManaCost)
+		if detectData then
+			detectData.Mana = tonumber(ManaCost)
+		end
 	end
 end
 
@@ -1622,8 +1903,12 @@ end
 -- F(type=string, string, int) -> Spell=table
 function Necrosis_FindSpellAttribute(type, attribute, array)
 	for index = 1, table.getn(NECROSIS_SPELL_TABLE), 1 do
-		if string.find(NECROSIS_SPELL_TABLE[index][type], attribute) then
-			return NECROSIS_SPELL_TABLE[index][array]
+		local spellData = Spells:Get(index)
+		if spellData then
+			local value = spellData[type]
+			if type(value) == "string" and string.find(value, attribute) then
+				return spellData[array]
+			end
 		end
 	end
 	return nil
@@ -1695,8 +1980,7 @@ function Necrosis_UnitHasTrance()
 	ShadowState.buffId = ID
 end
 
--- Function handling button click actions for Necrosis
-function Necrosis_UseItem(type, button)
+function Necrosis_UseItem(tooltipType, button)
 	Necrosis_MoneyToggle()
 	NecrosisTooltip:SetBagItem("player", 17)
 	local rightHand = tostring(NecrosisTooltipTextLeft1:GetText())
@@ -1704,19 +1988,19 @@ function Necrosis_UseItem(type, button)
 
 	-- Function that uses a hearthstone from the inventory
 	-- if one is in the inventory and it was a right-click
-	if type == "Hearthstone" and button == "RightButton" then
+	if tooltipType == "Hearthstone" and button == "RightButton" then
 		if StoneInventory.Hearthstone.onHand then
 			-- use it
 			UseContainerItem(StoneInventory.Hearthstone.location[1], StoneInventory.Hearthstone.location[2])
 		-- or, if none are in the inventory, show an error message
 		else
-			Necrosis_Msg(NECROSIS_MESSAGE.Error.NoHearthStone, "USER")
+			sendMessage("Error", "NoHearthStone")
 		end
 	end
 
 	-- When clicking the Soulstone button
 	-- Update the button to indicate the current mode
-	if type == "Soulstone" then
+	if tooltipType == "Soulstone" then
 		Necrosis_UpdateIcons()
 		-- If mode = 2 (stone in inventory, none in use)
 		-- alors on l'utilise
@@ -1736,14 +2020,15 @@ function Necrosis_UseItem(type, button)
 			Necrosis_UpdateIcons()
 		-- if no Soulstone is in the inventory, create the highest-rank Soulstone :)
 		elseif (StoneInventory.Soulstone.mode == 1) or (StoneInventory.Soulstone.mode == 3) then
-			if StoneIDInSpellTable[1] ~= 0 then
-				CastSpell(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[1]].ID, "spell")
+			local spellIndex = StoneIDInSpellTable[1]
+			if spellIndex ~= 0 and castSpellByIndex(spellIndex) then
+				-- cast handled
 			else
-				Necrosis_Msg(NECROSIS_MESSAGE.Error.NoSoulStoneSpell, "USER")
+				sendMessage("Error", "NoSoulStoneSpell")
 			end
 		end
 	-- When clicking the Healthstone button:
-	elseif type == "Healthstone" then
+	elseif tooltipType == "Healthstone" then
 		-- or there is one in the inventory
 		if StoneInventory.Healthstone.onHand then
 			-- If a friendly player is targeted, give them the stone
@@ -1770,7 +2055,7 @@ function Necrosis_UseItem(type, button)
 				return
 			end
 			if UnitHealth("player") == UnitHealthMax("player") then
-				Necrosis_Msg(NECROSIS_MESSAGE.Error.FullHealth, "USER")
+				sendMessage("Error", "FullHealth")
 			else
 				SpellStopCasting()
 				UseContainerItem(StoneInventory.Healthstone.location[1], StoneInventory.Healthstone.location[2])
@@ -1780,15 +2065,8 @@ function Necrosis_UseItem(type, button)
 				if Necrosis_TimerExists(NECROSIS_COOLDOWN.Healthstone) then
 					HealthstoneInUse = true
 				end
-				if not HealthstoneInUse and timerService then
-					timerService:EnsureNamedTimer(
-						NECROSIS_COOLDOWN.Healthstone,
-						120,
-						TIMER_TYPE.SELF_BUFF,
-						nil,
-						120,
-						nil
-					)
+				if timerService and not HealthstoneInUse then
+					Timers:EnsureNamedTimer(NECROSIS_COOLDOWN.Healthstone, 120, TIMER_TYPE.SELF_BUFF, nil, 120, nil)
 				end
 
 				-- Healthstone shares its cooldown with Spellstone, so we add both timers at the same time, but only if Spellstone is known
@@ -1796,32 +2074,26 @@ function Necrosis_UseItem(type, button)
 				if Necrosis_TimerExists(NECROSIS_COOLDOWN.Spellstone) then
 					SpellstoneInUse = true
 				end
-				if not SpellstoneInUse and StoneIDInSpellTable[3] ~= 0 and timerService then
-					timerService:EnsureNamedTimer(
-						NECROSIS_COOLDOWN.Spellstone,
-						120,
-						TIMER_TYPE.SELF_BUFF,
-						nil,
-						120,
-						nil
-					)
+				if timerService and not SpellstoneInUse and StoneIDInSpellTable[3] ~= 0 then
+					Timers:EnsureNamedTimer(NECROSIS_COOLDOWN.Spellstone, 120, TIMER_TYPE.SELF_BUFF, nil, 120, nil)
 				end
 			end
 		-- or, if none are in the inventory, create the highest rank stone
 		else
-			if StoneIDInSpellTable[2] ~= 0 then
-				CastSpell(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[2]].ID, "spell")
+			local spellIndex = StoneIDInSpellTable[2]
+			if spellIndex ~= 0 and castSpellByIndex(spellIndex) then
+			-- cast handled
 			else
-				Necrosis_Msg(NECROSIS_MESSAGE.Error.NoHealthStoneSpell, "USER")
+				sendMessage("Error", "NoHealthStoneSpell")
 			end
 		end
 	-- When clicking the Spellstone button
-	elseif type == "Spellstone" then
+	elseif tooltipType == "Spellstone" then
 		if StoneInventory.Spellstone.onHand then
 			local start, duration, enabled =
 				GetContainerItemCooldown(StoneInventory.Spellstone.location[1], StoneInventory.Spellstone.location[2])
 			if start > 0 then
-				Necrosis_Msg(NECROSIS_MESSAGE.Error.SpellStoneIsOnCooldown, "USER")
+				sendMessage("Error", "SpellStoneIsOnCooldown")
 			else
 				SpellStopCasting()
 				UseContainerItem(StoneInventory.Spellstone.location[1], StoneInventory.Spellstone.location[2])
@@ -1830,72 +2102,53 @@ function Necrosis_UseItem(type, button)
 				if Necrosis_TimerExists(NECROSIS_COOLDOWN.Spellstone) then
 					SpellstoneInUse = true
 				end
-				if not SpellstoneInUse and timerService then
-					timerService:EnsureNamedTimer(
-						NECROSIS_COOLDOWN.Spellstone,
-						120,
-						TIMER_TYPE.SELF_BUFF,
-						nil,
-						120,
-						nil
-					)
+				if timerService and not SpellstoneInUse then
+					Timers:EnsureNamedTimer(NECROSIS_COOLDOWN.Spellstone, 120, TIMER_TYPE.SELF_BUFF, nil, 120, nil)
 				end
 
 				local HealthstoneInUse = false
 				if Necrosis_TimerExists(NECROSIS_COOLDOWN.Healthstone) then
 					HealthstoneInUse = true
 				end
-				if not HealthstoneInUse and StoneIDInSpellTable[2] ~= 0 and timerService then
-					timerService:EnsureNamedTimer(
-						NECROSIS_COOLDOWN.Healthstone,
-						120,
-						TIMER_TYPE.SELF_BUFF,
-						nil,
-						120,
-						nil
-					)
+				if timerService and not HealthstoneInUse and StoneIDInSpellTable[2] ~= 0 then
+					Timers:EnsureNamedTimer(NECROSIS_COOLDOWN.Healthstone, 120, TIMER_TYPE.SELF_BUFF, nil, 120, nil)
 				end
 			end
 		else
-			if StoneIDInSpellTable[3] ~= 0 then
-				CastSpell(NECROSIS_SPELL_TABLE[StoneIDInSpellTable[3]].ID, "spell")
+			local spellIndex = StoneIDInSpellTable[3]
+			if spellIndex ~= 0 and castSpellByIndex(spellIndex) then
+			-- cast handled
 			else
-				Necrosis_Msg(NECROSIS_MESSAGE.Error.NoSpellStoneSpell, "USER")
+				sendMessage("Error", "NoSpellStoneSpell")
 			end
 		end
 
 	-- When clicking the mount button
-	elseif type == "Mount" then
+	elseif tooltipType == "Mount" then
 		-- Or it is the epic mount
-		if NECROSIS_SPELL_TABLE[2].ID ~= nil then
-			CastSpell(NECROSIS_SPELL_TABLE[2].ID, "spell")
+		if castSpellByIndex(SpellIndex.SUMMON_DREADSTEED) then
 			Necrosis_OnUpdate()
 		-- Either it is the normal mount
-		elseif NECROSIS_SPELL_TABLE[1].ID ~= nil then
-			CastSpell(NECROSIS_SPELL_TABLE[1].ID, "spell")
+		elseif castSpellByIndex(SpellIndex.SUMMON_FELSTEED) then
 			Necrosis_OnUpdate()
 		-- (Or it is nothing at all :) )
 		else
-			Necrosis_Msg(NECROSIS_MESSAGE.Error.NoRiding, "USER")
+			sendMessage("Error", "NoRiding")
 		end
 	end
 end
 
 -- Function that swaps the equipped off-hand item with one from the inventory
-function Necrosis_SwitchOffHand(type)
-	if type == "Spellstone" then
+function Necrosis_SwitchOffHand(itemType)
+	local timerService = getTimerService()
+	if itemType == "Spellstone" then
 		if StoneInventory.Spellstone.mode == 3 then
 			if StoneInventory.Itemswitch.onHand then
-				Necrosis_Msg(
-					"Equipe "
-						.. GetContainerItemLink(
-							StoneInventory.Itemswitch.location[1],
-							StoneInventory.Itemswitch.location[2]
-						)
-						.. NECROSIS_MESSAGE.SwitchMessage
-						.. GetInventoryItemLink("player", 17),
-					"USER"
-				)
+				local switchMessage = getMessageNested({ "SwitchMessage" }) or ""
+				local containerLink =
+					GetContainerItemLink(StoneInventory.Itemswitch.location[1], StoneInventory.Itemswitch.location[2])
+				local inventoryLink = GetInventoryItemLink("player", 17)
+				Necrosis_Msg("Equipe " .. (containerLink or "") .. switchMessage .. (inventoryLink or ""), "USER")
 				PickupInventoryItem(17)
 				PickupContainerItem(StoneInventory.Itemswitch.location[1], StoneInventory.Itemswitch.location[2])
 			end
@@ -1903,16 +2156,16 @@ function Necrosis_SwitchOffHand(type)
 		else
 			PickupContainerItem(StoneInventory.Spellstone.location[1], StoneInventory.Spellstone.location[2])
 			PickupInventoryItem(17)
-			if Necrosis_TimerExists(NECROSIS_COOLDOWN.Spellstone) and timerService then
-				timerService:RemoveTimerByName(NECROSIS_COOLDOWN.Spellstone)
+			if timerService and Necrosis_TimerExists(NECROSIS_COOLDOWN.Spellstone) then
+				Timers:RemoveTimerByName(NECROSIS_COOLDOWN.Spellstone)
 			end
 			if timerService then
-				timerService:EnsureNamedTimer(NECROSIS_COOLDOWN.Spellstone, 120, TIMER_TYPE.SELF_BUFF, nil, 120, nil)
+				Timers:EnsureNamedTimer(NECROSIS_COOLDOWN.Spellstone, 120, TIMER_TYPE.SELF_BUFF, nil, 120, nil)
 			end
 			return
 		end
 	end
-	if (type == "OffHand") and UnitClass("player") == NECROSIS_UNIT_WARLOCK then
+	if itemType == "OffHand" and UnitClass("player") == NECROSIS_UNIT_WARLOCK then
 		if StoneInventory.Itemswitch.location[1] ~= nil and StoneInventory.Itemswitch.location[2] ~= nil then
 			PickupContainerItem(StoneInventory.Itemswitch.location[1], StoneInventory.Itemswitch.location[2])
 			PickupInventoryItem(17)
@@ -2091,11 +2344,11 @@ function Necrosis_BuffCast(type)
 		TargetEnemy = true
 	end
 	-- If the Warlock has Demon Skin but not Demon Armor
-	if not NECROSIS_SPELL_TABLE[type].ID then
-		CastSpell(NECROSIS_SPELL_TABLE[36].ID, "spell")
+	if not hasSpell(type) then
+		castSpellByIndex(SpellIndex.DEMON_SKIN)
 	else
 		if (type ~= 44) or (type == 44 and UnitExists("Pet")) then
-			CastSpell(NECROSIS_SPELL_TABLE[type].ID, "spell")
+			castSpellByIndex(type)
 		end
 	end
 	LastCast.Buff = type
@@ -2113,15 +2366,19 @@ function Necrosis_CurseCast(type, click)
 	end
 	if (UnitCanAttack("player", "target")) and (UnitName("target") ~= nil) then
 		if type == 23 or type == 22 or type == 40 then
-			if (click == "RightButton") and (NECROSIS_SPELL_TABLE[42].ID ~= nil) then
-				local start3, duration3 = GetSpellCooldown(NECROSIS_SPELL_TABLE[42].ID, "spell")
+			local amplifyId = getSpellId(42)
+			if (click == "RightButton") and amplifyId then
+				local start3, duration3 = GetSpellCooldown(amplifyId, "spell")
 				if not (start3 > 0 and duration3 > 0) then
-					CastSpell(NECROSIS_SPELL_TABLE[42].ID, "spell")
-					SpellStopCasting(NECROSIS_SPELL_TABLE[42].Name)
+					CastSpell(amplifyId, "spell")
+					local spellName = getSpellNameByIndex(SpellIndex.AMPLIFY_CURSE)
+					if spellName then
+						SpellStopCasting(spellName)
+					end
 				end
 			end
 		end
-		CastSpell(NECROSIS_SPELL_TABLE[type].ID, "spell")
+		castSpellByIndex(type)
 		LastCast.Curse.id = type
 		LastCast.Curse.click = click
 		if (click == "MiddleButton") and (UnitExists("Pet")) then
@@ -2159,26 +2416,24 @@ function Necrosis_StoneCast(type, click)
 	end
 	local stoneSpell = nil
 	if stoneSpellIndex and stoneSpellIndex ~= 0 then
-		stoneSpell = NECROSIS_SPELL_TABLE[stoneSpellIndex]
+		stoneSpell = Spells:Get(stoneSpellIndex)
 	end
-	if not stoneSpell or not stoneSpell.ID then
-		local errorTable = NECROSIS_MESSAGE and NECROSIS_MESSAGE.Error
-		if errorTable then
-			local messageKey = "No" .. definition.inventoryKey .. "Spell"
-			local message = errorTable[messageKey]
-			if message then
-				Necrosis_Msg(message, "USER")
-			end
+	local stoneSpellId = stoneSpell and stoneSpell.ID
+	if not stoneSpell or not stoneSpellId then
+		local messageKey = "No" .. definition.inventoryKey .. "Spell"
+		local message = getMessage("Error", messageKey)
+		if message then
+			Necrosis_Msg(message, "USER")
 		end
 	else
 		if stoneSpell.Mana and stoneSpell.Mana > UnitMana("player") then
-			local errorTable = NECROSIS_MESSAGE and NECROSIS_MESSAGE.Error
-			if errorTable and errorTable.NoMana then
-				Necrosis_Msg(errorTable.NoMana, "USER")
+			local message = getMessage("Error", "NoMana")
+			if message then
+				Necrosis_Msg(message, "USER")
 			end
 			return
 		end
-		CastSpell(stoneSpell.ID, "spell")
+		castSpellByIndex(stoneSpellIndex)
 		LastCast.Stone.id = type
 		LastCast.Stone.click = click
 	end
@@ -2190,22 +2445,26 @@ end
 -- Handle casts triggered from the demon menu
 function Necrosis_PetCast(type, click)
 	if type == 8 and ComponentState.infernal == 0 then
-		Necrosis_Msg(NECROSIS_MESSAGE.Error.InfernalStoneNotPresent, "USER")
+		sendMessage("Error", "InfernalStoneNotPresent")
 		return
 	elseif type == 30 and ComponentState.demoniac == 0 then
-		Necrosis_Msg(NECROSIS_MESSAGE.Error.DemoniacStoneNotPresent, "USER")
+		sendMessage("Error", "DemoniacStoneNotPresent")
 		return
 	elseif type ~= 15 and type ~= 3 and type ~= 8 and type ~= 30 and SoulshardState.count == 0 then
-		Necrosis_Msg(NECROSIS_MESSAGE.Error.SoulShardNotPresent, "USER")
+		sendMessage("Error", "SoulShardNotPresent")
 		return
 	end
 	if type == 3 or type == 4 or type == 5 or type == 6 then
 		LastCast.Demon = type
-		if (click == "RightButton") and (NECROSIS_SPELL_TABLE[15].ID ~= nil) then
-			local start, duration = GetSpellCooldown(NECROSIS_SPELL_TABLE[15].ID, "spell")
+		local dominationId = getSpellId(15)
+		if (click == "RightButton") and dominationId then
+			local start, duration = GetSpellCooldown(dominationId, "spell")
 			if not (start > 0 and duration > 0) then
-				CastSpell(NECROSIS_SPELL_TABLE[15].ID, "spell")
-				SpellStopCasting(NECROSIS_SPELL_TABLE[15].Name)
+				CastSpell(dominationId, "spell")
+				local spellName = getSpellNameByIndex(SpellIndex.FEL_DOMINATION)
+				if spellName then
+					SpellStopCasting(spellName)
+				end
 			end
 		end
 		if NecrosisConfig.DemonSummon and NecrosisConfig.ChatMsg and not NecrosisConfig.SM then
@@ -2246,7 +2505,7 @@ function Necrosis_PetCast(type, click)
 			end
 		end
 	end
-	CastSpell(NECROSIS_SPELL_TABLE[type].ID, "spell")
+	castSpellByIndex(type)
 	MenuState.Pet.alpha = 1
 	MenuState.Pet.fadeAt = GetTime() + 3
 end
@@ -2468,19 +2727,19 @@ function NecrosisTimer(timerName, durationSeconds)
 		targetName = ""
 		timerType = TIMER_TYPE.SELF_BUFF
 	end
-	local service = getTimerService()
-	if service then
-		service:InsertCustomTimer(timerName, durationSeconds, timerType, targetName, durationSeconds)
+	local timerService = getTimerService()
+	if timerService then
+		Timers:InsertCustomTimer(timerName, durationSeconds, timerType, targetName, durationSeconds)
 	end
 end
 
 function NecrosisSpellCast(name)
 	if string.find(name, "coa") then
-		SpellCastName = NECROSIS_SPELL_TABLE[22].Name
+		SpellCastName = getSpellNameByIndex(SpellIndex.CURSE_OF_AGONY)
 		SpellTargetName = UnitName("target")
 		if not SpellTargetName then
 			SpellTargetName = ""
 		end
-		CastSpell(NECROSIS_SPELL_TABLE[22].ID, "spell")
+		castSpellByIndex(SpellIndex.CURSE_OF_AGONY)
 	end
 end

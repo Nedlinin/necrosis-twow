@@ -5,6 +5,9 @@
 NecrosisTimerService = NecrosisTimerService or {}
 
 local TimerService = NecrosisTimerService
+local Spells = Necrosis.Spells
+local Loc = Necrosis.Loc
+local SpellIndex = Spells.Index
 
 local floor = math.floor
 local table_getn = table.getn
@@ -12,9 +15,28 @@ local table_insert = table.insert
 local table_remove = table.remove
 local table_sort = table.sort
 local math_mod = math.mod
+local unpack = unpack
+local wipe_table = NecrosisUtils and NecrosisUtils.WipeTable
 
 if not math_mod then
 	math_mod = math.fmod
+end
+
+local function getSpellName(index)
+	local data = Spells and Spells:Get(index)
+	return data and data.Name
+end
+
+local function debugTimerEvent(action, name, details)
+	details = details or {}
+	for index = 1, table_getn(details) do
+		if details[index] == nil then
+			details[index] = "<nil>"
+		end
+	end
+	if Necrosis_DebugPrint then
+		Necrosis_DebugPrint("TimerService", action or "<nil>", name or "<nil>", unpack(details))
+	end
 end
 
 local TIMER_TYPE = NECROSIS_TIMER_TYPE or {}
@@ -39,6 +61,82 @@ TimerService.coloredDisplay = TimerService.coloredDisplay or ""
 TimerService.textDirty = TimerService.textDirty ~= false
 TimerService.lastTextBuildTime = TimerService.lastTextBuildTime or 0
 TimerService.reusableEnsureOptions = TimerService.reusableEnsureOptions or {}
+TimerService.reusableTextureCache = TimerService.reusableTextureCache or {}
+local reusableTextureCache = TimerService.reusableTextureCache
+
+local function clear_table(t)
+	if not t then
+		return
+	end
+	if wipe_table then
+		wipe_table(t)
+	else
+		for key in pairs(t) do
+			t[key] = nil
+		end
+	end
+end
+
+local function getReusableTextureCache()
+	clear_table(reusableTextureCache)
+	return reusableTextureCache
+end
+
+local function safeGetSpellTexture(identifier)
+	if not identifier or identifier == "" then
+		return nil
+	end
+	local ok, texture = pcall(GetSpellTexture, identifier)
+	if ok then
+		return texture
+	end
+	return nil
+end
+
+local function getTextureForBuff(cache, buffName)
+	if not buffName then
+		return nil
+	end
+	local cached = cache[buffName]
+	if cached ~= nil then
+		return cached ~= false and cached or nil
+	end
+	local texture = safeGetSpellTexture(buffName)
+	cache[buffName] = texture or false
+	return texture
+end
+
+local function playerHasSelfBuff(cache, buffName)
+	if not buffName then
+		return false
+	end
+	local expectedTexture = getTextureForBuff(cache, buffName)
+	local index = 0
+	while true do
+		local buffId = GetPlayerBuff(index, "HELPFUL")
+		if not buffId or buffId == -1 then
+			break
+		end
+		local texture = GetPlayerBuffTexture(buffId)
+		if expectedTexture and texture == expectedTexture then
+			return true
+		end
+		index = index + 1
+	end
+	if expectedTexture then
+		return false
+	end
+	local checker
+	if type(Necrosis_UnitHasBuff) == "function" then
+		checker = Necrosis_UnitHasBuff
+	elseif type(Necrosis_UnitHasEffect) == "function" then
+		checker = Necrosis_UnitHasEffect
+	end
+	if not checker then
+		return true
+	end
+	return checker("player", buffName) and true or false
+end
 
 ------------------------------------------------------------------------------------------------------
 -- INTERNAL HELPERS
@@ -69,7 +167,7 @@ local function shouldSkipSpellTimer(spellIndex)
 	if not spellIndex then
 		return false
 	end
-	local spellData = NECROSIS_SPELL_TABLE and NECROSIS_SPELL_TABLE[spellIndex]
+	local spellData = Spells and Spells:Get(spellIndex)
 	if not spellData then
 		return false
 	end
@@ -97,6 +195,10 @@ local function resetTimerDisplayCache(service, timer)
 	timer.cachedDisplayName = nil
 	timer.cachedShowTarget = nil
 	timer.cachedTarget = nil
+	timer.cachedTimeText = nil
+	timer.cachedTimeSeconds = nil
+	timer.cachedTextLine = nil
+	timer.cachedGraphLabel = nil
 	markTextDirty(service)
 end
 
@@ -186,9 +288,7 @@ local function updateTimerEntry(service, name, target, timeRemaining, expiryTime
 					newInitial = 0
 				end
 			end
-			if timeRemaining and timeRemaining > 0 and timeRemaining > newInitial then
-				newInitial = timeRemaining
-			end
+			-- preserve known initial duration; don't replace it with the remaining time
 			timer.InitialDuration = newInitial > 0 and newInitial or nil
 			timer.Time = newInitial or 0
 			if expiryTime then
@@ -198,6 +298,12 @@ local function updateTimerEntry(service, name, target, timeRemaining, expiryTime
 				timer.Type = timerType
 			end
 			timer.Target = target
+			debugTimerEvent("update", name, {
+				"target=" .. (target or ""),
+				"expiry=" .. tostring(timer.TimeMax or expiryTime or ""),
+				"remaining=" .. tostring(timeRemaining or 0),
+				"initial=" .. tostring(timer.InitialDuration or 0),
+			})
 			resetTimerDisplayCache(service, timer)
 			sortTimers(service)
 			return true
@@ -216,30 +322,45 @@ local function buildTimerView(service, graphData, textBuffer, timer, currentTime
 		return graphIndex
 	end
 
-	local seconds
-	if NECROSIS_SPELL_TABLE and timer.Name == (NECROSIS_SPELL_TABLE[10] and NECROSIS_SPELL_TABLE[10].Name) then
-		seconds = currentTime - (expiry - timer.Time)
+	local secondsValue
+	local enslaveName = getSpellName(SpellIndex.ENSLAVE_DEMON)
+	if enslaveName and timer.Name == enslaveName then
+		secondsValue = currentTime - (expiry - timer.Time)
 	else
-		seconds = expiry - currentTime
+		secondsValue = expiry - currentTime
 	end
 
-	local minutes = floor(seconds / 60)
-	local timeText
-	if minutes > 0 then
-		if minutes > 9 then
-			timeText = tostring(minutes) .. ":"
+	if secondsValue < 0 then
+		secondsValue = 0
+	end
+	local minutes = floor(secondsValue / 60)
+	local secondsComponent = math_mod(secondsValue, 60)
+
+	if timer.cachedTimeSeconds ~= secondsValue then
+		local timeText
+		if minutes > 0 then
+			if minutes > 9 then
+				timeText = tostring(minutes) .. ":"
+			else
+				timeText = "0" .. minutes .. ":"
+			end
 		else
-			timeText = "0" .. minutes .. ":"
+			timeText = "0:"
 		end
-	else
-		timeText = "0:"
+		if secondsComponent > 9 then
+			timeText = timeText .. secondsComponent
+		else
+			timeText = timeText .. "0" .. secondsComponent
+		end
+		timer.cachedTimeSeconds = secondsValue
+		timer.cachedTimeText = timeText
+		timer.cachedTextLine = nil
+		timer.cachedGraphLabel = nil
+		if not buildText then
+			markTextDirty(service)
+		end
 	end
-	seconds = math_mod(seconds, 60)
-	if seconds > 9 then
-		timeText = timeText .. seconds
-	else
-		timeText = timeText .. "0" .. seconds
-	end
+	local timeText = timer.cachedTimeText or "0:00"
 
 	local remaining = 0
 	if expiry then
@@ -278,9 +399,9 @@ local function buildTimerView(service, graphData, textBuffer, timer, currentTime
 	end
 
 	local targetName = timer.Target or ""
-	local shouldShowTarget = (
-		timer.Type == TIMER_TYPE.PRIMARY or (NECROSIS_SPELL_TABLE[16] and timer.Name == NECROSIS_SPELL_TABLE[16].Name)
-	) and targetName ~= ""
+	local banishName = getSpellName(SpellIndex.CURSE_OF_DOOM)
+	local shouldShowTarget = (timer.Type == TIMER_TYPE.PRIMARY or (banishName and timer.Name == banishName))
+		and targetName ~= ""
 	local needsSuffixUpdate = timer.cachedDisplaySuffix == nil
 	if not needsSuffixUpdate and timer.cachedPercentBucket ~= percentBucket then
 		needsSuffixUpdate = true
@@ -305,19 +426,30 @@ local function buildTimerView(service, graphData, textBuffer, timer, currentTime
 		timer.cachedDisplayName = displayName
 		timer.cachedShowTarget = shouldShowTarget
 		timer.cachedTarget = shouldShowTarget and targetName or ""
+		timer.cachedTextLine = nil
+		timer.cachedGraphLabel = nil
 	end
 
 	if buildText then
-		textBuffer[table_getn(textBuffer) + 1] = COLOR_WHITE .. timeText .. (timer.cachedDisplaySuffix or "\n")
+		local textLine = timer.cachedTextLine
+		if not textLine then
+			textLine = COLOR_WHITE .. timeText .. (timer.cachedDisplaySuffix or "\n")
+			timer.cachedTextLine = textLine
+		end
+		textBuffer[table_getn(textBuffer) + 1] = textLine
 	end
 
-	local timerLabel = timeText
-	if shouldShowTarget then
-		if NecrosisConfig and NecrosisConfig.SpellTimerPos == 1 then
-			timerLabel = timerLabel .. " - " .. targetName
-		else
-			timerLabel = targetName .. " - " .. timerLabel
+	local timerLabel = timer.cachedGraphLabel
+	if not timerLabel then
+		timerLabel = timeText
+		if shouldShowTarget then
+			if NecrosisConfig and NecrosisConfig.SpellTimerPos == 1 then
+				timerLabel = timerLabel .. " - " .. targetName
+			else
+				timerLabel = targetName .. " - " .. timerLabel
+			end
 		end
+		timer.cachedGraphLabel = timerLabel
 	end
 
 	graphIndex = graphIndex + 1
@@ -328,23 +460,24 @@ local function buildTimerView(service, graphData, textBuffer, timer, currentTime
 	graphData.displayLines[graphIndex] = timerLabel
 	graphData.slotIds[graphIndex] = assignGraphicalSlot(service, timer)
 
+	local soulstoneName = getSpellName(SpellIndex.SOULSTONE_RESURRECTION)
 	if NecrosisConfig and NecrosisConfig.CountType == 3 then
-		if NECROSIS_SPELL_TABLE and timer.Name == (NECROSIS_SPELL_TABLE[11] and NECROSIS_SPELL_TABLE[11].Name) then
+		if soulstoneName and timer.Name == soulstoneName then
 			if minutes > 0 then
 				NecrosisShardCount:SetText(minutes .. " m")
 			else
-				NecrosisShardCount:SetText(seconds)
+				NecrosisShardCount:SetText(secondsComponent)
 			end
 		end
 	end
 	if NecrosisConfig and NecrosisConfig.Circle == 2 then
-		if NECROSIS_SPELL_TABLE and timer.Name == (NECROSIS_SPELL_TABLE[11] and NECROSIS_SPELL_TABLE[11].Name) then
+		if soulstoneName and timer.Name == soulstoneName then
 			if minutes >= 16 then
 				NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Turquoise\\Shard" .. minutes - 15)
-			elseif minutes >= 1 or seconds >= 33 then
+			elseif minutes >= 1 or secondsComponent >= 33 then
 				NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Orange\\Shard" .. minutes + 1)
 			else
-				NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Rose\\Shard" .. seconds)
+				NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Rose\\Shard" .. secondsComponent)
 			end
 		end
 	end
@@ -403,7 +536,7 @@ function TimerService:EnsureTimer(options)
 	local expiry = options.expiry
 
 	if spellIndex then
-		local data = NECROSIS_SPELL_TABLE and NECROSIS_SPELL_TABLE[spellIndex]
+		local data = Spells and Spells:Get(spellIndex)
 		if data then
 			name = name or data.Name
 			timerType = timerType or data.Type
@@ -416,6 +549,7 @@ function TimerService:EnsureTimer(options)
 		end
 		if shouldSkipSpellTimer(spellIndex) then
 			if name then
+				debugTimerEvent("skip", name, { "spellIndex=" .. tostring(spellIndex) })
 				self:RemoveTimerByName(name)
 			end
 			return self.timers, self.timerSlots
@@ -462,6 +596,12 @@ function TimerService:EnsureTimer(options)
 	ensureTimerSlotTable(self)
 	self.timers, self.timerSlots = Necrosis_AddTimerFrame(self.timers, self.timerSlots)
 	sortTimers(self)
+	debugTimerEvent("insert", name, {
+		"target=" .. (target or ""),
+		"type=" .. tostring(timerType),
+		"expiry=" .. tostring(expiry),
+		"duration=" .. tostring(insertDuration),
+	})
 	return self.timers, self.timerSlots
 end
 
@@ -494,12 +634,16 @@ function TimerService:InsertCustomTimer(spellName, duration, timerType, targetNa
 	return self:EnsureNamedTimer(spellName, duration, timerType, targetName, initialDuration, expiryTime)
 end
 
-function TimerService:RemoveTimerByIndex(index)
+function TimerService:RemoveTimerByIndex(index, reason)
 	local timers = self.timers
 	local timer = timers[index]
 	if not timer then
 		return timers, self.timerSlots
 	end
+	debugTimerEvent("remove", timer.Name, {
+		"target=" .. (timer.Target or ""),
+		"cause=" .. (reason or "index"),
+	})
 	local removedSlot = timer.Gtimer
 	if removedSlot then
 		self.timerSlots = Necrosis_RemoveTimerFrame(removedSlot, self.timerSlots)
@@ -522,7 +666,7 @@ function TimerService:RemoveTimerByName(name)
 	local timers = self.timers
 	for index = 1, table_getn(timers) do
 		if timers[index].Name == name then
-			return self:RemoveTimerByIndex(index)
+			return self:RemoveTimerByIndex(index, "name")
 		end
 	end
 	return timers, self.timerSlots
@@ -538,11 +682,27 @@ function TimerService:RemoveCombatTimers()
 				resetTimerDisplayCache(self, timer)
 			end
 			if timer.Type == TIMER_TYPE.CURSE or timer.Type == TIMER_TYPE.COMBAT then
-				self:RemoveTimerByIndex(index)
+				self:RemoveTimerByIndex(index, "combat-clear")
 			end
 		end
 	end
 	return timers, self.timerSlots
+end
+
+function TimerService:RemoveAllTimers()
+	local timers = self.timers
+	if not timers then
+		return
+	end
+	for index = table_getn(timers), 1, -1 do
+		self:RemoveTimerByIndex(index, "clear-all")
+	end
+	self:ResetTimerAssignments()
+	self.textDisplay = ""
+	self.coloredDisplay = ""
+	self.graphical.activeCount = 0
+	self.lastTextBuildTime = 0
+	markTextDirty(self)
 end
 
 function TimerService:TimerExists(name)
@@ -615,9 +775,11 @@ function TimerService:ClearExpiredTimers(currentTime, targetName)
 	if not timers then
 		return
 	end
-	local soulstoneName = NECROSIS_SPELL_TABLE and NECROSIS_SPELL_TABLE[11] and NECROSIS_SPELL_TABLE[11].Name
-	local enslaveName = NECROSIS_SPELL_TABLE and NECROSIS_SPELL_TABLE[10] and NECROSIS_SPELL_TABLE[10].Name
-	local demonArmorName = NECROSIS_SPELL_TABLE and NECROSIS_SPELL_TABLE[17] and NECROSIS_SPELL_TABLE[17].Name
+	local soulstoneName = getSpellName(SpellIndex.SOULSTONE_RESURRECTION)
+	local enslaveName = getSpellName(SpellIndex.ENSLAVE_DEMON)
+	local demonArmorName = getSpellName(SpellIndex.DEMON_ARMOR)
+	local demonSkinName = getSpellName(SpellIndex.DEMON_SKIN)
+	local textureCache = getReusableTextureCache()
 	for index = table_getn(timers), 1, -1 do
 		local timer = timers[index]
 		if timer then
@@ -625,7 +787,10 @@ function TimerService:ClearExpiredTimers(currentTime, targetName)
 			local timeMax = timer.TimeMax or 0
 			if currentTime >= (timeMax - 0.5) and timeMax ~= -1 then
 				if soulstoneName and name == soulstoneName then
-					Necrosis_Msg(NECROSIS_MESSAGE.Information.SoulstoneEnd, "USER")
+					local message = Loc and Loc:GetMessage("Information", "SoulstoneEnd")
+					if message then
+						Necrosis_Msg(message, "USER")
+					end
 					timer.Target = ""
 					timer.TimeMax = -1
 					if NecrosisConfig.Sound then
@@ -635,19 +800,22 @@ function TimerService:ClearExpiredTimers(currentTime, targetName)
 						self.timerSlots = Necrosis_RemoveTimerFrame(timer.Gtimer, self.timerSlots)
 					end
 					Necrosis_UpdateIcons()
+					debugTimerEvent("expire", name, { "reason=soulstone-end" })
 				elseif not (enslaveName and name == enslaveName) then
-					self:RemoveTimerByIndex(index)
+					self:RemoveTimerByIndex(index, "expired")
 				end
 			else
-				if demonArmorName and name == demonArmorName and not Necrosis_UnitHasEffect("player", name) then
-					self:RemoveTimerByIndex(index)
+				if (demonArmorName and name == demonArmorName) or (demonSkinName and name == demonSkinName) then
+					if not playerHasSelfBuff(textureCache, name) then
+						self:RemoveTimerByIndex(index, "buff-missing")
+					end
 				elseif
 					(timer.Type == TIMER_TYPE.CURSE or timer.Type == TIMER_TYPE.COMBAT)
 					and timer.Target == targetName
 					and currentTime >= ((timer.TimeMax - timer.Time) + 1.5)
 				then
 					if not Necrosis_UnitHasEffect("target", name or timer.Name) then
-						self:RemoveTimerByIndex(index)
+						self:RemoveTimerByIndex(index, "target-lost")
 					end
 				end
 			end

@@ -27,6 +27,33 @@ local BagQueueState = getState("bags")
 local StoneInventory = getInventory("stones")
 local BagIsSoulPouch = getInventory("bagIsSoulPouch")
 local LastCast = Necrosis.GetLastCast()
+local Timers = Necrosis.Timers
+local Spells = Necrosis.Spells
+local Loc = Necrosis.Loc
+local SpellIndex = Spells.Index
+
+local SOUL_SHARD_ITEM_ID = 6265
+local CachedManaPetState = { "3", "3", "3", "3", "3", "3" }
+
+local function spellHasId(index)
+	return Spells:HasID(index)
+end
+
+local function spellId(index)
+	return Spells:GetID(index)
+end
+
+local function spellName(index)
+	return Spells:GetName(index)
+end
+
+local function spellMana(index)
+	return Spells:GetMana(index, 0)
+end
+
+local function spellType(index)
+	return Spells:GetType(index)
+end
 
 StoneIDInSpellTable = StoneIDInSpellTable or { 0, 0, 0, 0, 0, 0, 0 }
 StonePos = StonePos
@@ -57,7 +84,63 @@ local function Necrosis_GetBagState()
 	end
 	BagQueueState.pending = nil
 	BagQueueState.pendingSort = nil
+	BagQueueState.snapshot = BagQueueState.snapshot or {}
+	BagQueueState.dirtyBags = BagQueueState.dirtyBags or {}
 	return BagQueueState
+end
+
+local function GetSlotItemID(container, slot)
+	local itemLink = GetContainerItemLink(container, slot)
+	if not itemLink then
+		return nil
+	end
+	local _, _, itemId = string.find(itemLink, "item:(%d+)")
+	if itemId then
+		return tonumber(itemId, 10)
+	end
+	return nil
+end
+
+local function IsSoulShardSlot(container, slot)
+	if not slot then
+		return false
+	end
+	return GetSlotItemID(container, slot) == SOUL_SHARD_ITEM_ID
+end
+
+function Necrosis_FlagBagDirty(bag)
+	local state = Necrosis_GetBagState()
+	local dirty = state.dirtyBags
+	if not dirty then
+		dirty = {}
+		state.dirtyBags = dirty
+	end
+	if not bag or bag < 0 then
+		for index = 0, 4 do
+			dirty[index] = true
+		end
+	else
+		dirty[bag] = true
+	end
+end
+
+local function GetSlotItemID(container, slot)
+	local itemLink = GetContainerItemLink(container, slot)
+	if not itemLink then
+		return nil
+	end
+	local startIndex, endIndex, itemId = string.find(itemLink, "item:(%d+)")
+	if startIndex and itemId then
+		return tonumber(itemId, 10)
+	end
+	return nil
+end
+
+local function IsSoulShardSlot(container, slot)
+	if not slot then
+		return false
+	end
+	return GetSlotItemID(container, slot) == SOUL_SHARD_ITEM_ID
 end
 
 local function Necrosis_ProcessBagScanQueue(curTime)
@@ -147,7 +230,7 @@ local function Necrosis_IsOffhandItem(equipLoc, container, slot)
 	return InventoryConfig:IsOffhandItem(equipLoc, line3, line4)
 end
 
-function Necrosis_RequestBagScan(delay)
+function Necrosis_RequestBagScan(delay, forceFull)
 	local state = Necrosis_GetBagState()
 	delay = delay or 0
 	if delay < 0 then
@@ -166,6 +249,9 @@ function Necrosis_RequestBagScan(delay)
 		end
 	end
 	state.scanQueued = true
+	if forceFull then
+		Necrosis_FlagBagDirty(-1)
+	end
 	if state.processing then
 		return
 	end
@@ -197,11 +283,62 @@ function Necrosis_SoulshardSetup()
 	end
 end
 
-function Necrosis_BagExplore()
-	local previousShardCount = SoulshardState.count
+function Necrosis_BagExplore(forceFull)
+	local state = Necrosis_GetBagState()
+	state.scanQueued = false
+	state.nextScanTime = 0
+	state.snapshot = state.snapshot or {}
+	state.dirtyBags = state.dirtyBags or {}
+
+	if forceFull then
+		Necrosis_FlagBagDirty(-1)
+	end
+
+	local dirty = state.dirtyBags
+	local snapshot = state.snapshot
+	local sawIncompleteInfo = false
+
+	for bag in pairs(dirty) do
+		local slotCount = GetContainerNumSlots(bag)
+		snapshot[bag] = snapshot[bag] or {}
+		local bagSnapshot = snapshot[bag]
+		for slot = 1, slotCount do
+			local itemName, itemCount, equipLoc = Necrosis_GetBagSlotInfo(bag, slot)
+			local itemId = GetSlotItemID(bag, slot)
+			if itemName then
+				bagSnapshot[slot] = bagSnapshot[slot] or {}
+				local entry = bagSnapshot[slot]
+				entry.id = itemId
+				entry.name = itemName
+				entry.count = itemCount or 1
+				entry.equipLoc = equipLoc
+			else
+				sawIncompleteInfo = true
+				bagSnapshot[slot] = nil
+			end
+		end
+		if bagSnapshot then
+			for slot = slotCount + 1, table.getn(bagSnapshot) do
+				bagSnapshot[slot] = nil
+			end
+		end
+	end
+	for bag in pairs(dirty) do
+		dirty[bag] = nil
+	end
+
+	SoulshardState.container = NecrosisConfig.SoulshardContainer
+	local shardContainer = SoulshardState.container
+
 	SoulshardState.count = 0
+	SoulshardState.nextSlotIndex = 1
+	for key in pairs(SoulshardState.slots) do
+		SoulshardState.slots[key] = nil
+	end
+
 	ComponentState.infernal = 0
 	ComponentState.demoniac = 0
+
 	for key, data in pairs(StoneInventory) do
 		data.onHand = false
 		data.location[1], data.location[2] = nil, nil
@@ -210,69 +347,52 @@ function Necrosis_BagExplore()
 		end
 	end
 
-	SoulshardState.container = NecrosisConfig.SoulshardContainer
-	local shardContainer = SoulshardState.container
-	local needsRescan = false
 	local stoneKeys = InventoryConfig:GetStoneKeys()
 	local stonePatterns = InventoryConfig:EnsureStoneNamePatterns()
 
-	for container = 0, 4, 1 do
-		local slotCount = GetContainerNumSlots(container)
-		for slot = 1, slotCount, 1 do
-			local itemName, itemCount, equipLoc = Necrosis_GetBagSlotInfo(container, slot)
-			if not itemName then
-				needsRescan = true
+	for bag, bagSnapshot in pairs(snapshot) do
+		for slot, entry in pairs(bagSnapshot) do
+			if entry.id == SOUL_SHARD_ITEM_ID then
+				SoulshardState.count = SoulshardState.count + (entry.count or 1)
+				if bag == shardContainer then
+					SoulshardState.slots[SoulshardState.nextSlotIndex] = slot
+					SoulshardState.nextSlotIndex = SoulshardState.nextSlotIndex + 1
+				end
 			end
-			if container == shardContainer and (not itemName or itemName ~= NECROSIS_ITEM.Soulshard) then
-				SoulshardState.slots[slot] = nil
+			if entry.name == NECROSIS_ITEM.InfernalStone then
+				ComponentState.infernal = ComponentState.infernal + (entry.count or 1)
+			elseif entry.name == NECROSIS_ITEM.DemoniacStone then
+				ComponentState.demoniac = ComponentState.demoniac + (entry.count or 1)
 			end
-			if itemName then
-				if itemName == NECROSIS_ITEM.Soulshard then
-					SoulshardState.count = SoulshardState.count + itemCount
+			local recorded = false
+			for _, stoneKey in ipairs(stoneKeys) do
+				local pattern = stonePatterns[stoneKey]
+				if pattern and entry.name and string.find(entry.name, pattern, 1, true) then
+					Necrosis_RecordStoneInventory(stoneKey, bag, slot)
+					recorded = true
+					break
 				end
-				if itemName == NECROSIS_ITEM.InfernalStone then
-					ComponentState.infernal = ComponentState.infernal + itemCount
-				end
-				if itemName == NECROSIS_ITEM.DemoniacStone then
-					ComponentState.demoniac = ComponentState.demoniac + itemCount
-				end
-				local recorded = false
-				for _, stoneKey in ipairs(stoneKeys) do
-					local pattern = stonePatterns[stoneKey]
-					if pattern and string.find(itemName, pattern, 1, true) then
-						Necrosis_RecordStoneInventory(stoneKey, container, slot)
-						recorded = true
-						break
-					end
-				end
-				if not recorded and Necrosis_IsOffhandItem(equipLoc, container, slot) then
-					Necrosis_RecordStoneInventory("Itemswitch", container, slot)
-				end
+			end
+			if not recorded and Necrosis_IsOffhandItem(entry.equipLoc, bag, slot) then
+				Necrosis_RecordStoneInventory("Itemswitch", bag, slot)
 			end
 		end
 	end
 
-	local state = Necrosis_GetBagState()
-	state.scanQueued = false
-	state.nextScanTime = 0
-	if needsRescan then
-		Necrosis_RequestBagScan(0.2)
+	if sawIncompleteInfo then
+		Necrosis_RequestBagScan(0.2, true)
 	end
 
+	local shardIndex = SoulshardState.count
+	if shardIndex > 32 then
+		shardIndex = 32
+	end
 	if NecrosisConfig.Circle == 1 then
-		local shardIndex = SoulshardState.count
-		if shardIndex > 32 then
-			shardIndex = 32
-		end
 		Necrosis_SetNormalTextureIfDifferent(
 			NecrosisButton,
 			"Interface\\AddOns\\Necrosis\\UI\\" .. NecrosisConfig.NecrosisColor .. "\\Shard" .. shardIndex
 		)
 	elseif StoneInventory.Soulstone.mode == 1 or StoneInventory.Soulstone.mode == 2 then
-		local shardIndex = SoulshardState.count
-		if shardIndex > 32 then
-			shardIndex = 32
-		end
 		Necrosis_SetNormalTextureIfDifferent(
 			NecrosisButton,
 			"Interface\\AddOns\\Necrosis\\UI\\Bleu\\Shard" .. shardIndex
@@ -296,11 +416,13 @@ function Necrosis_BagExplore()
 	Necrosis_UpdateIcons()
 
 	if
-		SoulshardState.count > previousShardCount
-		and SoulshardState.count == GetContainerNumSlots(NecrosisConfig.SoulshardContainer)
+		SoulshardState.count == GetContainerNumSlots(NecrosisConfig.SoulshardContainer)
 		and NecrosisConfig.SoulshardSort
 	then
-		Necrosis_Msg(NECROSIS_MESSAGE.Warning.FullPouch, "USER")
+		local message = Loc:GetMessage("Warning", "FullPouch")
+		if message then
+			Necrosis_Msg(message, "USER")
+		end
 	end
 end
 
@@ -361,10 +483,7 @@ function Necrosis_SoulshardSwitch(action)
 		for bag = 0, 4, 1 do
 			if BagIsSoulPouch[bag + 1] then
 				for slot = 1, GetContainerNumSlots(bag), 1 do
-					Necrosis_MoneyToggle()
-					NecrosisTooltip:SetBagItem(bag, slot)
-					local itemInfo = tostring(NecrosisTooltipTextLeft1:GetText())
-					if itemInfo == NECROSIS_ITEM.Soulshard then
+					if IsSoulShardSlot(bag, slot) then
 						SoulshardState.slots[SoulshardState.nextSlotIndex] = slot
 						SoulshardState.nextSlotIndex = SoulshardState.nextSlotIndex + 1
 					end
@@ -375,10 +494,7 @@ function Necrosis_SoulshardSwitch(action)
 			for bag = 0, 4, 1 do
 				if not BagIsSoulPouch[bag + 1] then
 					for slot = 1, GetContainerNumSlots(bag), 1 do
-						Necrosis_MoneyToggle()
-						NecrosisTooltip:SetBagItem(bag, slot)
-						local itemInfo = tostring(NecrosisTooltipTextLeft1:GetText())
-						if itemInfo == NECROSIS_ITEM.Soulshard then
+						if IsSoulShardSlot(bag, slot) then
 							SoulshardState.pendingMoves = SoulshardState.pendingMoves + 1
 							PickupContainerItem(bag, slot)
 							PickupContainerItem(
@@ -401,21 +517,20 @@ function Necrosis_SoulshardSwitch(action)
 		SoulshardState.pendingMoves = SoulshardState.pendingMoves - 1
 		if SoulshardState.pendingMoves <= 0 then
 			SoulshardState.pendingMoves = 0
-			Necrosis_RequestBagScan(0)
+			Necrosis_FlagBagDirty(-1)
+			Necrosis_RequestBagScan(0, true)
 			return
 		end
 	end
 	if action == "CHECK" then
-		Necrosis_RequestBagScan(0)
+		Necrosis_FlagBagDirty(-1)
+		Necrosis_RequestBagScan(0, true)
 	end
 end
 function Necrosis_FindSlot(shardIndex, shardSlot)
 	local full = true
 	for slot = 1, GetContainerNumSlots(NecrosisConfig.SoulshardContainer), 1 do
-		Necrosis_MoneyToggle()
-		NecrosisTooltip:SetBagItem(NecrosisConfig.SoulshardContainer, slot)
-		local itemInfo = tostring(NecrosisTooltipTextLeft1:GetText())
-		if string.find(itemInfo, NECROSIS_ITEM.Soulshard) == nil then
+		if not IsSoulShardSlot(NecrosisConfig.SoulshardContainer, slot) then
 			PickupContainerItem(shardIndex, shardSlot)
 			PickupContainerItem(NecrosisConfig.SoulshardContainer, slot)
 			SoulshardState.slots[SoulshardState.nextSlotIndex] = slot
@@ -478,9 +593,9 @@ function Necrosis_UpdateIcons()
 
 	-- Determine whether a Soulstone was used by checking timers
 	local SoulstoneInUse = false
-	local soulstoneTimerName = NECROSIS_SPELL_TABLE[11] and NECROSIS_SPELL_TABLE[11].Name
+	local soulstoneTimerName = spellName(SpellIndex.SOULSTONE_RESURRECTION)
 	if soulstoneTimerName then
-		local timer = NecrosisTimerService and NecrosisTimerService:FindTimerByName(soulstoneTimerName)
+		local timer = Timers:FindTimerByName(soulstoneTimerName)
 		if timer and timer.TimeMax and timer.TimeMax > 0 then
 			SoulstoneInUse = true
 		end
@@ -502,12 +617,12 @@ function Necrosis_UpdateIcons()
 			local timeRemaining = floor(duration - GetTime() + start)
 			if timeRemaining > 0 then
 				local expiry = floor(start + duration)
-				if NecrosisTimerService then
-					NecrosisTimerService:EnsureSpellIndexTimer(
-						11,
+				if Timers:HasService() then
+					Timers:EnsureSpellIndexTimer(
+						SpellIndex.SOULSTONE_RESURRECTION,
 						"???",
 						timeRemaining,
-						NECROSIS_SPELL_TABLE[11].Type,
+						spellType(SpellIndex.SOULSTONE_RESURRECTION),
 						timeRemaining,
 						expiry
 					)
@@ -556,8 +671,8 @@ function Necrosis_UpdateIcons()
 	if StoneInventory.Soulstone.onHand and SoulstoneInUse then
 		SoulstoneAdvice = false
 		if not (SoulstoneWaiting or SoulstoneCooldown) then
-			if NecrosisTimerService then
-				NecrosisTimerService:RemoveTimerByName(NECROSIS_SPELL_TABLE[11].Name)
+			if Timers:HasService() then
+				Timers:RemoveTimerByName(soulstoneTimerName)
 			end
 			StoneInventory.Soulstone.mode = 2
 		else
@@ -596,11 +711,15 @@ function Necrosis_UpdateIcons()
 
 	-- Demon button
 	-----------------------------------------------
-	local ManaPet = { "3", "3", "3", "3", "3", "3" }
+	local ManaPet = CachedManaPetState
+	for index = 1, 6 do
+		ManaPet[index] = "3"
+	end
 
 	-- Si cooldown de domination corrompue on grise
-	if NECROSIS_SPELL_TABLE[15].ID and not DominationUp then
-		local start, duration = GetSpellCooldown(NECROSIS_SPELL_TABLE[15].ID, "spell")
+	local dominationId = spellId(15)
+	if dominationId and not DominationUp then
+		local start, duration = GetSpellCooldown(dominationId, "spell")
 		if start > 0 and duration > 0 then
 			Necrosis_SetButtonTexture(NecrosisPetMenu1, "Domination", 1)
 		else
@@ -609,8 +728,9 @@ function Necrosis_UpdateIcons()
 	end
 
 	-- Si cooldown de gardien de l'ombre on grise
-	if NECROSIS_SPELL_TABLE[43].ID then
-		local start2, duration2 = GetSpellCooldown(NECROSIS_SPELL_TABLE[43].ID, "spell")
+	local shadowWardId = spellId(43)
+	if shadowWardId then
+		local start2, duration2 = GetSpellCooldown(shadowWardId, "spell")
 		if start2 > 0 and duration2 > 0 then
 			Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 1)
 		else
@@ -619,8 +739,9 @@ function Necrosis_UpdateIcons()
 	end
 
 	-- Gray out the button while Amplify Curse is on cooldown
-	if NECROSIS_SPELL_TABLE[42].ID and not AmplifyUp then
-		local start3, duration3 = GetSpellCooldown(NECROSIS_SPELL_TABLE[42].ID, "spell")
+	local amplifyId = spellId(42)
+	if amplifyId and not AmplifyUp then
+		local start3, duration3 = GetSpellCooldown(amplifyId, "spell")
 		if start3 > 0 and duration3 > 0 then
 			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 1)
 		else
@@ -630,23 +751,23 @@ function Necrosis_UpdateIcons()
 
 	if mana ~= nil then
 		-- Grey out the button when there is not enough mana
-		if NECROSIS_SPELL_TABLE[3].ID then
-			if NECROSIS_SPELL_TABLE[3].Mana > mana then
+		if spellHasId(SpellIndex.SUMMON_IMP) then
+			if spellMana(SpellIndex.SUMMON_IMP) > mana then
 				for i = 1, 6, 1 do
 					ManaPet[i] = "1"
 				end
-			elseif NECROSIS_SPELL_TABLE[4].ID then
-				if NECROSIS_SPELL_TABLE[4].Mana > mana then
+			elseif spellHasId(SpellIndex.SUMMON_VOIDWALKER) then
+				if spellMana(SpellIndex.SUMMON_VOIDWALKER) > mana then
 					for i = 2, 6, 1 do
 						ManaPet[i] = "1"
 					end
-				elseif NECROSIS_SPELL_TABLE[8].ID then
-					if NECROSIS_SPELL_TABLE[8].Mana > mana then
+				elseif spellHasId(SpellIndex.INFERNO) then
+					if spellMana(SpellIndex.INFERNO) > mana then
 						for i = 5, 6, 1 do
 							ManaPet[i] = "1"
 						end
-					elseif NECROSIS_SPELL_TABLE[30].ID then
-						if NECROSIS_SPELL_TABLE[30].Mana > mana then
+					elseif spellHasId(SpellIndex.RITUAL_OF_DOOM) then
+						if spellMana(SpellIndex.RITUAL_OF_DOOM) > mana then
 							ManaPet[6] = "1"
 						end
 					end
@@ -726,90 +847,90 @@ function Necrosis_UpdateIcons()
 	if mana ~= nil then
 		-- Grey out the button when there is not enough mana
 		if MountState.available and not MountState.active then
-			if NECROSIS_SPELL_TABLE[2].ID then
-				if NECROSIS_SPELL_TABLE[2].Mana > mana or CombatState.inCombat then
+			if spellHasId(SpellIndex.SUMMON_DREADSTEED) then
+				if spellMana(SpellIndex.SUMMON_DREADSTEED) > mana or CombatState.inCombat then
 					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 1)
 				else
 					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 3)
 				end
 			else
-				if NECROSIS_SPELL_TABLE[1].Mana > mana or CombatState.inCombat then
+				if spellMana(SpellIndex.SUMMON_FELSTEED) > mana or CombatState.inCombat then
 					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 1)
 				else
 					Necrosis_SetButtonTexture(NecrosisMountButton, "MountButton", 3)
 				end
 			end
 		end
-		if NECROSIS_SPELL_TABLE[35].ID then
-			if NECROSIS_SPELL_TABLE[35].Mana > mana or SoulshardState.count == 0 then
+		if spellHasId(SpellIndex.ENSLAVE_DEMON_EFFECT) then
+			if spellMana(SpellIndex.ENSLAVE_DEMON_EFFECT) > mana or SoulshardState.count == 0 then
 				Necrosis_SetButtonTexture(NecrosisPetMenu8, "Enslave", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisPetMenu8, "Enslave", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[31].ID then
-			if NECROSIS_SPELL_TABLE[31].Mana > mana then
+		if spellHasId(SpellIndex.DEMON_ARMOR) then
+			if spellMana(SpellIndex.DEMON_ARMOR) > mana then
 				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 3)
 			end
-		elseif NECROSIS_SPELL_TABLE[36].ID then
-			if NECROSIS_SPELL_TABLE[36].Mana > mana then
+		elseif spellHasId(SpellIndex.DEMON_SKIN) then
+			if spellMana(SpellIndex.DEMON_SKIN) > mana then
 				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[32].ID then
-			if NECROSIS_SPELL_TABLE[32].Mana > mana then
+		if spellHasId(SpellIndex.UNENDING_BREATH) then
+			if spellMana(SpellIndex.UNENDING_BREATH) > mana then
 				Necrosis_SetButtonTexture(NecrosisBuffMenu2, "Aqua", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu2, "Aqua", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[33].ID then
-			if NECROSIS_SPELL_TABLE[33].Mana > mana then
+		if spellHasId(SpellIndex.DETECT_INVISIBILITY) then
+			if spellMana(SpellIndex.DETECT_INVISIBILITY) > mana then
 				Necrosis_SetButtonTexture(NecrosisBuffMenu3, "Invisible", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu3, "Invisible", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[34].ID then
-			if NECROSIS_SPELL_TABLE[34].Mana > mana then
+		if spellHasId(SpellIndex.EYE_OF_KILROGG) then
+			if spellMana(SpellIndex.EYE_OF_KILROGG) > mana then
 				Necrosis_SetButtonTexture(NecrosisBuffMenu4, "Kilrogg", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu4, "Kilrogg", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[37].ID then
-			if NECROSIS_SPELL_TABLE[37].Mana > mana or SoulshardState.count == 0 then
+		if spellHasId(SpellIndex.RITUAL_OF_SUMMONING) then
+			if spellMana(SpellIndex.RITUAL_OF_SUMMONING) > mana or SoulshardState.count == 0 then
 				Necrosis_SetNormalTextureIfDifferent(NecrosisBuffMenu5, "Interface\\AddOns\\Necrosis\\UI\\TPButton-05")
 			else
 				Necrosis_SetNormalTextureIfDifferent(NecrosisBuffMenu5, "Interface\\AddOns\\Necrosis\\UI\\TPButton-01")
 			end
 		end
-		if NECROSIS_SPELL_TABLE[38].ID then
-			if NECROSIS_SPELL_TABLE[38].Mana > mana then
+		if spellHasId(SpellIndex.SOUL_LINK) then
+			if spellMana(SpellIndex.SOUL_LINK) > mana then
 				Necrosis_SetButtonTexture(NecrosisBuffMenu7, "Lien", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu7, "Lien", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[43].ID then
-			if NECROSIS_SPELL_TABLE[43].Mana > mana then
+		if spellHasId(SpellIndex.SHADOW_WARD) then
+			if spellMana(SpellIndex.SHADOW_WARD) > mana then
 				Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[9].ID then
-			if NECROSIS_SPELL_TABLE[9].Mana > mana then
+		if spellHasId(SpellIndex.BANISH) then
+			if spellMana(SpellIndex.BANISH) > mana then
 				Necrosis_SetButtonTexture(NecrosisBuffMenu9, "Banish", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisBuffMenu9, "Banish", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[44].ID then
+		if spellHasId(SpellIndex.DEMONIC_SACRIFICE) then
 			if not UnitExists("Pet") then
 				Necrosis_SetButtonTexture(NecrosisPetMenu9, "Sacrifice", 1)
 			else
@@ -823,57 +944,57 @@ function Necrosis_UpdateIcons()
 
 	if mana ~= nil then
 		-- Grey out the button when there is not enough mana
-		if NECROSIS_SPELL_TABLE[23].ID then
-			if NECROSIS_SPELL_TABLE[23].Mana > mana then
+		if spellHasId(SpellIndex.CURSE_OF_WEAKNESS) then
+			if spellMana(SpellIndex.CURSE_OF_WEAKNESS) > mana then
 				Necrosis_SetButtonTexture(NecrosisCurseMenu2, "Weakness", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu2, "Weakness", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[22].ID then
-			if NECROSIS_SPELL_TABLE[22].Mana > mana then
+		if spellHasId(SpellIndex.CURSE_OF_AGONY) then
+			if spellMana(SpellIndex.CURSE_OF_AGONY) > mana then
 				Necrosis_SetButtonTexture(NecrosisCurseMenu3, "Agony", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu3, "Agony", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[24].ID then
-			if NECROSIS_SPELL_TABLE[24].Mana > mana then
+		if spellHasId(SpellIndex.CURSE_OF_RECKLESSNESS) then
+			if spellMana(SpellIndex.CURSE_OF_RECKLESSNESS) > mana then
 				Necrosis_SetButtonTexture(NecrosisCurseMenu4, "Reckless", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu4, "Reckless", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[25].ID then
-			if NECROSIS_SPELL_TABLE[25].Mana > mana then
+		if spellHasId(SpellIndex.CURSE_OF_TONGUES) then
+			if spellMana(SpellIndex.CURSE_OF_TONGUES) > mana then
 				Necrosis_SetButtonTexture(NecrosisCurseMenu5, "Tongues", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu5, "Tongues", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[40].ID then
-			if NECROSIS_SPELL_TABLE[40].Mana > mana then
+		if spellHasId(SpellIndex.CURSE_OF_EXHAUSTION) then
+			if spellMana(SpellIndex.CURSE_OF_EXHAUSTION) > mana then
 				Necrosis_SetButtonTexture(NecrosisCurseMenu6, "Exhaust", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu6, "Exhaust", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[26].ID then
-			if NECROSIS_SPELL_TABLE[26].Mana > mana then
+		if spellHasId(SpellIndex.CURSE_OF_THE_ELEMENTS) then
+			if spellMana(SpellIndex.CURSE_OF_THE_ELEMENTS) > mana then
 				Necrosis_SetButtonTexture(NecrosisCurseMenu7, "Elements", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu7, "Elements", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[27].ID then
-			if NECROSIS_SPELL_TABLE[27].Mana > mana then
+		if spellHasId(SpellIndex.CURSE_OF_SHADOW) then
+			if spellMana(SpellIndex.CURSE_OF_SHADOW) > mana then
 				Necrosis_SetButtonTexture(NecrosisCurseMenu8, "Shadow", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu8, "Shadow", 3)
 			end
 		end
-		if NECROSIS_SPELL_TABLE[16].ID then
-			if NECROSIS_SPELL_TABLE[16].Mana > mana then
+		if spellHasId(SpellIndex.CURSE_OF_DOOM) then
+			if spellMana(SpellIndex.CURSE_OF_DOOM) > mana then
 				Necrosis_SetButtonTexture(NecrosisCurseMenu9, "Doom", 1)
 			else
 				Necrosis_SetButtonTexture(NecrosisCurseMenu9, "Doom", 3)

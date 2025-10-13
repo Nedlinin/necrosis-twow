@@ -9,6 +9,9 @@
 	<Script file="Speech.lua"/>
 	<Script file="NecrosisUtils.lua"/>
 	<Script file="NecrosisState.lua"/>
+	<Script file="NecrosisTimers.lua"/>
+	<Script file="NecrosisSpellAccess.lua"/>
+	<Script file="NecrosisLocalizationAccess.lua"/>
 	<Script file="NecrosisInventoryConfig.lua"/>
 	<Script file="NecrosisMenus.lua"/>
 	<Script file="NecrosisInventory.lua"/>

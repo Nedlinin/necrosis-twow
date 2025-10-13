@@ -3,11 +3,54 @@
 ------------------------------------------------------------------------------------------------------
 
 local floor = math.floor
+local wipe_table = NecrosisUtils.WipeTable
+
+Necrosis = Necrosis or {}
+Necrosis.Events = Necrosis.Events or {}
+
+local Loc = Necrosis.Loc or {}
+
+local Dispatcher = Necrosis.Events
+Dispatcher.handlers = Dispatcher.handlers or {}
+
+function Dispatcher:Register(eventName, handler)
+	if not eventName or type(handler) ~= "function" then
+		return
+	end
+	self.handlers[eventName] = handler
+end
+
+function Dispatcher:Get(eventName)
+	if not eventName then
+		return nil
+	end
+	return self.handlers[eventName]
+end
+
+function Dispatcher:Fire(eventName, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+	local handler = self:Get(eventName)
+	if handler then
+		return handler(eventName, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+	end
+end
+
+function Dispatcher:Iterate()
+	return pairs(self.handlers)
+end
 
 local SHADOW_TRANCE_BUFF_FLAGS = "HELPFUL|HARMFUL|PASSIVE"
 local ANTI_FEAR_TEXTURE_BASE = "Interface\\AddOns\\Necrosis\\UI\\AntiFear"
 local ANTI_FEAR_TEXTURE_SUFFIXES = { "", "Immu", "Prot" }
 local ANTI_FEAR_TEXTURE_VARIANTS = {}
+
+local function wipe_array(t)
+	if type(t) ~= "table" then
+		return
+	end
+	for index = table.getn(t), 1, -1 do
+		t[index] = nil
+	end
+end
 
 for mode = 1, table.getn(ANTI_FEAR_TEXTURE_SUFFIXES) do
 	local suffix = ANTI_FEAR_TEXTURE_SUFFIXES[mode] or ""
@@ -33,6 +76,243 @@ end
 local ShadowState = getState("shadowTrance")
 local AntiFearState = getState("antiFear")
 local TradeState = getState("trade")
+AntiFearState.buffTextureSet = AntiFearState.buffTextureSet or {}
+AntiFearState.debuffTextureSet = AntiFearState.debuffTextureSet or {}
+AntiFearState.buffNameSet = AntiFearState.buffNameSet or {}
+AntiFearState.debuffNameSet = AntiFearState.debuffNameSet or {}
+
+local ANTI_FEAR_BUFF_TEXTURE_SET = {}
+local ANTI_FEAR_DEBUFF_TEXTURE_SET = {}
+local ANTI_FEAR_FALLBACK_BUFF_NAMES = {}
+local ANTI_FEAR_FALLBACK_DEBUFF_NAMES = {}
+local PRESET_ANTI_FEAR_TEXTURES = {
+	["Fear Ward"] = "Interface\\Icons\\Spell_Holy_Excorcism",
+	["Will of the Forsaken"] = "Interface\\Icons\\Spell_Shadow_Raisedead",
+	["Berserker Rage"] = "Interface\\Icons\\Spell_Nature_AncestralGuardian",
+	["Recklessness"] = "Interface\\Icons\\Ability_CriticalStrike",
+	["Death Wish"] = "Interface\\Icons\\Spell_Shadow_DeathPact",
+	["Bestial Wrath"] = "Interface\\Icons\\Ability_Druid_FerociousBite",
+	["Ice Block"] = "Interface\\Icons\\Spell_Frost_Frost",
+	["Divine Protection"] = "Interface\\Icons\\Spell_Holy_Restoration",
+	["Divine Shield"] = "Interface\\Icons\\Spell_Holy_DivineIntervention",
+	["Tremor Totem"] = "Interface\\Icons\\Spell_Nature_TremorTotem",
+	["Curse of Recklessness"] = "Interface\\Icons\\Spell_Shadow_UnholyStrength",
+}
+
+local function safeGetSpellTexture(identifier)
+	if not identifier or identifier == "" then
+		return nil
+	end
+	local ok, texture = pcall(GetSpellTexture, identifier)
+	if ok then
+		return texture
+	end
+	return nil
+end
+
+local function cache_has_texture(cache, lookup)
+	if not cache or not lookup then
+		return false
+	end
+	for texture in pairs(cache) do
+		if lookup[texture] then
+			return true
+		end
+	end
+	return false
+end
+
+local function cache_has_name(cache, lookup)
+	if not cache or not lookup then
+		return false
+	end
+	for name in pairs(cache) do
+		if lookup[name] then
+			return true
+		end
+	end
+	return false
+end
+
+local function addTextureForName(name, targetSet, fallbackSet)
+	if not name then
+		return
+	end
+	local texture = safeGetSpellTexture(name)
+	if not texture then
+		texture = PRESET_ANTI_FEAR_TEXTURES[name]
+	end
+	if texture then
+		targetSet[texture] = true
+	else
+		fallbackSet[name] = true
+	end
+end
+
+for _, name in ipairs(NECROSIS_ANTI_FEAR_SPELL.Buff) do
+	addTextureForName(name, ANTI_FEAR_BUFF_TEXTURE_SET, ANTI_FEAR_FALLBACK_BUFF_NAMES)
+end
+
+for _, name in ipairs(NECROSIS_ANTI_FEAR_SPELL.Debuff) do
+	addTextureForName(name, ANTI_FEAR_DEBUFF_TEXTURE_SET, ANTI_FEAR_FALLBACK_DEBUFF_NAMES)
+end
+
+AntiFearState.requireBuffNameCache = next(ANTI_FEAR_FALLBACK_BUFF_NAMES) ~= nil
+AntiFearState.requireDebuffNameCache = next(ANTI_FEAR_FALLBACK_DEBUFF_NAMES) ~= nil
+
+local function Necrosis_UpdateTargetAuraCacheInternal()
+	AntiFearState.buffTextureSet = AntiFearState.buffTextureSet or {}
+	AntiFearState.debuffTextureSet = AntiFearState.debuffTextureSet or {}
+	AntiFearState.buffNameSet = AntiFearState.buffNameSet or {}
+	AntiFearState.debuffNameSet = AntiFearState.debuffNameSet or {}
+	local buffTextures = AntiFearState.buffTextureSet
+	local debuffTextures = AntiFearState.debuffTextureSet
+	local buffNames = AntiFearState.buffNameSet
+	local debuffNames = AntiFearState.debuffNameSet
+	wipe_table(buffTextures)
+	wipe_table(debuffTextures)
+	wipe_table(buffNames)
+	wipe_table(debuffNames)
+
+	if not UnitExists("target") then
+		AntiFearState.targetGuid = nil
+		AntiFearState.targetAuraSignature = (AntiFearState.targetAuraSignature or 0) + 1
+		AntiFearState.cachedStatus = 0
+		AntiFearState.statusDirty = false
+		return
+	end
+
+	local requireBuffFallback = AntiFearState.requireBuffNameCache
+	local requireDebuffFallback = AntiFearState.requireDebuffNameCache
+
+	for index = 1, 32, 1 do
+		local texture = UnitBuff("target", index)
+		if not texture then
+			break
+		end
+		buffTextures[texture] = true
+		if requireBuffFallback and not ANTI_FEAR_BUFF_TEXTURE_SET[texture] then
+			Necrosis_MoneyToggle()
+			NecrosisTooltip:SetUnitBuff("target", index)
+			local name = NecrosisTooltipTextLeft1 and NecrosisTooltipTextLeft1:GetText()
+			if name and name ~= "" then
+				buffNames[name] = true
+			end
+		end
+	end
+
+	for index = 1, 16, 1 do
+		local texture = UnitDebuff("target", index)
+		if not texture then
+			break
+		end
+		debuffTextures[texture] = true
+		if requireDebuffFallback and not ANTI_FEAR_DEBUFF_TEXTURE_SET[texture] then
+			Necrosis_MoneyToggle()
+			NecrosisTooltip:SetUnitDebuff("target", index)
+			local name = NecrosisTooltipTextLeft1 and NecrosisTooltipTextLeft1:GetText()
+			if name and name ~= "" then
+				debuffNames[name] = true
+			end
+		end
+	end
+
+	AntiFearState.targetGuid = UnitGUID("target")
+	AntiFearState.targetAuraSignature = (AntiFearState.targetAuraSignature or 0) + 1
+	AntiFearState.statusDirty = true
+end
+
+function Necrosis_RebuildTargetAuraCache()
+	Necrosis_UpdateTargetAuraCacheInternal()
+end
+
+local function Necrosis_UpdateShadowTranceState()
+	local buffId = -1
+	for index = 0, 24, 1 do
+		local texture = GetPlayerBuffTexture(index)
+		if not texture then
+			break
+		end
+		if strfind(texture, "Spell_Shadow_Twilight") then
+			buffId = index
+			break
+		end
+	end
+	ShadowState.buffId = buffId
+	if buffId ~= -1 then
+		local timeLeft = GetPlayerBuffTimeLeft(buffId) or 0
+		if timeLeft > 0 then
+			ShadowState.remaining = floor(timeLeft)
+		else
+			ShadowState.remaining = nil
+		end
+	else
+		ShadowState.remaining = nil
+	end
+end
+
+function Necrosis_RefreshShadowTranceState()
+	Necrosis_UpdateShadowTranceState()
+end
+
+local function Necrosis_GetCachedTargetFearStatus()
+	if not NecrosisConfig.AntiFearAlert then
+		return 0
+	end
+
+	if AntiFearState.targetAuraSignature == nil and UnitExists("target") then
+		Necrosis_UpdateTargetAuraCacheInternal()
+	end
+
+	if not UnitExists("target") or UnitIsDead("target") or not UnitCanAttack("player", "target") then
+		AntiFearState.cachedStatus = 0
+		AntiFearState.statusDirty = false
+		return 0
+	end
+
+	if AntiFearState.statusDirty ~= false then
+		local status = 0
+		if not UnitIsPlayer("target") then
+			for index = 1, table.getn(NECROSIS_ANTI_FEAR_UNIT), 1 do
+				if UnitCreatureType("target") == NECROSIS_ANTI_FEAR_UNIT[index] then
+					status = 2
+					break
+				end
+			end
+		end
+
+		if status == 0 then
+			if cache_has_texture(AntiFearState.buffTextureSet, ANTI_FEAR_BUFF_TEXTURE_SET) then
+				status = 3
+			elseif
+				AntiFearState.requireBuffNameCache
+				and cache_has_name(AntiFearState.buffNameSet, ANTI_FEAR_FALLBACK_BUFF_NAMES)
+			then
+				status = 3
+			end
+		end
+
+		if status == 0 then
+			if cache_has_texture(AntiFearState.debuffTextureSet, ANTI_FEAR_DEBUFF_TEXTURE_SET) then
+				status = 3
+			elseif
+				AntiFearState.requireDebuffNameCache
+				and cache_has_name(AntiFearState.debuffNameSet, ANTI_FEAR_FALLBACK_DEBUFF_NAMES)
+			then
+				status = 3
+			end
+		end
+
+		if status == 0 and AntiFearState.currentTargetImmune then
+			status = 1
+		end
+
+		AntiFearState.cachedStatus = status
+		AntiFearState.statusDirty = false
+	end
+
+	return AntiFearState.cachedStatus or 0
+end
 
 local function Necrosis_OnSpellcastStartEvent(_, spellName)
 	Necrosis_OnSpellcastStart(spellName)
@@ -70,7 +350,7 @@ local function Necrosis_OnDebuffEvent()
 	Necrosis_SelfEffect("DEBUFF")
 end
 
-NECROSIS_EVENT_HANDLERS = {
+local defaultHandlers = {
 	BAG_UPDATE = Necrosis_OnBagUpdate,
 	SPELLCAST_START = Necrosis_OnSpellcastStartEvent,
 	SPELLCAST_STOP = Necrosis_OnSpellcastStopEvent,
@@ -94,6 +374,12 @@ NECROSIS_EVENT_HANDLERS = {
 	CHAT_MSG_SPELL_BREAK_AURA = Necrosis_OnDebuffEvent,
 	UNIT_AURA = Necrosis_OnPlayerAuraEvent,
 }
+
+for eventName, handler in pairs(defaultHandlers) do
+	Dispatcher:Register(eventName, handler)
+end
+
+NECROSIS_EVENT_HANDLERS = Dispatcher.handlers
 
 local function Necrosis_HandleTradingAndIcons(shouldUpdate)
 	if not shouldUpdate then
@@ -121,8 +407,12 @@ local function Necrosis_UpdateShadowTrance(curTime)
 		return
 	end
 
-	Necrosis_UnitHasTrance()
-	local buffId = ShadowState.buffId or -1
+	local buffId = ShadowState.buffId
+	if buffId == nil then
+		Necrosis_UpdateShadowTranceState()
+		buffId = ShadowState.buffId or -1
+	end
+
 	local hasShadowTrance = buffId ~= -1
 
 	if hasShadowTrance and not ShadowState.active then
@@ -166,46 +456,24 @@ local function Necrosis_UpdateShadowTrance(curTime)
 end
 
 local function Necrosis_UpdateAntiFear(curTime)
-	if not NecrosisConfig.AntiFearAlert then
-		return
-	end
+	local status = Necrosis_GetCachedTargetFearStatus()
 
-	local status = 0
-	if UnitExists("target") and UnitCanAttack("player", "target") and not UnitIsDead("target") then
-		if not UnitIsPlayer("target") then
-			for index = 1, table.getn(NECROSIS_ANTI_FEAR_UNIT), 1 do
-				if UnitCreatureType("target") == NECROSIS_ANTI_FEAR_UNIT[index] then
-					status = 2
-					break
-				end
-			end
+	if not NecrosisConfig.AntiFearAlert then
+		if AntiFearState.inUse then
+			AntiFearState.inUse = false
+			AntiFearState.blink1 = 0
+			AntiFearState.blink2 = 0
+			HideUIPanel(NecrosisAntiFearButton)
 		end
-		if status == 0 then
-			for index = 1, table.getn(NECROSIS_ANTI_FEAR_SPELL.Buff), 1 do
-				if Necrosis_UnitHasBuff("target", NECROSIS_ANTI_FEAR_SPELL.Buff[index]) then
-					status = 3
-					break
-				end
-			end
-		end
-		if status == 0 then
-			for index = 1, table.getn(NECROSIS_ANTI_FEAR_SPELL.Debuff), 1 do
-				if Necrosis_UnitHasEffect("target", NECROSIS_ANTI_FEAR_SPELL.Debuff[index]) then
-					status = 3
-					break
-				end
-			end
-		end
-		if status == 0 and AntiFearState.currentTargetImmune then
-			status = 1
-		end
+		return
 	end
 
 	if status ~= 0 then
 		if not AntiFearState.inUse then
 			AntiFearState.inUse = true
-			if NECROSIS_MESSAGE and NECROSIS_MESSAGE.Information and NECROSIS_MESSAGE.Information.FearProtect then
-				Necrosis_Msg(NECROSIS_MESSAGE.Information.FearProtect, "USER")
+			local message = Loc.GetMessage and Loc:GetMessage("Information", "FearProtect")
+			if message then
+				Necrosis_Msg(message, "USER")
 			end
 			if NecrosisConfig.Sound and NECROSIS_SOUND and NECROSIS_SOUND.Fear then
 				PlaySoundFile(NECROSIS_SOUND.Fear)
@@ -247,10 +515,7 @@ function Necrosis_OnEvent(event)
 		return
 	end
 
-	local handler = NECROSIS_EVENT_HANDLERS[event]
-	if handler then
-		handler(event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
-	end
+	Dispatcher:Fire(event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 end
 
 -- Function executed on UI updates (roughly every 0.1 seconds)

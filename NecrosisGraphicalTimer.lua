@@ -119,15 +119,22 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 			end
 			local expiryTime = expiryTimes[index]
 			local startTime = expiryTime - totalDuration
-			barFrame:SetMinMaxValues(startTime, expiryTime)
-			local value = 2 * expiryTime - (totalDuration + current)
-			if value < startTime then
-				value = startTime
-			elseif value > expiryTime then
-				value = expiryTime
+			barFrame:SetMinMaxValues(0, totalDuration)
+			local clamped = current
+			if clamped < startTime then
+				clamped = startTime
+			elseif clamped > expiryTime then
+				clamped = expiryTime
 			end
-			barFrame:SetValue(value)
-			Necrosis_ApplyBarColor(barFrame, (expiryTime - current) / totalDuration)
+			local remaining = expiryTime - clamped
+			if remaining < 0 then
+				remaining = 0
+			elseif remaining > totalDuration then
+				remaining = totalDuration
+			end
+			barFrame:SetValue(remaining)
+			local percentRemaining = totalDuration > 0 and (remaining / totalDuration) or 0
+			Necrosis_ApplyBarColor(barFrame, percentRemaining)
 
 			textureFrame:ClearAllPoints()
 			textureFrame:SetPoint(anchorJustify, GRAPH_TIMER_BUTTON, "CENTER", baseOffset, yPosition)
@@ -138,11 +145,9 @@ function Necrosis_DisplayTimerFrames(timerData, pointer)
 			timerTextFrame:SetPoint(anchorJustify, barFrame, opposite, textOffset, 1)
 			timerTextFrame:SetText(displayLines[index])
 
-			local sparkPosition = TIMER_SPARK_RANGE - ((current - startTime) / totalDuration) * TIMER_SPARK_RANGE
-			if sparkPosition < 1 then
-				sparkPosition = 1
-			end
-			sparkFrame:SetPoint("CENTER", barFrame, "LEFT", sparkPosition, 0)
+			local barWidth = barFrame:GetWidth() or TIMER_SPARK_RANGE
+			local sparkOffset = percentRemaining * barWidth
+			sparkFrame:SetPoint("CENTER", barFrame, "LEFT", sparkOffset, 0)
 
 			yPosition = yPosition - yStep
 		end

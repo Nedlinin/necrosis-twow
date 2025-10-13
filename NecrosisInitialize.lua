@@ -11,6 +11,8 @@
 -- Version 28.06.2006-1
 ------------------------------------------------------------------------------------------------------
 
+local Loc = Necrosis.Loc
+
 ------------------------------------------------------------------------------------------------------
 -- INITIALIZATION FUNCTION
 ------------------------------------------------------------------------------------------------------
@@ -309,10 +311,16 @@ function Necrosis_Initialize()
 		NecrosisConfig.Version = Default_NecrosisConfig.Version
 
 		if resetToDefault then
-			Necrosis_Msg(NECROSIS_MESSAGE.Interface.DefaultConfig, "USER")
+			local message = Loc and Loc:GetMessage("Interface", "DefaultConfig")
+			if message then
+				Necrosis_Msg(message, "USER")
+			end
 			Necrosis_ResetDefaultAnchors()
 		else
-			Necrosis_Msg(NECROSIS_MESSAGE.Interface.UserConfig, "USER")
+			local message = Loc and Loc:GetMessage("Interface", "UserConfig")
+			if message then
+				Necrosis_Msg(message, "USER")
+			end
 		end
 
 		-----------------------------------------------------------
@@ -320,13 +328,19 @@ function Necrosis_Initialize()
 		-----------------------------------------------------------
 
 		-- Display a message in the console
-		Necrosis_Msg(NECROSIS_MESSAGE.Interface.Welcome, "USER")
+		local welcomeMessage = Loc and Loc:GetMessage("Interface", "Welcome")
+		if welcomeMessage then
+			Necrosis_Msg(welcomeMessage, "USER")
+		end
 		-- Build the list of available spells
 		Necrosis_SpellSetup()
 		-- Build the list of shard bag slots
 		Necrosis_SoulshardSetup()
 		-- Inventory the stones and shards owned by the Warlock
-		Necrosis_BagExplore()
+		Necrosis_FlagBagDirty(-1)
+		Necrosis_BagExplore(true)
+		-- Apply spell timer visibility preference
+		Necrosis_HandleSpellTimerPreference()
 		-- Build the buff and summon menus
 		Necrosis_CreateMenu()
 
@@ -590,9 +604,13 @@ function Necrosis_SlashHandler(arg1)
 	elseif string.find(string.lower(arg1), "cast") then
 		NecrosisSpellCast(string.lower(arg1))
 	else
-		if NECROSIS_MESSAGE.Help ~= nil then
-			for i = 1, table.getn(NECROSIS_MESSAGE.Help), 1 do
-				Necrosis_Msg(NECROSIS_MESSAGE.Help[i], "USER")
+		local helpMessages = Loc and Loc:GetMessageNested({ "Help" })
+		if type(helpMessages) == "table" then
+			for i = 1, table.getn(helpMessages), 1 do
+				local line = helpMessages[i]
+				if line then
+					Necrosis_Msg(line, "USER")
+				end
 			end
 		end
 		Necrosis_Toggle()

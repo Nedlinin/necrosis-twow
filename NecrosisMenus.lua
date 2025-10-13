@@ -15,9 +15,11 @@ local MenuState = Necrosis.GetMenuState()
 MenuState = MenuState or {}
 
 local LastCast = Necrosis.GetLastCast()
+local Spells = Necrosis.Spells
+local SpellIndex = Spells.Index
 
 local function Necrosis_HasSpell(spellIndex)
-	return spellIndex and NECROSIS_SPELL_TABLE[spellIndex] and NECROSIS_SPELL_TABLE[spellIndex].ID
+	return spellIndex and Spells:HasID(spellIndex)
 end
 
 local function Necrosis_ShouldAddMenuEntry(entry)
@@ -217,15 +219,15 @@ local MENU_LAYOUT = {
 		offset = 36,
 		configKey = "PetMenuPos",
 		entries = {
-			{ frame = "NecrosisPetMenu1", spells = { 15 } },
-			{ frame = "NecrosisPetMenu2", spells = { 3 } },
-			{ frame = "NecrosisPetMenu3", spells = { 4 } },
-			{ frame = "NecrosisPetMenu4", spells = { 5 } },
-			{ frame = "NecrosisPetMenu5", spells = { 6 } },
-			{ frame = "NecrosisPetMenu6", spells = { 8 } },
-			{ frame = "NecrosisPetMenu7", spells = { 30 } },
-			{ frame = "NecrosisPetMenu8", spells = { 35 } },
-			{ frame = "NecrosisPetMenu9", spells = { 44 } },
+			{ frame = "NecrosisPetMenu1", spells = { SpellIndex.FEL_DOMINATION } },
+			{ frame = "NecrosisPetMenu2", spells = { SpellIndex.SUMMON_IMP } },
+			{ frame = "NecrosisPetMenu3", spells = { SpellIndex.SUMMON_VOIDWALKER } },
+			{ frame = "NecrosisPetMenu4", spells = { SpellIndex.SUMMON_SUCCUBUS } },
+			{ frame = "NecrosisPetMenu5", spells = { SpellIndex.SUMMON_FELHUNTER } },
+			{ frame = "NecrosisPetMenu6", spells = { SpellIndex.INFERNO } },
+			{ frame = "NecrosisPetMenu7", spells = { SpellIndex.RITUAL_OF_DOOM } },
+			{ frame = "NecrosisPetMenu8", spells = { SpellIndex.ENSLAVE_DEMON_EFFECT } },
+			{ frame = "NecrosisPetMenu9", spells = { SpellIndex.DEMONIC_SACRIFICE } },
 		},
 	},
 	Buff = {
@@ -236,15 +238,15 @@ local MENU_LAYOUT = {
 		offset = 36,
 		configKey = "BuffMenuPos",
 		entries = {
-			{ frame = "NecrosisBuffMenu1", spells = { 31, 36 } },
-			{ frame = "NecrosisBuffMenu2", spells = { 32 } },
-			{ frame = "NecrosisBuffMenu3", spells = { 33 } },
-			{ frame = "NecrosisBuffMenu4", spells = { 34 } },
-			{ frame = "NecrosisBuffMenu5", spells = { 37 } },
-			{ frame = "NecrosisBuffMenu6", spells = { 39 } },
-			{ frame = "NecrosisBuffMenu7", spells = { 38 } },
-			{ frame = "NecrosisBuffMenu8", spells = { 43 } },
-			{ frame = "NecrosisBuffMenu9", spells = { 9 } },
+			{ frame = "NecrosisBuffMenu1", spells = { SpellIndex.DEMON_ARMOR, SpellIndex.DEMON_SKIN } },
+			{ frame = "NecrosisBuffMenu2", spells = { SpellIndex.UNENDING_BREATH } },
+			{ frame = "NecrosisBuffMenu3", spells = { SpellIndex.DETECT_INVISIBILITY } },
+			{ frame = "NecrosisBuffMenu4", spells = { SpellIndex.EYE_OF_KILROGG } },
+			{ frame = "NecrosisBuffMenu5", spells = { SpellIndex.RITUAL_OF_SUMMONING } },
+			{ frame = "NecrosisBuffMenu6", spells = { SpellIndex.SENSE_DEMONS } },
+			{ frame = "NecrosisBuffMenu7", spells = { SpellIndex.SOUL_LINK } },
+			{ frame = "NecrosisBuffMenu8", spells = { SpellIndex.SHADOW_WARD } },
+			{ frame = "NecrosisBuffMenu9", spells = { SpellIndex.BANISH } },
 		},
 	},
 	Curse = {
@@ -255,15 +257,15 @@ local MENU_LAYOUT = {
 		offset = 36,
 		configKey = "CurseMenuPos",
 		entries = {
-			{ frame = "NecrosisCurseMenu1", spells = { 42 } },
-			{ frame = "NecrosisCurseMenu2", spells = { 23 } },
-			{ frame = "NecrosisCurseMenu3", spells = { 22 } },
-			{ frame = "NecrosisCurseMenu4", spells = { 24 } },
-			{ frame = "NecrosisCurseMenu5", spells = { 25 } },
-			{ frame = "NecrosisCurseMenu6", spells = { 40 } },
-			{ frame = "NecrosisCurseMenu7", spells = { 26 } },
-			{ frame = "NecrosisCurseMenu8", spells = { 27 } },
-			{ frame = "NecrosisCurseMenu9", spells = { 16 } },
+			{ frame = "NecrosisCurseMenu1", spells = { SpellIndex.AMPLIFY_CURSE } },
+			{ frame = "NecrosisCurseMenu2", spells = { SpellIndex.CURSE_OF_WEAKNESS } },
+			{ frame = "NecrosisCurseMenu3", spells = { SpellIndex.CURSE_OF_AGONY } },
+			{ frame = "NecrosisCurseMenu4", spells = { SpellIndex.CURSE_OF_RECKLESSNESS } },
+			{ frame = "NecrosisCurseMenu5", spells = { SpellIndex.CURSE_OF_TONGUES } },
+			{ frame = "NecrosisCurseMenu6", spells = { SpellIndex.CURSE_OF_EXHAUSTION } },
+			{ frame = "NecrosisCurseMenu7", spells = { SpellIndex.CURSE_OF_THE_ELEMENTS } },
+			{ frame = "NecrosisCurseMenu8", spells = { SpellIndex.CURSE_OF_SHADOW } },
+			{ frame = "NecrosisCurseMenu9", spells = { SpellIndex.CURSE_OF_DOOM } },
 		},
 	},
 	Stone = {
@@ -274,9 +276,21 @@ local MENU_LAYOUT = {
 		offset = 36,
 		configKey = "StoneMenuPos",
 		entries = {
-			{ frame = "NecrosisStoneMenu1", spells = { 45 }, texture = { base = "Felstone", variant = 2 } },
-			{ frame = "NecrosisStoneMenu2", spells = { 46 }, texture = { base = "Wrathstone", variant = 2 } },
-			{ frame = "NecrosisStoneMenu3", spells = { 47 }, texture = { base = "Voidstone", variant = 2 } },
+			{
+				frame = "NecrosisStoneMenu1",
+				spells = { SpellIndex.CREATE_FELSTONE },
+				texture = { base = "Felstone", variant = 2 },
+			},
+			{
+				frame = "NecrosisStoneMenu2",
+				spells = { SpellIndex.CREATE_WRATHSTONE },
+				texture = { base = "Wrathstone", variant = 2 },
+			},
+			{
+				frame = "NecrosisStoneMenu3",
+				spells = { SpellIndex.CREATE_VOIDSTONE },
+				texture = { base = "Voidstone", variant = 2 },
+			},
 			{
 				frame = "NecrosisStoneMenu4",
 				condition = function()
