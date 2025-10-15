@@ -23,6 +23,7 @@ function Necrosis_Localization_Dialog_De()
 	NECROSIS_COOLDOWN = {
 		["Spellstone"] = "Zauberstein Cooldown",
 		["Healthstone"] = "Gesundheitsstein Cooldown",
+		["Label"] = "Abklingzeit",
 	}
 
 	NecrosisTooltipData = {

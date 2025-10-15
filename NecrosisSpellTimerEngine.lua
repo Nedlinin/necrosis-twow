@@ -9,8 +9,18 @@ local wipe_table = NecrosisUtils.WipeTable
 local Spells = Necrosis.Spells
 local SpellIndex = Spells and Spells.Index or {}
 
+-- Cache timer service reference to avoid repeated lookups
+local timerServiceCache = nil
+
 local function getTimerService()
-	return NecrosisTimerService
+	if not timerServiceCache then
+		timerServiceCache = NecrosisTimerService
+	end
+	return timerServiceCache
+end
+
+function Necrosis_InvalidateTimerServiceCache()
+	timerServiceCache = nil
 end
 
 DEBUG_TIMER_EVENTS = DEBUG_TIMER_EVENTS or false
@@ -69,6 +79,49 @@ local function Necrosis_CreateStoneBuffConfig(itemKey)
 	}
 end
 
+local function safeGetSpellTexture(identifier)
+	if not identifier or identifier == "" then
+		return nil
+	end
+	local ok, texture = pcall(GetSpellTexture, identifier)
+	if ok then
+		return texture
+	end
+	return nil
+end
+
+local function assignBuffTextures(config)
+	if not config then
+		return
+	end
+	if config.buffTextureSet then
+		return
+	end
+	local textures = {}
+	local function addTexture(texture)
+		if texture and texture ~= "" then
+			textures[texture] = true
+		end
+	end
+	if config.spellIndex then
+		local spellData = NECROSIS_SPELL_TABLE and NECROSIS_SPELL_TABLE[config.spellIndex]
+		if spellData then
+			addTexture(safeGetSpellTexture(spellData.ID))
+			addTexture(safeGetSpellTexture(spellData.Name))
+		end
+	end
+	addTexture(safeGetSpellTexture(config.buffName))
+	if config.timerName and config.timerName ~= config.buffName then
+		addTexture(safeGetSpellTexture(config.timerName))
+	end
+	if config.buffTexture then
+		addTexture(config.buffTexture)
+	end
+	if next(textures) then
+		config.buffTextureSet = textures
+	end
+end
+
 local function Necrosis_BuildDefaultTrackedBuffs()
 	local buffs = {}
 	local added = {}
@@ -119,6 +172,43 @@ local function Necrosis_BuildDefaultTrackedBuffs()
 	return buffs
 end
 
+function Necrosis_RebuildDefaultTrackedBuffs()
+	local newDefaults = Necrosis_BuildDefaultTrackedBuffs()
+	DEFAULT_TRACKED_SELF_BUFFS = newDefaults
+	if type(TRACKED_SELF_BUFFS) ~= "table" then
+		TRACKED_SELF_BUFFS = newDefaults
+	end
+	TRACKED_SELF_BUFF_COUNT = table.getn(TRACKED_SELF_BUFFS)
+
+	-- Rebuild lookup table (inline logic since function is local)
+	wipe_table(TRACKED_BUFF_LOOKUP)
+	for index = 1, TRACKED_SELF_BUFF_COUNT do
+		local config = TRACKED_SELF_BUFFS[index]
+		if config then
+			local timerName = config.timerName
+			if timerName then
+				TRACKED_BUFF_LOOKUP[timerName] = config
+			end
+			local buffName = config.buffName
+			if buffName then
+				TRACKED_BUFF_LOOKUP[buffName] = config
+			end
+		end
+	end
+
+	wipe_table(TRACKED_BUFF_ACTIVE_IDS)
+	wipe_table(TRACKED_BUFF_ACTIVE_NAMES)
+	markTrackedBuffsDirty()
+	for index = 1, TRACKED_SELF_BUFF_COUNT do
+		assignBuffTextures(TRACKED_SELF_BUFFS[index])
+	end
+
+	-- Clear stored durations so they get recalculated with updated spell data
+	if type(NecrosisConfig) == "table" and type(NecrosisConfig.TrackedBuffDurations) == "table" then
+		wipe_table(NecrosisConfig.TrackedBuffDurations)
+	end
+end
+
 local function Necrosis_TrackStoneBuff(stoneKey, buffName, baseDuration)
 	DEFAULT_TRACKED_SELF_BUFFS = DEFAULT_TRACKED_SELF_BUFFS or Necrosis_BuildDefaultTrackedBuffs()
 	TRACKED_SELF_BUFFS = TRACKED_SELF_BUFFS or DEFAULT_TRACKED_SELF_BUFFS
@@ -167,49 +257,6 @@ local function Necrosis_GetStoredBuffDuration(timerName)
 		return nil
 	end
 	return durations[timerName]
-end
-
-local function safeGetSpellTexture(identifier)
-	if not identifier or identifier == "" then
-		return nil
-	end
-	local ok, texture = pcall(GetSpellTexture, identifier)
-	if ok then
-		return texture
-	end
-	return nil
-end
-
-local function assignBuffTextures(config)
-	if not config then
-		return
-	end
-	if config.buffTextureSet then
-		return
-	end
-	local textures = {}
-	local function addTexture(texture)
-		if texture and texture ~= "" then
-			textures[texture] = true
-		end
-	end
-	if config.spellIndex then
-		local spellData = NECROSIS_SPELL_TABLE and NECROSIS_SPELL_TABLE[config.spellIndex]
-		if spellData then
-			addTexture(safeGetSpellTexture(spellData.ID))
-			addTexture(safeGetSpellTexture(spellData.Name))
-		end
-	end
-	addTexture(safeGetSpellTexture(config.buffName))
-	if config.timerName and config.timerName ~= config.buffName then
-		addTexture(safeGetSpellTexture(config.timerName))
-	end
-	if config.buffTexture then
-		addTexture(config.buffTexture)
-	end
-	if next(textures) then
-		config.buffTextureSet = textures
-	end
 end
 
 local function Necrosis_RebuildTrackedBuffLookup(buffConfigs)
@@ -328,7 +375,7 @@ local function Necrosis_GetTrackedBuffTimerName(buffConfig)
 	return buffConfig.buffName
 end
 
-local function Necrosis_FindTrackedBuffConfigByName(searchText)
+function Necrosis_FindTrackedBuffConfigByName(searchText)
 	if not searchText then
 		return nil
 	end
@@ -609,7 +656,13 @@ local function Necrosis_WasBuffRecentlyRefreshedInternal(buffName)
 end
 
 local function Necrosis_ShouldUseSpellTimersInternal()
-	return NecrosisConfig.ShowSpellTimers or NecrosisConfig.Graphical
+	if NecrosisSpellTimersEnabled == false then
+		return false
+	end
+	if NecrosisConfig.ShowSpellTimers or NecrosisConfig.Graphical then
+		return true
+	end
+	return false
 end
 
 function Necrosis_ShouldUseSpellTimers()
@@ -683,7 +736,8 @@ end
 
 function Necrosis_UpdateTimerDisplay()
 	local service = getTimerService()
-	if NecrosisConfig.ShowSpellTimers or NecrosisConfig.Graphical then
+	local shouldDisplay = Necrosis_ShouldUseSpellTimersInternal()
+	if shouldDisplay then
 		if not NecrosisSpellTimerButton:IsVisible() then
 			ShowUIPanel(NecrosisSpellTimerButton)
 			if NecrosisConfig.ShowSpellTimers and service then
@@ -705,6 +759,7 @@ function Necrosis_UpdateTimerDisplay()
 end
 
 function Necrosis_UpdateTimerEventRegistration()
+	NecrosisTimerEventsDirty = false
 	if not NecrosisButton then
 		return
 	end

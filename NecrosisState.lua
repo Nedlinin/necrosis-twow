@@ -39,6 +39,24 @@ local stateDefaults = {
 	components = { infernal = 0, demoniac = 0 },
 	bags = { scanQueued = true, nextScanTime = 0, processing = false },
 	messages = { pet = 0, steed = 0, rez = 0, tp = 0 },
+	demon = {
+		type = nil, -- Previously: DemonType global
+		enslaved = false, -- Previously: DemonEnslaved global
+	},
+	buffs = {
+		amplifyUp = false, -- Previously: AmplifyUp global
+		dominationUp = false, -- Previously: DominationUp global
+		lastRefreshed = nil, -- Previously: LastRefreshedBuffName global
+	},
+	soulstone = {
+		target = nil, -- Previously: SoulstoneTarget global
+		pendingAdvice = false, -- Previously: SoulstoneAdvice global
+	},
+	initialization = {
+		loaded = false, -- Previously: Loaded local in Necrosis.lua
+		inWorld = false, -- Previously: Necrosis_In global
+		reloadFlag = true, -- Previously: NecrosisRL global
+	},
 }
 
 local menuDefaults = {

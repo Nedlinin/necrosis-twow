@@ -153,14 +153,17 @@
 							GameTooltip:SetText("Francais");
 							NecrosisConfig.NecrosisLanguage = "frFR";
 							Necrosis_Localization_Dialog_Fr();
+							Necrosis_Localization_Functions_Fr();
 						elseif (this:GetValue() == 2) then
 							GameTooltip:SetText("English");
 							NecrosisConfig.NecrosisLanguage = "enUS";
 							Necrosis_Localization_Dialog_En();
+							Necrosis_Localization_Functions_En();
 						else
 							GameTooltip:SetText("Deutsch");
 							NecrosisConfig.NecrosisLanguage = "deDE";
 							Necrosis_Localization_Dialog_De();
+							Necrosis_Localization_Functions_De();
 						end
 						Necrosis_LanguageInitialize();
 					</OnValueChanged>

@@ -32,14 +32,16 @@ local function Necrosis_ShouldAddMenuEntry(entry)
 	if entry.spells then
 		local requireAll = entry.check == "all"
 		if requireAll then
-			for index = 1, table.getn(entry.spells), 1 do
+			local spellCount = table.getn(entry.spells)
+			for index = 1, spellCount, 1 do
 				if not Necrosis_HasSpell(entry.spells[index]) then
 					return false
 				end
 			end
 			return true
 		end
-		for index = 1, table.getn(entry.spells), 1 do
+		local spellCount = table.getn(entry.spells)
+		for index = 1, spellCount, 1 do
 			if Necrosis_HasSpell(entry.spells[index]) then
 				return true
 			end
@@ -112,8 +114,18 @@ function MenuManager:ShowFrames(menuState)
 	if not frames then
 		return
 	end
+	local anchor = menuState and menuState.anchor
+	local shouldShow = not anchor or anchor:IsShown()
 	for index = 1, table.getn(frames), 1 do
-		ShowUIPanel(frames[index])
+		local frame = frames[index]
+		if frame then
+			-- ShowUIPanel re-anchors the frame to UIParent; keep existing anchors intact
+			if shouldShow then
+				frame:Show()
+			else
+				frame:Hide()
+			end
+		end
 	end
 end
 
@@ -131,8 +143,10 @@ function MenuManager:BuildMenu(definition)
 	if not anchor then
 		return
 	end
+	menuState.anchor = anchor
 	local menuPos = NecrosisConfig[definition.configKey] or 0
-	for index = 1, table.getn(definition.entries), 1 do
+	local entryCount = table.getn(definition.entries)
+	for index = 1, entryCount, 1 do
 		local entry = definition.entries[index]
 		if Necrosis_ShouldAddMenuEntry(entry) then
 			local frame = self:AddFrame(menuState, entry.frame, anchor, menuPos)
@@ -175,6 +189,7 @@ function MenuManager:Toggle(menuState, button, options)
 
 	menuState.fading = true
 	Necrosis_SetNormalTextureIfDifferent(button, options.openTexture)
+	self:ShowFrames(menuState)
 	if options.rightSticky and options.rightSticky() then
 		menuState.sticky = true
 	end
@@ -194,7 +209,7 @@ function MenuManager:UpdateState(menuState, framePrefix, toggleFunc, curTime)
 
 	if curTime >= menuState.fadeAt and menuState.alpha > 0 and not menuState.sticky then
 		menuState.fadeAt = curTime + 0.1
-		Necrosis_SetMenuAlpha(framePrefix, menuState.alpha)
+		self:SetStateAlpha(menuState, menuState.alpha)
 		menuState.alpha = menuState.alpha - 0.1
 	end
 
@@ -208,6 +223,26 @@ function MenuManager:UpdateAll(curTime)
 	self:UpdateState(MenuState.Buff, "NecrosisBuffMenu", Necrosis_BuffMenu, curTime)
 	self:UpdateState(MenuState.Curse, "NecrosisCurseMenu", Necrosis_CurseMenu, curTime)
 	self:UpdateState(MenuState.Stone, "NecrosisStoneMenu", Necrosis_StoneMenu, curTime)
+end
+
+function Necrosis_ShouldUpdateMenus()
+	local pet = MenuState.Pet
+	if pet and pet.fading then
+		return true
+	end
+	local buff = MenuState.Buff
+	if buff and buff.fading then
+		return true
+	end
+	local curse = MenuState.Curse
+	if curse and curse.fading then
+		return true
+	end
+	local stone = MenuState.Stone
+	if stone and stone.fading then
+		return true
+	end
+	return false
 end
 
 local MENU_LAYOUT = {

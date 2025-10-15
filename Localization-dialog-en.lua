@@ -23,6 +23,7 @@ function Necrosis_Localization_Dialog_En()
 	NECROSIS_COOLDOWN = {
 		["Spellstone"] = "Spellstone Cooldown",
 		["Healthstone"] = "Healthstone Cooldown",
+		["Label"] = "Cooldown",
 	}
 
 	NecrosisTooltipData = {

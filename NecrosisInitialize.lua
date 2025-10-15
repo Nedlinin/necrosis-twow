@@ -332,8 +332,8 @@ function Necrosis_Initialize()
 		if welcomeMessage then
 			Necrosis_Msg(welcomeMessage, "USER")
 		end
-		-- Build the list of available spells
-		Necrosis_SpellSetup()
+		-- NOTE: Necrosis_SpellSetup() is called later in Necrosis_LoadVariables
+		-- after Loaded=true and InitState.inWorld=true to ensure spellbook is ready
 		-- Build the list of shard bag slots
 		Necrosis_SoulshardSetup()
 		-- Inventory the stones and shards owned by the Warlock
@@ -513,6 +513,11 @@ function Necrosis_LanguageInitialize()
 	-- Localize speech.lua
 	NecrosisLocalization()
 
+	-- Clear all timers when language changes
+	-- This is simpler and more reliable than trying to update them in-place
+	-- Timers will rebuild naturally as spells are cast and buffs refresh
+	Necrosis_ClearAllTimers()
+
 	-- Localize XML
 	NecrosisVersion:SetText(NecrosisData.Label)
 	NecrosisShardsInventory_Section:SetText(NECROSIS_CONFIGURATION.ShardMenu)
@@ -592,6 +597,7 @@ function Necrosis_SlashHandler(arg1)
 		if NECROSIS_SOULSTONE_ALERT_MESSAGE == NECROSIS_SHORT_MESSAGES[1] then
 			NecrosisConfig.SM = false
 			NecrosisLocalization()
+			Necrosis_RefreshTimerNames()
 			Necrosis_Msg("Short Messages : <red>Off", "USER")
 		else
 			NecrosisConfig.SM = true
@@ -614,6 +620,10 @@ function Necrosis_SlashHandler(arg1)
 			end
 		end
 		Necrosis_Toggle()
+		-- Update config cache after initialization completes
+		if type(Necrosis_UpdateConfigCache) == "function" then
+			Necrosis_UpdateConfigCache()
+		end
 	end
 end
 

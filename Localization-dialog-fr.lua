@@ -23,6 +23,7 @@ function Necrosis_Localization_Dialog_Fr()
 	NECROSIS_COOLDOWN = {
 		["Spellstone"] = "Temps de recharge Pierre de sort",
 		["Healthstone"] = "Temps de recharge Pierre de soins",
+		["Label"] = "Temps de recharge",
 	}
 
 	NecrosisTooltipData = {

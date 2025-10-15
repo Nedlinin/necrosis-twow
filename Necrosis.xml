@@ -1266,8 +1266,8 @@
 			</OnLoad>
 		</Scripts>
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\ShadowTrance-Icon"/>
-		<PushedTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
-		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
+		<PushedTexture file="Interface\AddOns\Necrosis\UI\ShadowTrance-Icon"/>
+		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing" alphaMode="ADD"/>
 	</Button>
 	
 	<Button name="NecrosisAntiFearButton" frameStrata="MEDIUM" movable="true" parent="UIParent">

@@ -15,7 +15,7 @@
 -- ENGLISH  VERSION FUNCTIONS --
 ------------------------------------------------
 
-if (GetLocale() == "enUS") or (GetLocale() == "enGB") then
+function Necrosis_Localization_Functions_En()
 	NECROSIS_UNIT_WARLOCK = "Warlock"
 
 	NECROSIS_ANTI_FEAR_SPELL = {
@@ -119,4 +119,9 @@ if (GetLocale() == "enUS") or (GetLocale() == "enGB") then
 		["SacrificeGain"] = "You gain Sacrifice.",
 		["SummoningRitual"] = "Ritual of Summoning",
 	}
+end
+
+-- Auto-initialize on load if client locale matches
+if (GetLocale() == "enUS") or (GetLocale() == "enGB") then
+	Necrosis_Localization_Functions_En()
 end

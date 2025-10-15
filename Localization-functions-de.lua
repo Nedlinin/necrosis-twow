@@ -15,7 +15,7 @@
 -- GERMAN  VERSION FUNCTIONS --
 ------------------------------------------------
 
-if GetLocale() == "deDE" then
+function Necrosis_Localization_Functions_De()
 	NECROSIS_UNIT_WARLOCK = "Hexenmeister"
 
 	NECROSIS_ANTI_FEAR_SPELL = {
@@ -152,4 +152,9 @@ if GetLocale() == "deDE" then
 		["SacrificeGain"] = "Du bekommst Opferung.",
 		["SummoningRitual"] = "Ritual der Beschw\195\182rung",
 	}
+end
+
+-- Auto-initialize on load if client locale matches
+if GetLocale() == "deDE" then
+	Necrosis_Localization_Functions_De()
 end

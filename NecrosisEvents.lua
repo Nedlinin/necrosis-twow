@@ -38,6 +38,28 @@ function Dispatcher:Iterate()
 	return pairs(self.handlers)
 end
 
+-- Config cache to eliminate repeated table lookups in hot path
+local configCache = {
+	shadowTranceAlert = false,
+	antiFearAlert = false,
+	showSpellTimers = false,
+	graphical = false,
+	sound = false,
+	diagnosticsEnabled = false,
+}
+
+function Necrosis_UpdateConfigCache()
+	if not NecrosisConfig then
+		return
+	end
+	configCache.shadowTranceAlert = NecrosisConfig.ShadowTranceAlert
+	configCache.antiFearAlert = NecrosisConfig.AntiFearAlert
+	configCache.showSpellTimers = NecrosisConfig.ShowSpellTimers
+	configCache.graphical = NecrosisConfig.Graphical
+	configCache.sound = NecrosisConfig.Sound
+	configCache.diagnosticsEnabled = NecrosisConfig.DiagnosticsEnabled
+end
+
 local SHADOW_TRANCE_BUFF_FLAGS = "HELPFUL|HARMFUL|PASSIVE"
 local ANTI_FEAR_TEXTURE_BASE = "Interface\\AddOns\\Necrosis\\UI\\AntiFear"
 local ANTI_FEAR_TEXTURE_SUFFIXES = { "", "Immu", "Prot" }
@@ -76,6 +98,9 @@ end
 local ShadowState = getState("shadowTrance")
 local AntiFearState = getState("antiFear")
 local TradeState = getState("trade")
+local InitState = getState("initialization")
+local CombatState = getState("combat")
+
 AntiFearState.buffTextureSet = AntiFearState.buffTextureSet or {}
 AntiFearState.debuffTextureSet = AntiFearState.debuffTextureSet or {}
 AntiFearState.buffNameSet = AntiFearState.buffNameSet or {}
@@ -217,7 +242,11 @@ local function Necrosis_UpdateTargetAuraCacheInternal()
 		end
 	end
 
-	AntiFearState.targetGuid = UnitGUID("target")
+	if type(UnitGUID) == "function" then
+		AntiFearState.targetGuid = UnitGUID("target")
+	else
+		AntiFearState.targetGuid = nil
+	end
 	AntiFearState.targetAuraSignature = (AntiFearState.targetAuraSignature or 0) + 1
 	AntiFearState.statusDirty = true
 end
@@ -350,6 +379,20 @@ local function Necrosis_OnDebuffEvent()
 	Necrosis_SelfEffect("DEBUFF")
 end
 
+local function Necrosis_OnPlayerAuraEvent(_, unitId)
+	-- UNIT_AURA event handler
+	-- This fires when auras (buffs/debuffs) change on a unit
+	-- Currently handled primarily through other events (BUFF/DEBUFF messages)
+	-- Could be extended for more responsive aura tracking in the future
+	if unitId == "player" then
+		-- Player aura changed - could update shadow trance, demon armor, etc.
+		-- For now, this is handled through spell cast events
+	elseif unitId == "target" then
+		-- Target aura changed - update anti-fear cache
+		Necrosis_RebuildTargetAuraCache()
+	end
+end
+
 local defaultHandlers = {
 	BAG_UPDATE = Necrosis_OnBagUpdate,
 	SPELLCAST_START = Necrosis_OnSpellcastStartEvent,
@@ -403,7 +446,12 @@ local function Necrosis_HandleTradingAndIcons(shouldUpdate)
 end
 
 local function Necrosis_UpdateShadowTrance(curTime)
-	if not NecrosisConfig.ShadowTranceAlert then
+	if not configCache.shadowTranceAlert then
+		return
+	end
+
+	local nextUpdate = ShadowState.nextUpdate or 0
+	if curTime < nextUpdate then
 		return
 	end
 
@@ -421,8 +469,28 @@ local function Necrosis_UpdateShadowTrance(curTime)
 		if NECROSIS_NIGHTFALL_TEXT and NECROSIS_NIGHTFALL_TEXT.Message then
 			Necrosis_Msg(NECROSIS_NIGHTFALL_TEXT.Message, "USER")
 		end
-		if NecrosisConfig.Sound and NECROSIS_SOUND and NECROSIS_SOUND.ShadowTrance then
+		if configCache.sound and NECROSIS_SOUND and NECROSIS_SOUND.ShadowTrance then
 			PlaySoundFile(NECROSIS_SOUND.ShadowTrance)
+		end
+		if NecrosisShadowTranceButton then
+			if type(Necrosis_SetButtonTexture) == "function" then
+				Necrosis_SetButtonTexture(NecrosisShadowTranceButton, "ShadowTrance-Icon", 3)
+			else
+				NecrosisShadowTranceButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\ShadowTrance-Icon")
+			end
+			local normalTexture = NecrosisShadowTranceButton:GetNormalTexture()
+			if normalTexture then
+				normalTexture:SetAllPoints(NecrosisShadowTranceButton)
+			end
+			local pushedTexture = NecrosisShadowTranceButton:GetPushedTexture()
+			if pushedTexture then
+				pushedTexture:SetAllPoints(NecrosisShadowTranceButton)
+			end
+			local highlightTexture = NecrosisShadowTranceButton:GetHighlightTexture()
+			if highlightTexture then
+				highlightTexture:SetAllPoints(NecrosisShadowTranceButton)
+				highlightTexture:SetBlendMode("ADD")
+			end
 		end
 		ShowUIPanel(NecrosisShadowTranceButton)
 	end
@@ -453,12 +521,15 @@ local function Necrosis_UpdateShadowTrance(curTime)
 			NecrosisShadowTranceTimer:SetText("")
 		end
 	end
+
+	local interval = ShadowState.active and 0.1 or 0.25
+	ShadowState.nextUpdate = curTime + interval
 end
 
 local function Necrosis_UpdateAntiFear(curTime)
 	local status = Necrosis_GetCachedTargetFearStatus()
 
-	if not NecrosisConfig.AntiFearAlert then
+	if not configCache.antiFearAlert then
 		if AntiFearState.inUse then
 			AntiFearState.inUse = false
 			AntiFearState.blink1 = 0
@@ -502,16 +573,23 @@ local function Necrosis_UpdateAntiFear(curTime)
 	end
 end
 
+-- Flag to schedule spell setup for next OnUpdate tick
+local spellSetupScheduled = false
+
+function Necrosis_ScheduleSpellSetup()
+	spellSetupScheduled = true
+end
+
 function Necrosis_OnEvent(event)
 	if event == "PLAYER_ENTERING_WORLD" then
-		Necrosis_In = true
+		InitState.inWorld = true
 		return
 	elseif event == "PLAYER_LEAVING_WORLD" then
-		Necrosis_In = false
+		InitState.inWorld = false
 		return
 	end
 
-	if (not Loaded) or not Necrosis_In or UnitClass("player") ~= NECROSIS_UNIT_WARLOCK then
+	if (not Necrosis_IsLoaded()) or not InitState.inWorld or UnitClass("player") ~= NECROSIS_UNIT_WARLOCK then
 		return
 	end
 
@@ -520,83 +598,96 @@ end
 
 -- Function executed on UI updates (roughly every 0.1 seconds)
 function Necrosis_OnUpdate(self, elapsed)
-	if (not Loaded) and UnitClass("player") ~= NECROSIS_UNIT_WARLOCK then
+	if (not Necrosis_IsLoaded()) and UnitClass("player") ~= NECROSIS_UNIT_WARLOCK then
 		return
+	end
+
+	-- Execute scheduled spell setup after initialization completes
+	if spellSetupScheduled then
+		spellSetupScheduled = false
+		Necrosis_SpellSetup()
+		-- Rebuild menus and buttons now that spell data is loaded
+		Necrosis_CreateMenu()
+		Necrosis_ButtonSetup()
 	end
 
 	elapsed = elapsed or 0
 	Necrosis_TrackUpdateDiagnostics(elapsed)
 
-	local diagActive = NecrosisConfig and NecrosisConfig.DiagnosticsEnabled
+	local diagActive = configCache.diagnosticsEnabled
 	local curTime = GetTime()
 
-	local before = diagActive and gcinfo()
-	Necrosis_UpdateTimerEventRegistration()
-	if before then
-		Necrosis_RecordHelperDiag("UpdateTimerEventRegistration", before)
+	if NecrosisTimerEventsDirty then
+		local before = diagActive and debugprofilestop()
+		Necrosis_UpdateTimerEventRegistration()
+		if before then
+			Necrosis_RecordHelperDiag("UpdateTimerEventRegistration", before)
+		end
 	end
 
-	before = diagActive and gcinfo()
+	before = diagActive and debugprofilestop()
 	Necrosis_UpdateSoulShardSorting(elapsed)
 	if before then
 		Necrosis_RecordHelperDiag("UpdateSoulShardSorting", before)
 	end
 
-	before = diagActive and gcinfo()
+	before = diagActive and debugprofilestop()
 	Necrosis_ProcessBagUpdates(curTime)
 	if before then
 		Necrosis_RecordHelperDiag("ProcessBagUpdates", before)
 	end
 
-	before = diagActive and gcinfo()
+	before = diagActive and debugprofilestop()
 	Necrosis_UpdateTrackedBuffTimers(elapsed, curTime)
 	if before then
 		Necrosis_RecordHelperDiag("UpdateTrackedBuffTimers", before)
 	end
 
-	before = diagActive and gcinfo()
-	Necrosis_UpdateMenus(curTime)
-	if before then
-		Necrosis_RecordHelperDiag("UpdateMenus", before)
+	if Necrosis_ShouldUpdateMenus() then
+		local before = diagActive and debugprofilestop()
+		Necrosis_UpdateMenus(curTime)
+		if before then
+			Necrosis_RecordHelperDiag("UpdateMenus", before)
+		end
 	end
 
-	before = diagActive and gcinfo()
+	local before = diagActive and debugprofilestop()
 	Necrosis_UpdateShadowTrance(curTime)
 	if before then
 		Necrosis_RecordHelperDiag("UpdateShadowTrance", before)
 	end
 
-	before = diagActive and gcinfo()
+	before = diagActive and debugprofilestop()
 	Necrosis_UpdateAntiFear(curTime)
 	if before then
 		Necrosis_RecordHelperDiag("UpdateAntiFear", before)
 	end
 
-	before = diagActive and gcinfo()
+	before = diagActive and debugprofilestop()
 	Necrosis_HandleShardCount()
 	if before then
 		Necrosis_RecordHelperDiag("HandleShardCount", before)
 	end
 
-	before = diagActive and gcinfo()
+	before = diagActive and debugprofilestop()
 	local shouldUpdate = Necrosis_ShouldUpdateSpellState(curTime)
 	if before then
 		Necrosis_RecordHelperDiag("ShouldUpdateSpellState", before)
 	end
 
-	before = diagActive and gcinfo()
+	before = diagActive and debugprofilestop()
 	Necrosis_HandleTradingAndIcons(shouldUpdate)
 	if before then
 		Necrosis_RecordHelperDiag("HandleTradingAndIcons", before)
 	end
 
-	before = diagActive and gcinfo()
+	before = diagActive and debugprofilestop()
 	Necrosis_UpdateSpellTimers(curTime, shouldUpdate)
 	if before then
 		Necrosis_RecordHelperDiag("UpdateSpellTimers", before)
 	end
 
-	before = diagActive and gcinfo()
+	before = diagActive and debugprofilestop()
 	Necrosis_UpdateTimerDisplay()
 	if before then
 		Necrosis_RecordHelperDiag("UpdateTimerDisplay", before)

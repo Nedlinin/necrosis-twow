@@ -15,6 +15,7 @@ local table_insert = table.insert
 local table_remove = table.remove
 local table_sort = table.sort
 local math_mod = math.mod
+local math_huge = math.huge or 1e9
 local unpack = unpack
 local wipe_table = NecrosisUtils and NecrosisUtils.WipeTable
 
@@ -22,21 +23,124 @@ if not math_mod then
 	math_mod = math.fmod
 end
 
+-- Spell name cache to avoid repeated lookups in hot path
+local cachedSpellNames = {}
+
 local function getSpellName(index)
 	local data = Spells and Spells:Get(index)
 	return data and data.Name
 end
 
-local function debugTimerEvent(action, name, details)
-	details = details or {}
-	for index = 1, table_getn(details) do
-		if details[index] == nil then
-			details[index] = "<nil>"
+local function getCachedSpellName(spellIndex)
+	if not cachedSpellNames[spellIndex] then
+		cachedSpellNames[spellIndex] = getSpellName(spellIndex)
+	end
+	return cachedSpellNames[spellIndex]
+end
+
+function Necrosis_InvalidateSpellNameCache()
+	cachedSpellNames = {}
+end
+
+-- Pre-calculated timer color codes (percent is quantized to 10% buckets)
+-- Buckets: 0=0-9%, 1=10-19%, 2=20-29%, ..., 10=90-100%
+local TIMER_COLOR_CODES = {}
+
+-- Reusable string builder buffer for timer suffix construction
+local suffixParts = {}
+
+-- Reusable soulstone tracker to avoid allocation every BuildDisplayData call
+local soulstoneTracker = { displayed = false }
+
+local function InitializeTimerColorCodes()
+	if not NecrosisTimerColor then
+		return
+	end
+	for i = 0, 10 do
+		TIMER_COLOR_CODES[i] = NecrosisTimerColor(i * 10) or ""
+	end
+end
+
+local function buildTimerSuffix(colorCode, displayName, shouldShowTarget, targetName)
+	-- Ensure all values are strings (COLOR_CLOSE/COLOR_WHITE may not be initialized yet)
+	local closeCode = COLOR_CLOSE or ""
+	local whiteCode = COLOR_WHITE or ""
+
+	suffixParts[1] = " - "
+	suffixParts[2] = closeCode
+	suffixParts[3] = colorCode or ""
+	suffixParts[4] = displayName or ""
+	suffixParts[5] = closeCode
+
+	local endIndex = 5
+	if shouldShowTarget then
+		suffixParts[6] = whiteCode
+		suffixParts[7] = " - "
+		suffixParts[8] = targetName or ""
+		suffixParts[9] = closeCode
+		endIndex = 9
+	end
+
+	local suffix = table.concat(suffixParts, "", 1, endIndex)
+
+	-- Clear buffer for reuse
+	for i = 1, 9 do
+		suffixParts[i] = nil
+	end
+
+	return suffix .. "\n"
+end
+
+local function isTimerDebugEnabled()
+	if DEBUG_TIMER_EVENTS then
+		return true
+	end
+	local config = NecrosisConfig
+	if type(config) == "table" then
+		if config.DebugTimers or config.DiagnosticsEnabled then
+			return true
 		end
 	end
-	if Necrosis_DebugPrint then
-		Necrosis_DebugPrint("TimerService", action or "<nil>", name or "<nil>", unpack(details))
+	return false
+end
+
+local function debugTimerEvent(action, name, ...)
+	if not isTimerDebugEnabled() then
+		return
 	end
+	local debugPrinter = Necrosis_DebugPrint
+	if type(debugPrinter) ~= "function" then
+		return
+	end
+	local params = arg
+	local paramCount = params and params.n or 0
+	if paramCount == 0 then
+		debugPrinter("TimerService", action or "<nil>", name or "<nil>")
+		return
+	end
+	local detailsBuffer = TimerService.debugDetailsBuffer
+	if not detailsBuffer then
+		detailsBuffer = {}
+		TimerService.debugDetailsBuffer = detailsBuffer
+	end
+	local labelCount = 0
+	for index = 1, paramCount, 2 do
+		local key = params[index]
+		local value = params[index + 1]
+		labelCount = labelCount + 1
+		local keyText = key ~= nil and tostring(key) or "<nil>"
+		if value == nil then
+			detailsBuffer[labelCount] = keyText .. "=<nil>"
+		else
+			detailsBuffer[labelCount] = keyText .. "=" .. tostring(value)
+		end
+	end
+	for index = labelCount + 1, TimerService.debugDetailsCount do
+		detailsBuffer[index] = nil
+	end
+	TimerService.debugDetailsCount = labelCount
+	detailsBuffer[labelCount + 1] = nil
+	debugPrinter("TimerService", action or "<nil>", name or "<nil>", unpack(detailsBuffer))
 end
 
 local TIMER_TYPE = NECROSIS_TIMER_TYPE or {}
@@ -62,7 +166,12 @@ TimerService.textDirty = TimerService.textDirty ~= false
 TimerService.lastTextBuildTime = TimerService.lastTextBuildTime or 0
 TimerService.reusableEnsureOptions = TimerService.reusableEnsureOptions or {}
 TimerService.reusableTextureCache = TimerService.reusableTextureCache or {}
+TimerService.debugDetailsBuffer = TimerService.debugDetailsBuffer or {}
+TimerService.debugDetailsCount = TimerService.debugDetailsCount or 0
+TimerService.timeTextCache = TimerService.timeTextCache or {}
 local reusableTextureCache = TimerService.reusableTextureCache
+local debugDetailsBuffer = TimerService.debugDetailsBuffer
+local timeTextCache = TimerService.timeTextCache
 
 local function clear_table(t)
 	if not t then
@@ -138,6 +247,33 @@ local function playerHasSelfBuff(cache, buffName)
 	return checker("player", buffName) and true or false
 end
 
+local function getTimeText(secondsValue, minutes, secondsComponent)
+	if secondsValue < 0 then
+		secondsValue = 0
+	end
+	local cached = timeTextCache[secondsValue]
+	if cached then
+		return cached
+	end
+	local timeText
+	if minutes > 0 then
+		if minutes > 9 then
+			timeText = tostring(minutes) .. ":"
+		else
+			timeText = "0" .. minutes .. ":"
+		end
+	else
+		timeText = "0:"
+	end
+	if secondsComponent > 9 then
+		timeText = timeText .. secondsComponent
+	else
+		timeText = timeText .. "0" .. secondsComponent
+	end
+	timeTextCache[secondsValue] = timeText
+	return timeText
+end
+
 ------------------------------------------------------------------------------------------------------
 -- INTERNAL HELPERS
 ------------------------------------------------------------------------------------------------------
@@ -202,33 +338,35 @@ local function resetTimerDisplayCache(service, timer)
 	markTextDirty(service)
 end
 
+local function compareTimers(left, right)
+	if not left then
+		return false
+	end
+	if not right then
+		return true
+	end
+	local leftTime = left.TimeMax
+	if type(leftTime) ~= "number" or leftTime <= 0 then
+		leftTime = math_huge
+	end
+	local rightTime = right.TimeMax
+	if type(rightTime) ~= "number" or rightTime <= 0 then
+		rightTime = math_huge
+	end
+	if leftTime == rightTime then
+		local leftName = left.Name or ""
+		local rightName = right.Name or ""
+		return leftName < rightName
+	end
+	return leftTime < rightTime
+end
+
 local function sortTimers(service)
 	local timers = service.timers
 	if not timers then
 		return
 	end
-	table_sort(timers, function(left, right)
-		if not left then
-			return false
-		end
-		if not right then
-			return true
-		end
-		local leftTime = left.TimeMax
-		if type(leftTime) ~= "number" or leftTime <= 0 then
-			leftTime = math.huge
-		end
-		local rightTime = right.TimeMax
-		if type(rightTime) ~= "number" or rightTime <= 0 then
-			rightTime = math.huge
-		end
-		if leftTime == rightTime then
-			local leftName = left.Name or ""
-			local rightName = right.Name or ""
-			return leftName < rightName
-		end
-		return leftTime < rightTime
-	end)
+	table_sort(timers, compareTimers)
 end
 
 local function assignGraphicalSlot(service, timer)
@@ -298,12 +436,18 @@ local function updateTimerEntry(service, name, target, timeRemaining, expiryTime
 				timer.Type = timerType
 			end
 			timer.Target = target
-			debugTimerEvent("update", name, {
-				"target=" .. (target or ""),
-				"expiry=" .. tostring(timer.TimeMax or expiryTime or ""),
-				"remaining=" .. tostring(timeRemaining or 0),
-				"initial=" .. tostring(timer.InitialDuration or 0),
-			})
+			debugTimerEvent(
+				"update",
+				name,
+				"target",
+				target or "",
+				"expiry",
+				timer.TimeMax or expiryTime or "",
+				"remaining",
+				timeRemaining or 0,
+				"initial",
+				timer.InitialDuration or 0
+			)
 			resetTimerDisplayCache(service, timer)
 			sortTimers(service)
 			return true
@@ -312,7 +456,16 @@ local function updateTimerEntry(service, name, target, timeRemaining, expiryTime
 	return false
 end
 
-local function buildTimerView(service, graphData, textBuffer, timer, currentTime, buildText, graphIndex)
+local function buildTimerView(
+	service,
+	graphData,
+	textBuffer,
+	timer,
+	currentTime,
+	buildText,
+	graphIndex,
+	soulstoneTracker
+)
 	if not timer then
 		return graphIndex
 	end
@@ -323,7 +476,7 @@ local function buildTimerView(service, graphData, textBuffer, timer, currentTime
 	end
 
 	local secondsValue
-	local enslaveName = getSpellName(SpellIndex.ENSLAVE_DEMON)
+	local enslaveName = getCachedSpellName(SpellIndex.ENSLAVE_DEMON)
 	if enslaveName and timer.Name == enslaveName then
 		secondsValue = currentTime - (expiry - timer.Time)
 	else
@@ -337,21 +490,7 @@ local function buildTimerView(service, graphData, textBuffer, timer, currentTime
 	local secondsComponent = math_mod(secondsValue, 60)
 
 	if timer.cachedTimeSeconds ~= secondsValue then
-		local timeText
-		if minutes > 0 then
-			if minutes > 9 then
-				timeText = tostring(minutes) .. ":"
-			else
-				timeText = "0" .. minutes .. ":"
-			end
-		else
-			timeText = "0:"
-		end
-		if secondsComponent > 9 then
-			timeText = timeText .. secondsComponent
-		else
-			timeText = timeText .. "0" .. secondsComponent
-		end
+		local timeText = getTimeText(secondsValue, minutes, secondsComponent)
 		timer.cachedTimeSeconds = secondsValue
 		timer.cachedTimeText = timeText
 		timer.cachedTextLine = nil
@@ -360,7 +499,7 @@ local function buildTimerView(service, graphData, textBuffer, timer, currentTime
 			markTextDirty(service)
 		end
 	end
-	local timeText = timer.cachedTimeText or "0:00"
+	local timeText = timer.cachedTimeText or getTimeText(secondsValue, minutes, secondsComponent)
 
 	local remaining = 0
 	if expiry then
@@ -388,7 +527,8 @@ local function buildTimerView(service, graphData, textBuffer, timer, currentTime
 
 	local displayName
 	if timer.Type == TIMER_TYPE.COOLDOWN and timer.Name and timer.Name ~= "" then
-		local expected = timer.Name .. " Cooldown"
+		local cooldownLabel = (NECROSIS_COOLDOWN and NECROSIS_COOLDOWN.Label) or "Cooldown"
+		local expected = timer.Name .. " " .. cooldownLabel
 		if timer.DisplayName ~= expected then
 			timer.DisplayName = expected
 		end
@@ -399,7 +539,7 @@ local function buildTimerView(service, graphData, textBuffer, timer, currentTime
 	end
 
 	local targetName = timer.Target or ""
-	local banishName = getSpellName(SpellIndex.CURSE_OF_DOOM)
+	local banishName = getCachedSpellName(SpellIndex.CURSE_OF_DOOM)
 	local shouldShowTarget = (timer.Type == TIMER_TYPE.PRIMARY or (banishName and timer.Name == banishName))
 		and targetName ~= ""
 	local needsSuffixUpdate = timer.cachedDisplaySuffix == nil
@@ -416,12 +556,8 @@ local function buildTimerView(service, graphData, textBuffer, timer, currentTime
 		needsSuffixUpdate = true
 	end
 	if needsSuffixUpdate then
-		local colorCode = NecrosisTimerColor and NecrosisTimerColor(percent) or ""
-		local suffix = " - " .. COLOR_CLOSE .. colorCode .. displayName .. COLOR_CLOSE
-		if shouldShowTarget then
-			suffix = suffix .. COLOR_WHITE .. " - " .. targetName .. COLOR_CLOSE
-		end
-		timer.cachedDisplaySuffix = suffix .. "\n"
+		local colorCode = TIMER_COLOR_CODES[percentBucket] or ""
+		timer.cachedDisplaySuffix = buildTimerSuffix(colorCode, displayName, shouldShowTarget, targetName)
 		timer.cachedPercentBucket = percentBucket
 		timer.cachedDisplayName = displayName
 		timer.cachedShowTarget = shouldShowTarget
@@ -463,10 +599,15 @@ local function buildTimerView(service, graphData, textBuffer, timer, currentTime
 	local soulstoneName = getSpellName(SpellIndex.SOULSTONE_RESURRECTION)
 	if NecrosisConfig and NecrosisConfig.CountType == 3 then
 		if soulstoneName and timer.Name == soulstoneName then
-			if minutes > 0 then
+			if type(Necrosis_UpdateShardCountTimer) == "function" then
+				Necrosis_UpdateShardCountTimer(minutes, secondsComponent)
+			elseif minutes > 0 then
 				NecrosisShardCount:SetText(minutes .. " m")
 			else
 				NecrosisShardCount:SetText(secondsComponent)
+			end
+			if soulstoneTracker then
+				soulstoneTracker.displayed = true
 			end
 		end
 	end
@@ -549,7 +690,7 @@ function TimerService:EnsureTimer(options)
 		end
 		if shouldSkipSpellTimer(spellIndex) then
 			if name then
-				debugTimerEvent("skip", name, { "spellIndex=" .. tostring(spellIndex) })
+				debugTimerEvent("skip", name, "spellIndex", spellIndex)
 				self:RemoveTimerByName(name)
 			end
 			return self.timers, self.timerSlots
@@ -596,12 +737,18 @@ function TimerService:EnsureTimer(options)
 	ensureTimerSlotTable(self)
 	self.timers, self.timerSlots = Necrosis_AddTimerFrame(self.timers, self.timerSlots)
 	sortTimers(self)
-	debugTimerEvent("insert", name, {
-		"target=" .. (target or ""),
-		"type=" .. tostring(timerType),
-		"expiry=" .. tostring(expiry),
-		"duration=" .. tostring(insertDuration),
-	})
+	debugTimerEvent(
+		"insert",
+		name,
+		"target",
+		target or "",
+		"type",
+		timerType,
+		"expiry",
+		expiry,
+		"duration",
+		insertDuration
+	)
 	return self.timers, self.timerSlots
 end
 
@@ -640,10 +787,7 @@ function TimerService:RemoveTimerByIndex(index, reason)
 	if not timer then
 		return timers, self.timerSlots
 	end
-	debugTimerEvent("remove", timer.Name, {
-		"target=" .. (timer.Target or ""),
-		"cause=" .. (reason or "index"),
-	})
+	debugTimerEvent("remove", timer.Name, "target", timer.Target or "", "cause", reason or "index")
 	local removedSlot = timer.Gtimer
 	if removedSlot then
 		self.timerSlots = Necrosis_RemoveTimerFrame(removedSlot, self.timerSlots)
@@ -711,7 +855,8 @@ function TimerService:TimerExists(name)
 	end
 	local timers = self.timers
 	for index = 1, table_getn(timers) do
-		if timers[index].Name == name then
+		local timer = timers[index]
+		if timer and timer.Name == name then
 			return true
 		end
 	end
@@ -800,7 +945,7 @@ function TimerService:ClearExpiredTimers(currentTime, targetName)
 						self.timerSlots = Necrosis_RemoveTimerFrame(timer.Gtimer, self.timerSlots)
 					end
 					Necrosis_UpdateIcons()
-					debugTimerEvent("expire", name, { "reason=soulstone-end" })
+					debugTimerEvent("expire", name, "reason", "soulstone-end")
 				elseif not (enslaveName and name == enslaveName) then
 					self:RemoveTimerByIndex(index, "expired")
 				end
@@ -830,19 +975,38 @@ function TimerService:BuildDisplayData(currentTime, buildText)
 	end
 
 	local textBuffer = self.textSegments
-	for index = table_getn(textBuffer), 1, -1 do
-		textBuffer[index] = nil
+	if wipe_table then
+		wipe_table(textBuffer)
+	else
+		for index = table_getn(textBuffer), 1, -1 do
+			textBuffer[index] = nil
+		end
 	end
 
 	local graphData = self.graphical
 	local previousActive = graphData.activeCount or 0
 	local graphCount = 0
 	local curTimeFloor = floor(currentTime)
+	local useTracker = NecrosisConfig and NecrosisConfig.CountType == 3
+	if useTracker then
+		soulstoneTracker.displayed = false
+	else
+		soulstoneTracker = nil
+	end
 
 	for index = 1, table_getn(timers) do
 		local timer = timers[index]
 		if timer then
-			graphCount = buildTimerView(self, graphData, textBuffer, timer, curTimeFloor, buildText, graphCount)
+			graphCount = buildTimerView(
+				self,
+				graphData,
+				textBuffer,
+				timer,
+				curTimeFloor,
+				buildText,
+				graphCount,
+				soulstoneTracker
+			)
 		end
 	end
 
@@ -862,6 +1026,14 @@ function TimerService:BuildDisplayData(currentTime, buildText)
 		self.coloredDisplay = self.textDisplay
 		self.lastTextBuildTime = curTimeFloor
 		self.textDirty = false
+	end
+
+	if soulstoneTracker and not soulstoneTracker.displayed then
+		if type(Necrosis_ClearShardCountTimer) == "function" then
+			Necrosis_ClearShardCountTimer()
+		elseif NecrosisShardCount then
+			NecrosisShardCount:SetText("")
+		end
 	end
 
 	return graphCount
@@ -985,3 +1157,6 @@ end
 
 SpellTimer = TimerService.timers
 TimerTable = TimerService.timerSlots
+
+-- Initialize timer color codes cache when module loads
+InitializeTimerColorCodes()

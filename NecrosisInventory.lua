@@ -24,6 +24,8 @@ local CombatState = getState("combat")
 local MountState = getState("mount")
 local MessageState = getState("messages")
 local BagQueueState = getState("bags")
+local DemonState = getState("demon")
+local SoulstoneState_Internal = getState("soulstone")
 local StoneInventory = getInventory("stones")
 local BagIsSoulPouch = getInventory("bagIsSoulPouch")
 local LastCast = Necrosis.GetLastCast()
@@ -68,6 +70,97 @@ StonePos = StonePos
 		StoneMenu = 8,
 	}
 SoulstoneUsedOnTarget = SoulstoneUsedOnTarget or false
+
+local function ensureShardDisplay()
+	local display = SoulshardState.shardDisplay
+	if not display then
+		display = { text = "" }
+		SoulshardState.shardDisplay = display
+	end
+	return display
+end
+
+local function applyShardCountText(display, text)
+	local normalized = text or ""
+	if display.text == normalized then
+		return
+	end
+	display.text = normalized
+	if NecrosisShardCount then
+		NecrosisShardCount:SetText(normalized)
+	end
+end
+
+function Necrosis_ClearShardCountDisplay()
+	local display = ensureShardDisplay()
+	display.countType = nil
+	display.primary = nil
+	display.secondary = nil
+	display.timerMinutes = nil
+	display.timerSeconds = nil
+	display.timerControlled = false
+	applyShardCountText(display, "")
+end
+
+function Necrosis_UpdateShardCountNumeric(countType, primary, secondary)
+	local display = ensureShardDisplay()
+	if display.countType == countType and display.primary == primary and display.secondary == secondary then
+		return
+	end
+	display.countType = countType
+	display.primary = primary
+	display.secondary = secondary
+	display.timerControlled = false
+	display.timerMinutes = nil
+	display.timerSeconds = nil
+
+	local text = ""
+	if countType == 1 then
+		local value = primary or 0
+		if value < 10 then
+			text = "0" .. value
+		else
+			text = tostring(value)
+		end
+	elseif countType == 2 then
+		text = tostring(primary or 0) .. " / " .. tostring(secondary or 0)
+	end
+	applyShardCountText(display, text)
+end
+
+function Necrosis_UpdateShardCountTimer(minutes, seconds)
+	local display = ensureShardDisplay()
+	local minuteValue = minutes or 0
+	local secondValue = seconds or 0
+	if display.timerControlled and display.timerMinutes == minuteValue and display.timerSeconds == secondValue then
+		return
+	end
+	display.countType = 3
+	display.timerControlled = true
+	display.timerMinutes = minuteValue
+	display.timerSeconds = secondValue
+	display.primary = nil
+	display.secondary = nil
+
+	local text
+	if minuteValue > 0 then
+		text = minuteValue .. " m"
+	else
+		text = tostring(secondValue)
+	end
+	applyShardCountText(display, text)
+end
+
+function Necrosis_ClearShardCountTimer()
+	local display = ensureShardDisplay()
+	display.countType = 3
+	display.timerControlled = true
+	display.timerMinutes = nil
+	display.timerSeconds = nil
+	display.primary = nil
+	display.secondary = nil
+	applyShardCountText(display, "")
+end
 
 local function Necrosis_GetBagState()
 	if type(BagQueueState) ~= "table" then
@@ -400,17 +493,18 @@ function Necrosis_BagExplore(forceFull)
 	end
 
 	if NecrosisConfig.ShowCount then
-		if NecrosisConfig.CountType == 2 then
-			NecrosisShardCount:SetText(ComponentState.infernal .. " / " .. ComponentState.demoniac)
-		elseif NecrosisConfig.CountType == 1 then
-			if SoulshardState.count < 10 then
-				NecrosisShardCount:SetText("0" .. SoulshardState.count)
-			else
-				NecrosisShardCount:SetText(SoulshardState.count)
-			end
+		local countType = NecrosisConfig.CountType
+		if countType == 1 then
+			Necrosis_UpdateShardCountNumeric(1, SoulshardState.count or 0, nil)
+		elseif countType == 2 then
+			Necrosis_UpdateShardCountNumeric(2, ComponentState.infernal or 0, ComponentState.demoniac or 0)
+		elseif countType == 3 then
+			Necrosis_ClearShardCountTimer()
+		else
+			Necrosis_ClearShardCountDisplay()
 		end
 	else
-		NecrosisShardCount:SetText("")
+		Necrosis_ClearShardCountDisplay()
 	end
 
 	Necrosis_UpdateIcons()
@@ -457,7 +551,7 @@ end
 
 function Necrosis_HandleShardCount()
 	if NecrosisConfig.CountType == 3 then
-		NecrosisShardCount:SetText("")
+		Necrosis_ClearShardCountTimer()
 	end
 end
 
@@ -646,7 +740,7 @@ function Necrosis_UpdateIcons()
 		StoneInventory.Soulstone.mode = 3
 		SoulstoneWaiting = true
 		-- If the stone was just applied, announce it to the raid
-		if SoulstoneAdvice and NECROSIS_SOULSTONE_ALERT_MESSAGE then
+		if SoulstoneState_Internal.pendingAdvice and NECROSIS_SOULSTONE_ALERT_MESSAGE then
 			local alertMessages = NECROSIS_SOULSTONE_ALERT_MESSAGE
 			local alertCount = table.getn(alertMessages)
 			if alertCount > 0 then
@@ -660,16 +754,16 @@ function Necrosis_UpdateIcons()
 				local lines = alertMessages[tempnum]
 				local lineCount = table.getn(lines)
 				for i = 1, lineCount, 1 do
-					Necrosis_Msg(Necrosis_MsgReplace(lines[i], SoulstoneTarget), "WORLD")
+					Necrosis_Msg(Necrosis_MsgReplace(lines[i], SoulstoneState_Internal.target), "WORLD")
 				end
-				SoulstoneAdvice = false
+				SoulstoneState_Internal.pendingAdvice = false
 			end
 		end
 	end
 
 	-- If the stone was consumed but another is in the inventory
 	if StoneInventory.Soulstone.onHand and SoulstoneInUse then
-		SoulstoneAdvice = false
+		SoulstoneState_Internal.pendingAdvice = false
 		if not (SoulstoneWaiting or SoulstoneCooldown) then
 			if Timers:HasService() then
 				Timers:RemoveTimerByName(soulstoneTimerName)
@@ -790,42 +884,42 @@ function Necrosis_UpdateIcons()
 	end
 
 	-- Apply textures to the pet buttons
-	if DemonType == NECROSIS_PET_LOCAL_NAME[1] then
+	if DemonState.type == NECROSIS_PET_LOCAL_NAME[1] then
 		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", 2)
 		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2])
 		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3])
 		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4])
 		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5])
 		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6])
-	elseif DemonType == NECROSIS_PET_LOCAL_NAME[2] then
+	elseif DemonState.type == NECROSIS_PET_LOCAL_NAME[2] then
 		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1])
 		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", 2)
 		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3])
 		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4])
 		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5])
 		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6])
-	elseif DemonType == NECROSIS_PET_LOCAL_NAME[3] then
+	elseif DemonState.type == NECROSIS_PET_LOCAL_NAME[3] then
 		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1])
 		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2])
 		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", 2)
 		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4])
 		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5])
 		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6])
-	elseif DemonType == NECROSIS_PET_LOCAL_NAME[4] then
+	elseif DemonState.type == NECROSIS_PET_LOCAL_NAME[4] then
 		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1])
 		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2])
 		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3])
 		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", 2)
 		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5])
 		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6])
-	elseif DemonType == NECROSIS_PET_LOCAL_NAME[5] then
+	elseif DemonState.type == NECROSIS_PET_LOCAL_NAME[5] then
 		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1])
 		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2])
 		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3])
 		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4])
 		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", 2)
 		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6])
-	elseif DemonType == NECROSIS_PET_LOCAL_NAME[6] then
+	elseif DemonState.type == NECROSIS_PET_LOCAL_NAME[6] then
 		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1])
 		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2])
 		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3])

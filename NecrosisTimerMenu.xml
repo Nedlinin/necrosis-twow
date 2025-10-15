@@ -150,6 +150,7 @@
 					<OnClick>
 						NecrosisConfig.Graphical = this:GetChecked();
 						Necrosis_HideGraphTimer();
+						Necrosis_FlagTimerEventRegistrationUpdate();
 					</OnClick>
 				</Scripts>
 			</CheckButton>
