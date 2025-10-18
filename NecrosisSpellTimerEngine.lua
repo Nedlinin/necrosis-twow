@@ -6,6 +6,7 @@ local floor = math.floor
 local GetTime = GetTime
 local wipe_array = NecrosisUtils.WipeArray
 local wipe_table = NecrosisUtils.WipeTable
+local safeGetSpellTexture = NecrosisUtils.SafeGetSpellTexture
 local Spells = Necrosis.Spells
 local SpellIndex = Spells and Spells.Index or {}
 
@@ -77,17 +78,6 @@ local function Necrosis_CreateStoneBuffConfig(itemKey)
 		timerType = NECROSIS_TIMER_TYPE.SELF_BUFF,
 		tooltipPattern = stoneName,
 	}
-end
-
-local function safeGetSpellTexture(identifier)
-	if not identifier or identifier == "" then
-		return nil
-	end
-	local ok, texture = pcall(GetSpellTexture, identifier)
-	if ok then
-		return texture
-	end
-	return nil
 end
 
 local function assignBuffTextures(config)

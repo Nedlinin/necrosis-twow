@@ -4,6 +4,7 @@
 
 local floor = math.floor
 local wipe_table = NecrosisUtils.WipeTable
+local safeGetSpellTexture = NecrosisUtils and NecrosisUtils.SafeGetSpellTexture
 
 Necrosis = Necrosis or {}
 Necrosis.Events = Necrosis.Events or {}
@@ -123,17 +124,6 @@ local PRESET_ANTI_FEAR_TEXTURES = {
 	["Tremor Totem"] = "Interface\\Icons\\Spell_Nature_TremorTotem",
 	["Curse of Recklessness"] = "Interface\\Icons\\Spell_Shadow_UnholyStrength",
 }
-
-local function safeGetSpellTexture(identifier)
-	if not identifier or identifier == "" then
-		return nil
-	end
-	local ok, texture = pcall(GetSpellTexture, identifier)
-	if ok then
-		return texture
-	end
-	return nil
-end
 
 local function cache_has_texture(cache, lookup)
 	if not cache or not lookup then

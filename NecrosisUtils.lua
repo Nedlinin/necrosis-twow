@@ -21,3 +21,14 @@ function NecrosisUtils.WipeTable(t)
 		t[key] = nil
 	end
 end
+
+function NecrosisUtils.SafeGetSpellTexture(identifier)
+	if not identifier or identifier == "" then
+		return nil
+	end
+	local ok, texture = pcall(GetSpellTexture, identifier)
+	if ok then
+		return texture
+	end
+	return nil
+end

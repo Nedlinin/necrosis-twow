@@ -18,6 +18,7 @@ local math_mod = math.mod
 local math_huge = math.huge or 1e9
 local unpack = unpack
 local wipe_table = NecrosisUtils and NecrosisUtils.WipeTable
+local safeGetSpellTexture = NecrosisUtils and NecrosisUtils.SafeGetSpellTexture
 
 if not math_mod then
 	math_mod = math.fmod
@@ -189,17 +190,6 @@ end
 local function getReusableTextureCache()
 	clear_table(reusableTextureCache)
 	return reusableTextureCache
-end
-
-local function safeGetSpellTexture(identifier)
-	if not identifier or identifier == "" then
-		return nil
-	end
-	local ok, texture = pcall(GetSpellTexture, identifier)
-	if ok then
-		return texture
-	end
-	return nil
 end
 
 local function getTextureForBuff(cache, buffName)
