@@ -32,6 +32,15 @@ local SpellIndex = Spells.Index
 local SOUL_SHARD_ITEM_ID = 6265
 local CachedManaPetState = { "3", "3", "3", "3", "3", "3" }
 
+local PET_BUTTON_CONFIG = {
+	{ buttonName = "NecrosisPetMenu2", texture = "Imp" },
+	{ buttonName = "NecrosisPetMenu3", texture = "Voidwalker" },
+	{ buttonName = "NecrosisPetMenu4", texture = "Succubus" },
+	{ buttonName = "NecrosisPetMenu5", texture = "Felhunter" },
+	{ buttonName = "NecrosisPetMenu6", texture = "Infernal" },
+	{ buttonName = "NecrosisPetMenu7", texture = "Doomguard" },
+}
+
 local function spellHasId(index)
 	return Spells:HasID(index)
 end
@@ -50,6 +59,32 @@ end
 
 local function spellType(index)
 	return Spells:GetType(index)
+end
+
+local function getActivePetIndex(currentType)
+	if type(NECROSIS_PET_LOCAL_NAME) ~= "table" or not currentType then
+		return nil
+	end
+	for index = 1, table.getn(PET_BUTTON_CONFIG) do
+		if currentType == NECROSIS_PET_LOCAL_NAME[index] then
+			return index
+		end
+	end
+	return nil
+end
+
+local function applyPetMenuTextures(activeIndex, manaVariants)
+	for index = 1, table.getn(PET_BUTTON_CONFIG) do
+		local config = PET_BUTTON_CONFIG[index]
+		local button = _G[config.buttonName]
+		if button then
+			local variant = manaVariants[index] or "3"
+			if activeIndex and index == activeIndex then
+				variant = 2
+			end
+			Necrosis_SetButtonTexture(button, config.texture, variant)
+		end
+	end
 end
 
 StoneIDInSpellTable = StoneIDInSpellTable or { 0, 0, 0, 0, 0, 0, 0 }
@@ -879,56 +914,8 @@ function Necrosis_UpdateIcons()
 	end
 
 	-- Apply textures to the pet buttons
-	if DemonState.type == NECROSIS_PET_LOCAL_NAME[1] then
-		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", 2)
-		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2])
-		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3])
-		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4])
-		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5])
-		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6])
-	elseif DemonState.type == NECROSIS_PET_LOCAL_NAME[2] then
-		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1])
-		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", 2)
-		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3])
-		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4])
-		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5])
-		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6])
-	elseif DemonState.type == NECROSIS_PET_LOCAL_NAME[3] then
-		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1])
-		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2])
-		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", 2)
-		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4])
-		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5])
-		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6])
-	elseif DemonState.type == NECROSIS_PET_LOCAL_NAME[4] then
-		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1])
-		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2])
-		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3])
-		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", 2)
-		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5])
-		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6])
-	elseif DemonState.type == NECROSIS_PET_LOCAL_NAME[5] then
-		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1])
-		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2])
-		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3])
-		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4])
-		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", 2)
-		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6])
-	elseif DemonState.type == NECROSIS_PET_LOCAL_NAME[6] then
-		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1])
-		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2])
-		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3])
-		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4])
-		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5])
-		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", 2)
-	else
-		Necrosis_SetButtonTexture(NecrosisPetMenu2, "Imp", ManaPet[1])
-		Necrosis_SetButtonTexture(NecrosisPetMenu3, "Voidwalker", ManaPet[2])
-		Necrosis_SetButtonTexture(NecrosisPetMenu4, "Succubus", ManaPet[3])
-		Necrosis_SetButtonTexture(NecrosisPetMenu5, "Felhunter", ManaPet[4])
-		Necrosis_SetButtonTexture(NecrosisPetMenu6, "Infernal", ManaPet[5])
-		Necrosis_SetButtonTexture(NecrosisPetMenu7, "Doomguard", ManaPet[6])
-	end
+	local activePetIndex = getActivePetIndex(DemonState.type)
+	applyPetMenuTextures(activePetIndex, ManaPet)
 
 	-- Buff button
 	-----------------------------------------------
