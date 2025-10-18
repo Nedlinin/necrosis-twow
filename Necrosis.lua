@@ -132,13 +132,8 @@ local function normalize_spell_name(name)
 end
 
 -- Define helper functions for state access BEFORE using them
-local function getState(slice)
-	return Necrosis.GetStateSlice(slice)
-end
-
-local function getInventory(slice)
-	return Necrosis.GetInventorySlice(slice)
-end
+local getState = Necrosis.GetStateSlice
+local getInventory = Necrosis.GetInventorySlice
 
 -- Initialize state accessors (using state system from NecrosisState.lua)
 local DemonState = getState("demon")

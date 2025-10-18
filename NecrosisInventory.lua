@@ -10,13 +10,8 @@ local GetContainerItemInfo = GetContainerItemInfo
 local GetContainerItemLink = GetContainerItemLink
 local InventoryConfig = NecrosisInventoryConfig
 
-local function getState(key)
-	return Necrosis.GetStateSlice(key)
-end
-
-local function getInventory(key)
-	return Necrosis.GetInventorySlice(key)
-end
+local getState = Necrosis.GetStateSlice
+local getInventory = Necrosis.GetInventorySlice
 
 local SoulshardState = getState("soulshards")
 local ComponentState = getState("components")

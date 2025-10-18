@@ -92,9 +92,7 @@ local function getAntiFearTexture(mode, variant)
 	return textures[variant] or textures[2]
 end
 
-local function getState(key)
-	return Necrosis.GetStateSlice(key)
-end
+local getState = Necrosis.GetStateSlice
 
 local ShadowState = getState("shadowTrance")
 local AntiFearState = getState("antiFear")
