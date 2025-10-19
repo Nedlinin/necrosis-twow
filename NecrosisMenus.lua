@@ -2,13 +2,46 @@
 -- Necrosis Menu Management
 ------------------------------------------------------------------------------------------------------
 
-local function Necrosis_SetMenuAlpha(prefix, alpha)
-	for index = 1, 9, 1 do
-		local frame = getglobal(prefix .. index)
-		if frame then
-			frame:SetAlpha(alpha)
-		end
+local function ForEachMenuFrame(target, count, handler)
+	if not handler then
+		return
 	end
+	if type(target) == "table" then
+		local entryCount = table.getn(target)
+		for index = 1, entryCount, 1 do
+			local entry = target[index]
+			local frameName = nil
+			if type(entry) == "table" then
+				frameName = entry.frame
+			elseif type(entry) == "string" then
+				frameName = entry
+			end
+			if frameName then
+				local frame = getglobal(frameName)
+				if frame then
+					handler(frame)
+				end
+			end
+		end
+		return true
+	end
+	if type(target) == "string" then
+		local limit = count or 9
+		for index = 1, limit, 1 do
+			local frame = getglobal(target .. index)
+			if frame then
+				handler(frame)
+			end
+		end
+		return true
+	end
+	return false
+end
+
+local function Necrosis_SetMenuAlpha(target, alpha, count)
+	ForEachMenuFrame(target, count, function(frame)
+		frame:SetAlpha(alpha)
+	end)
 end
 
 local MenuState = Necrosis.GetMenuState()
@@ -100,12 +133,14 @@ function MenuManager:AddFrame(menuState, frameName, anchorButton, menuPos)
 	return frame
 end
 
-function MenuManager:HideFrames(prefix, count)
-	for index = 1, count, 1 do
-		local frame = getglobal(prefix .. index)
-		if frame then
+function MenuManager:HideFrames(entries, prefix, count)
+	ForEachMenuFrame(entries, nil, function(frame)
+		frame:Hide()
+	end)
+	if prefix then
+		ForEachMenuFrame(prefix, count, function(frame)
 			frame:Hide()
-		end
+		end)
 	end
 end
 
@@ -138,7 +173,7 @@ function MenuManager:BuildMenu(definition)
 		return
 	end
 	menuState.frames = {}
-	self:HideFrames(definition.prefix, definition.count)
+	self:HideFrames(definition.entries, definition.prefix, definition.count)
 	local anchor = getglobal(definition.anchor)
 	if not anchor then
 		return
@@ -273,15 +308,15 @@ local MENU_LAYOUT = {
 		offset = 36,
 		configKey = "BuffMenuPos",
 		entries = {
-			{ frame = "NecrosisBuffMenu1", spells = { SpellIndex.DEMON_ARMOR, SpellIndex.DEMON_SKIN } },
-			{ frame = "NecrosisBuffMenu2", spells = { SpellIndex.UNENDING_BREATH } },
-			{ frame = "NecrosisBuffMenu3", spells = { SpellIndex.DETECT_INVISIBILITY } },
-			{ frame = "NecrosisBuffMenu4", spells = { SpellIndex.EYE_OF_KILROGG } },
-			{ frame = "NecrosisBuffMenu5", spells = { SpellIndex.RITUAL_OF_SUMMONING } },
-			{ frame = "NecrosisBuffMenu6", spells = { SpellIndex.SENSE_DEMONS } },
-			{ frame = "NecrosisBuffMenu7", spells = { SpellIndex.SOUL_LINK } },
-			{ frame = "NecrosisBuffMenu8", spells = { SpellIndex.SHADOW_WARD } },
-			{ frame = "NecrosisBuffMenu9", spells = { SpellIndex.BANISH } },
+			{ frame = "NecrosisDemonArmorButton", spells = { SpellIndex.DEMON_ARMOR, SpellIndex.DEMON_SKIN } },
+			{ frame = "NecrosisUnendingBreathButton", spells = { SpellIndex.UNENDING_BREATH } },
+			{ frame = "NecrosisDetectInvisibilityButton", spells = { SpellIndex.DETECT_INVISIBILITY } },
+			{ frame = "NecrosisEyeOfKilroggButton", spells = { SpellIndex.EYE_OF_KILROGG } },
+			{ frame = "NecrosisRitualOfSummoningButton", spells = { SpellIndex.RITUAL_OF_SUMMONING } },
+			{ frame = "NecrosisSenseDemonsButton", spells = { SpellIndex.SENSE_DEMONS } },
+			{ frame = "NecrosisSoulLinkButton", spells = { SpellIndex.SOUL_LINK } },
+			{ frame = "NecrosisShadowWardButton", spells = { SpellIndex.SHADOW_WARD } },
+			{ frame = "NecrosisBanishButton", spells = { SpellIndex.BANISH } },
 		},
 	},
 	Curse = {
@@ -292,15 +327,15 @@ local MENU_LAYOUT = {
 		offset = 36,
 		configKey = "CurseMenuPos",
 		entries = {
-			{ frame = "NecrosisCurseMenu1", spells = { SpellIndex.AMPLIFY_CURSE } },
-			{ frame = "NecrosisCurseMenu2", spells = { SpellIndex.CURSE_OF_WEAKNESS } },
-			{ frame = "NecrosisCurseMenu3", spells = { SpellIndex.CURSE_OF_AGONY } },
-			{ frame = "NecrosisCurseMenu4", spells = { SpellIndex.CURSE_OF_RECKLESSNESS } },
-			{ frame = "NecrosisCurseMenu5", spells = { SpellIndex.CURSE_OF_TONGUES } },
-			{ frame = "NecrosisCurseMenu6", spells = { SpellIndex.CURSE_OF_EXHAUSTION } },
-			{ frame = "NecrosisCurseMenu7", spells = { SpellIndex.CURSE_OF_THE_ELEMENTS } },
-			{ frame = "NecrosisCurseMenu8", spells = { SpellIndex.CURSE_OF_SHADOW } },
-			{ frame = "NecrosisCurseMenu9", spells = { SpellIndex.CURSE_OF_DOOM } },
+			{ frame = "NecrosisAmplifyCurseButton", spells = { SpellIndex.AMPLIFY_CURSE } },
+			{ frame = "NecrosisCurseOfWeaknessButton", spells = { SpellIndex.CURSE_OF_WEAKNESS } },
+			{ frame = "NecrosisCurseOfAgonyButton", spells = { SpellIndex.CURSE_OF_AGONY } },
+			{ frame = "NecrosisCurseOfRecklessnessButton", spells = { SpellIndex.CURSE_OF_RECKLESSNESS } },
+			{ frame = "NecrosisCurseOfTonguesButton", spells = { SpellIndex.CURSE_OF_TONGUES } },
+			{ frame = "NecrosisCurseOfExhaustionButton", spells = { SpellIndex.CURSE_OF_EXHAUSTION } },
+			{ frame = "NecrosisCurseOfTheElementsButton", spells = { SpellIndex.CURSE_OF_THE_ELEMENTS } },
+			{ frame = "NecrosisCurseOfShadowButton", spells = { SpellIndex.CURSE_OF_SHADOW } },
+			{ frame = "NecrosisCurseOfDoomButton", spells = { SpellIndex.CURSE_OF_DOOM } },
 		},
 	},
 	Stone = {

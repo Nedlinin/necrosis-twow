@@ -1071,7 +1071,7 @@ function Necrosis_SelfEffect(action)
 		-- Update the Amplify Curse button when active and start the cooldown timer
 		if amplifyName and Spells:HasID(42) and string.find(arg1, amplifyName) then
 			BuffState.amplifyUp = true
-			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 2)
+			Necrosis_SetButtonTexture(NecrosisAmplifyCurseButton, "Amplify", 2)
 		end
 		-- Track Demon Armor/Skin on the player
 		local playerName = UnitName("player") or ""
@@ -1117,7 +1117,7 @@ function Necrosis_SelfEffect(action)
 		-- Change the Amplify Curse button when the Warlock leaves its effect
 		if amplifyName and Spells:HasID(42) and string.find(arg1, amplifyName) then
 			BuffState.amplifyUp = false
-			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 3)
+			Necrosis_SetButtonTexture(NecrosisAmplifyCurseButton, "Amplify", 3)
 		end
 		-- Remove tracked buff timers when they fade
 		if not Necrosis_RemoveTrackedBuffTimerForMessage(arg1) and timerService then

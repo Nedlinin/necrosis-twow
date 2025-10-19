@@ -450,7 +450,7 @@ function Necrosis_Initialize()
 		NecrosisButton:SetScale(NecrosisConfig.NecrosisButtonScale / 100)
 		NecrosisShadowTranceButton:SetScale(NecrosisConfig.ShadowTranceScale / 100)
 		NecrosisAntiFearButton:SetScale(NecrosisConfig.ShadowTranceScale / 100)
-		NecrosisBuffMenu9:SetScale(NecrosisConfig.BanishScale / 100)
+		NecrosisBanishButton:SetScale(NecrosisConfig.BanishScale / 100)
 
 		-- Decide whether timers appear to the left or right of the button
 		NecrosisListSpells:ClearAllPoints()
