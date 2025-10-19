@@ -100,7 +100,8 @@
 		</Anchors>
 		<Layers>
 			<Layer level="ARTWORK">
-				<FontString name="NecrosisShardCount" inherits="GameFontNormal" text="00">
+				<FontString name="NecrosisShardCount" inherits="GameFontHighlight" text="00">
+					<FontHeight val="12"/>
 					<Color r="1.0" g="1.0" b="1.0" a="1"/>
 					<Anchors>
 						<Anchor point="CENTER" relativeTo="NecrosisButton" relativeFrom="CENTER">

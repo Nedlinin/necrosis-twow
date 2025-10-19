@@ -71,7 +71,7 @@ function Necrosis_Localization_Functions_En()
 		["Offhand"] = "Held In Off-hand",
 		["Twohand"] = "Two-Hand",
 		["InfernalStone"] = "Infernal Stone",
-		["DemoniacStone"] = "Demonic Figurine",
+		["DemonicStone"] = "Demonic Figurine",
 		["Hearthstone"] = "Hearthstone",
 		["SoulPouch"] = { "Soul Pouch", "Felcloth Bag", "Core Felcloth Bag" },
 	}

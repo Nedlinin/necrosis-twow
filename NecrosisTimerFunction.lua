@@ -994,7 +994,11 @@ function TimerService:BuildDisplayData(currentTime, buildText)
 	local curTimeFloor = floor(currentTime)
 	local useTracker = NecrosisConfig and NecrosisConfig.CountType == 3
 	if useTracker then
-		soulstoneTracker.displayed = false
+		if soulstoneTracker then
+			soulstoneTracker.displayed = false
+		else
+			soulstoneTracker = { displayed = false }
+		end
 	else
 		soulstoneTracker = nil
 	end

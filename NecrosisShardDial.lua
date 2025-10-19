@@ -7,38 +7,29 @@ NecrosisShardDial = NecrosisShardDial or {}
 local Dial = NecrosisShardDial
 
 local DEFAULT_THEME = "Rose"
-local TIMER_THEME = "Blue"
+local MAX_SHARD_STEPS = 32
+local math_mod = math.mod or math.fmod
+local INACTIVE_COLOR = { r = 25, g = 25, b = 25 }
 
 Dial.themes = {
-	-- Matches legacy colour selection options (Rose, Blue, Orange, Turquoise, Violet)
 	Rose = {
-		coreTint = { r = 255, g = 170, b = 200 },
-		wedgeMin = { r = 200, g = 80, b = 130 },
-		wedgeMax = { r = 255, g = 190, b = 220 },
+		wedgeMax = { r = 255, g = 20, b = 245 },
 		dividerTint = { r = 0, g = 0, b = 0 },
 	},
 	Blue = {
-		coreTint = { r = 170, g = 210, b = 255 },
-		wedgeMin = { r = 70, g = 120, b = 255 },
-		wedgeMax = { r = 170, g = 220, b = 255 },
+		wedgeMax = { r = 200, g = 240, b = 255 },
 		dividerTint = { r = 0, g = 0, b = 0 },
 	},
 	Orange = {
-		coreTint = { r = 255, g = 170, b = 90 },
-		wedgeMin = { r = 255, g = 120, b = 20 },
-		wedgeMax = { r = 255, g = 220, b = 120 },
+		wedgeMax = { r = 255, g = 230, b = 150 },
 		dividerTint = { r = 0, g = 0, b = 0 },
 	},
 	Turquoise = {
-		coreTint = { r = 140, g = 240, b = 220 },
-		wedgeMin = { r = 40, g = 180, b = 160 },
-		wedgeMax = { r = 160, g = 255, b = 235 },
+		wedgeMax = { r = 200, g = 255, b = 245 },
 		dividerTint = { r = 0, g = 0, b = 0 },
 	},
 	Violet = {
-		coreTint = { r = 210, g = 170, b = 255 },
-		wedgeMin = { r = 150, g = 80, b = 255 },
-		wedgeMax = { r = 220, g = 190, b = 255 },
+		wedgeMax = { r = 240, g = 210, b = 255 },
 		dividerTint = { r = 0, g = 0, b = 0 },
 	},
 }
@@ -63,10 +54,84 @@ local function clampCount(count)
 	local numeric = tonumber(count) or 0
 	if numeric < 0 then
 		numeric = 0
-	elseif numeric > 32 then
-		numeric = 32
+	elseif numeric > MAX_SHARD_STEPS then
+		numeric = MAX_SHARD_STEPS
 	end
 	return numeric
+end
+
+local currentThemeSteps = nil
+local currentThemeFingerprint = nil
+
+local function applyCountTextStyle(self, countText, colour)
+	if not countText then
+		return
+	end
+	local r, g, b
+	if colour then
+		r = colour.r or 1
+		g = colour.g or 1
+		b = colour.b or 1
+	else
+		r = self.coreCurrentR or self.baseCoreR or 1
+		g = self.coreCurrentG or self.baseCoreG or 1
+		b = self.coreCurrentB or self.baseCoreB or 1
+	end
+	local luminance = 0.299 * r + 0.587 * g + 0.114 * b
+	if luminance > 0.5 then
+		countText:SetTextColor(0, 0, 0)
+		countText:SetShadowColor(1, 1, 1, self.baseShadowA or 1)
+	else
+		countText:SetTextColor(1, 1, 1)
+		if self.baseShadowR then
+			countText:SetShadowColor(self.baseShadowR, self.baseShadowG, self.baseShadowB, self.baseShadowA or 1)
+		else
+			countText:SetShadowColor(0, 0, 0, 1)
+		end
+	end
+	if self.baseShadowOffsetX and self.baseShadowOffsetY then
+		countText:SetShadowOffset(self.baseShadowOffsetX, self.baseShadowOffsetY)
+	end
+end
+
+local function themeFingerprint(theme)
+	if not theme then
+		return nil
+	end
+	local divider = theme.dividerTint or {}
+	return string.format(
+		"%d:%d:%d|%d:%d:%d",
+		theme.wedgeMax.r or 0,
+		theme.wedgeMax.g or 0,
+		theme.wedgeMax.b or 0,
+		divider.r or 0,
+		divider.g or 0,
+		divider.b or 0
+	)
+end
+
+local function ensureThemeSteps(theme)
+	if not theme then
+		return nil
+	end
+	local fingerprint = themeFingerprint(theme)
+	if fingerprint == currentThemeFingerprint and currentThemeSteps then
+		return currentThemeSteps
+	end
+	local steps = {}
+	local effectiveMinR = INACTIVE_COLOR.r + 0.40 * (theme.wedgeMax.r - INACTIVE_COLOR.r)
+	local effectiveMinG = INACTIVE_COLOR.g + 0.40 * (theme.wedgeMax.g - INACTIVE_COLOR.g)
+	local effectiveMinB = INACTIVE_COLOR.b + 0.40 * (theme.wedgeMax.b - INACTIVE_COLOR.b)
+	for index = 0, MAX_SHARD_STEPS - 1 do
+		local blend = index / (MAX_SHARD_STEPS - 1)
+		local r = normaliseChannel(blendChannel(effectiveMinR, theme.wedgeMax.r, blend))
+		local g = normaliseChannel(blendChannel(effectiveMinG, theme.wedgeMax.g, blend))
+		local b = normaliseChannel(blendChannel(effectiveMinB, theme.wedgeMax.b, blend))
+		steps[index + 1] = { r = r, g = g, b = b }
+	end
+	currentThemeSteps = steps
+	currentThemeFingerprint = fingerprint
+	return steps
 end
 
 local function applyTheme(self, themeName)
@@ -77,13 +142,15 @@ local function applyTheme(self, themeName)
 	local theme = getTheme(resolvedTheme)
 	self.activeThemeName = resolvedTheme
 	self.activeTheme = theme
-	if self.coreTex then
-		self.coreTex:SetVertexColor(
-			normaliseChannel(theme.coreTint.r),
-			normaliseChannel(theme.coreTint.g),
-			normaliseChannel(theme.coreTint.b)
-		)
+	local steps = ensureThemeSteps(theme)
+	if resolvedTheme == self.baseThemeName then
+		self.baseCoreR = 1
+		self.baseCoreG = 1
+		self.baseCoreB = 1
 	end
+	self.coreCurrentR = 1
+	self.coreCurrentG = 1
+	self.coreCurrentB = 1
 	if self.dividerTex then
 		self.dividerTex:SetVertexColor(
 			normaliseChannel(theme.dividerTint.r),
@@ -93,15 +160,6 @@ local function applyTheme(self, themeName)
 	end
 end
 
-local function getWedgeColour(theme, step)
-	local blend = easeOutCubic(step / 15)
-	return {
-		r = blendChannel(theme.wedgeMin.r, theme.wedgeMax.r, blend),
-		g = blendChannel(theme.wedgeMin.g, theme.wedgeMax.g, blend),
-		b = blendChannel(theme.wedgeMin.b, theme.wedgeMax.b, blend),
-	}
-end
-
 local function applyCount(self, count)
 	local displayCount = clampCount(count)
 	self.displayCount = displayCount
@@ -109,23 +167,68 @@ local function applyCount(self, count)
 		return
 	end
 	local theme = self.activeTheme or getTheme(self.activeThemeName or self.baseThemeName or DEFAULT_THEME)
+	local steps = ensureThemeSteps(theme)
 	local visible = math.min(displayCount, self.wedgeCount)
-	local colourOffset = 0
-	if displayCount > self.wedgeCount then
-		colourOffset = displayCount - self.wedgeCount
-	end
+	local startStep = 1
+	local lastColour = nil
 	for index = 1, self.wedgeCount do
 		local wedge = self.wedges[index]
 		if wedge then
 			if index <= visible then
-				local step = math.mod(index - 1 + colourOffset, self.wedgeCount)
-				local colour = getWedgeColour(theme, step)
-				wedge:SetVertexColor(normaliseChannel(colour.r), normaliseChannel(colour.g), normaliseChannel(colour.b))
-				wedge:Show()
+				local stepIndex
+				if displayCount <= self.wedgeCount then
+					stepIndex = math.ceil((index / visible) * MAX_SHARD_STEPS)
+				else
+					local offset = displayCount - visible
+					local fraction = (offset + index) / displayCount
+					stepIndex = math.ceil(fraction * MAX_SHARD_STEPS)
+				end
+				if stepIndex > MAX_SHARD_STEPS then
+					stepIndex = MAX_SHARD_STEPS
+				elseif stepIndex < 1 then
+					stepIndex = 1
+				end
+				local colour = steps and steps[stepIndex]
+				if colour then
+					wedge:SetVertexColor(colour.r, colour.g, colour.b)
+					lastColour = colour
+				else
+					wedge:SetVertexColor(1, 1, 1)
+					lastColour = { r = 1, g = 1, b = 1 }
+				end
 			else
-				wedge:Hide()
+				wedge:SetVertexColor(
+					normaliseChannel(INACTIVE_COLOR.r),
+					normaliseChannel(INACTIVE_COLOR.g),
+					normaliseChannel(INACTIVE_COLOR.b)
+				)
 			end
+			wedge:Show()
 		end
+	end
+
+	local countText = _G.NecrosisShardCount
+	if lastColour and self.coreTex then
+		self.coreTex:SetVertexColor(lastColour.r, lastColour.g, lastColour.b)
+		self.coreCurrentR = lastColour.r
+		self.coreCurrentG = lastColour.g
+		self.coreCurrentB = lastColour.b
+		applyCountTextStyle(self, countText, lastColour)
+	elseif
+		self.coreTex
+		and (
+			self.coreCurrentR ~= self.baseCoreR
+			or self.coreCurrentG ~= self.baseCoreG
+			or self.coreCurrentB ~= self.baseCoreB
+		)
+	then
+		self.coreTex:SetVertexColor(self.baseCoreR, self.baseCoreG, self.baseCoreB)
+		self.coreCurrentR = self.baseCoreR
+		self.coreCurrentG = self.baseCoreG
+		self.coreCurrentB = self.baseCoreB
+		applyCountTextStyle(self, countText, nil)
+	elseif countText then
+		applyCountTextStyle(self, countText, nil)
 	end
 end
 
@@ -139,6 +242,28 @@ function Dial:Init()
 		return
 	end
 
+	local baseTexture = parent:GetNormalTexture()
+	if baseTexture then
+		baseTexture:SetTexture(nil)
+		baseTexture:Hide()
+	end
+	parent:SetNormalTexture(nil)
+
+	local countText = _G.NecrosisShardCount
+	if countText then
+		local shadowR, shadowG, shadowB, shadowA = countText:GetShadowColor()
+		local shadowOffsetX, shadowOffsetY = countText:GetShadowOffset()
+		self.baseShadowR = shadowR or 0
+		self.baseShadowG = shadowG or 0
+		self.baseShadowB = shadowB or 0
+		self.baseShadowA = shadowA or 1
+		self.baseShadowOffsetX = shadowOffsetX or 0
+		self.baseShadowOffsetY = shadowOffsetY or 0
+		countText:SetTextColor(1, 1, 1, 1)
+		countText:SetShadowColor(self.baseShadowR, self.baseShadowG, self.baseShadowB, self.baseShadowA)
+		countText:SetShadowOffset(self.baseShadowOffsetX, self.baseShadowOffsetY)
+	end
+
 	self.wedgeCount = 16
 	self.wedges = {}
 	self.enabled = false
@@ -150,13 +275,28 @@ function Dial:Init()
 	self.overrideHasCount = false
 	self.overrideActive = false
 	self.displayCount = 0
+	self.baseCoreR = 1
+	self.baseCoreG = 1
+	self.baseCoreB = 1
+	self.coreCurrentR = 1
+	self.coreCurrentG = 1
+	self.coreCurrentB = 1
+	self.baseShadowR = self.baseShadowR or 0
+	self.baseShadowG = self.baseShadowG or 0
+	self.baseShadowB = self.baseShadowB or 0
+	self.baseShadowA = self.baseShadowA or 1
+	self.baseShadowOffsetX = self.baseShadowOffsetX or 0
+	self.baseShadowOffsetY = self.baseShadowOffsetY or 0
 
 	local texturePath = "Interface\\AddOns\\Necrosis\\UI\\Wedges\\"
 
 	local core = parent:CreateTexture("NecrosisShardDialCore", "ARTWORK")
 	core:SetTexture(texturePath .. "ShardCore")
-	core:SetAllPoints(parent)
+	core:SetPoint("CENTER", parent, "CENTER")
+	core:SetWidth(parent:GetWidth() * 0.5)
+	core:SetHeight(parent:GetHeight() * 0.5)
 	core:Hide()
+	core:SetDrawLayer("ARTWORK", 1)
 	self.coreTex = core
 
 	for index = 1, self.wedgeCount do
@@ -171,6 +311,7 @@ function Dial:Init()
 	divider:SetTexture(texturePath .. "DividerOverlay")
 	divider:SetAllPoints(parent)
 	divider:Hide()
+	divider:SetDrawLayer("OVERLAY", 0)
 	self.dividerTex = divider
 
 	self.initialised = true
@@ -255,6 +396,7 @@ function Dial:SetOverride(themeName, count)
 			self.overrideThemeName = resolved
 			self.overrideThemeDirty = true
 		end
+		ensureThemeSteps(getTheme(resolved))
 	end
 	if count ~= nil then
 		local numeric = clampCount(count)
@@ -346,9 +488,6 @@ end
 
 function Dial.GetConfiguredTheme()
 	local config = NecrosisConfig
-	if config and config.Circle and config.Circle ~= 1 then
-		return TIMER_THEME
-	end
 	local theme = config and config.NecrosisColor
 	if theme and Dial.themes[theme] then
 		return theme

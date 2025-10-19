@@ -657,9 +657,9 @@ function Necrosis_DumpDiagnostics()
 	)
 	Necrosis_PrintDiagnostic(
 		string.format(
-			"  Components: infernal=%d, demoniac=%d",
+			"  Components: infernal=%d, demonic=%d",
 			ComponentState.infernal or 0,
-			ComponentState.demoniac or 0
+			ComponentState.demonic or 0
 		)
 	)
 	local stoneKeys = (InventoryConfig and InventoryConfig:GetStoneKeys()) or {}
@@ -1556,7 +1556,7 @@ function Necrosis_BuildTooltip(button, tooltipType, anchor)
 	if tooltipType == "Main" then
 		GameTooltip:AddLine((mainTooltip.Soulshard or "") .. SoulshardState.count)
 		GameTooltip:AddLine((mainTooltip.InfernalStone or "") .. ComponentState.infernal)
-		GameTooltip:AddLine((mainTooltip.DemoniacStone or "") .. ComponentState.demoniac)
+		GameTooltip:AddLine((mainTooltip.DemonicStone or "") .. ComponentState.demonic)
 		local stoneText = tooltip.Stone or {}
 		GameTooltip:AddLine((mainTooltip.Soulstone or "") .. tostring(stoneText[StoneInventory.Soulstone.onHand] or ""))
 		GameTooltip:AddLine(
@@ -1754,10 +1754,10 @@ function Necrosis_BuildTooltip(button, tooltipType, anchor)
 		end
 	elseif tooltipType == "Doomguard" then
 		addManaCostTooltip(SpellIndex.RITUAL_OF_DOOM)
-		if ComponentState.demoniac == 0 then
-			GameTooltip:AddLine("|c00FF4444" .. (mainTooltip.DemoniacStone or "") .. ComponentState.demoniac .. "|r")
+		if ComponentState.demonic == 0 then
+			GameTooltip:AddLine("|c00FF4444" .. (mainTooltip.DemonicStone or "") .. ComponentState.demonic .. "|r")
 		else
-			GameTooltip:AddLine((mainTooltip.DemoniacStone or "") .. ComponentState.demoniac)
+			GameTooltip:AddLine((mainTooltip.DemonicStone or "") .. ComponentState.demonic)
 		end
 	elseif (type == "Buff") and LastCast.Buff ~= 0 then
 		local spellName = getSpellNameByIndex(LastCast.Buff)
@@ -2794,8 +2794,8 @@ function Necrosis_PetCast(type, click)
 	if type == 8 and ComponentState.infernal == 0 then
 		sendMessage("Error", "InfernalStoneNotPresent")
 		return
-	elseif type == 30 and ComponentState.demoniac == 0 then
-		sendMessage("Error", "DemoniacStoneNotPresent")
+	elseif type == 30 and ComponentState.demonic == 0 then
+		sendMessage("Error", "DemonicStoneNotPresent")
 		return
 	elseif type ~= 15 and type ~= 3 and type ~= 8 and type ~= 30 and SoulshardState.count == 0 then
 		sendMessage("Error", "SoulShardNotPresent")

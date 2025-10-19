@@ -150,7 +150,11 @@ end
 local function refreshShardDialDisplay()
 	local dial = syncShardDial()
 	if dial then
-		dial:SetShardCount(SoulshardState.count or 0)
+		local dialCount = SoulshardState.count or 0
+		if NecrosisConfig and NecrosisConfig.Circle == 2 then
+			dialCount = 0
+		end
+		dial:SetShardCount(dialCount)
 	end
 end
 
@@ -159,7 +163,11 @@ Necrosis_UpdateShardDialDisplay = refreshShardDialDisplay
 function Necrosis_UpdateShardDialTheme()
 	local dial = syncShardDial()
 	if dial then
-		dial:SetShardCount(SoulshardState.count or 0)
+		local dialCount = SoulshardState.count or 0
+		if NecrosisConfig and NecrosisConfig.Circle == 2 then
+			dialCount = 0
+		end
+		dial:SetShardCount(dialCount)
 	end
 end
 
@@ -288,6 +296,9 @@ local function ensureShardDisplay()
 		display = { text = "" }
 		SoulshardState.shardDisplay = display
 	end
+	if display.timerActive == nil then
+		display.timerActive = false
+	end
 	return display
 end
 
@@ -310,6 +321,7 @@ function Necrosis_ClearShardCountDisplay()
 	display.timerMinutes = nil
 	display.timerSeconds = nil
 	display.timerControlled = false
+	display.timerActive = false
 	applyShardCountText(display, "")
 end
 
@@ -324,6 +336,7 @@ function Necrosis_UpdateShardCountNumeric(countType, primary, secondary)
 	display.timerControlled = false
 	display.timerMinutes = nil
 	display.timerSeconds = nil
+	display.timerActive = false
 
 	local text = ""
 	if countType == 1 then
@@ -340,7 +353,11 @@ function Necrosis_UpdateShardCountNumeric(countType, primary, secondary)
 	if countType == 1 then
 		local dial = type(ShardDial) == "table" and ShardDial.Ensure and ShardDial.Ensure()
 		if dial then
-			dial:SetShardCount(primary or 0)
+			local dialCount = primary or 0
+			if NecrosisConfig and NecrosisConfig.Circle == 2 then
+				dialCount = 0
+			end
+			dial:SetShardCount(dialCount)
 		end
 	end
 end
@@ -358,6 +375,7 @@ function Necrosis_UpdateShardCountTimer(minutes, seconds)
 	display.timerSeconds = secondValue
 	display.primary = nil
 	display.secondary = nil
+	display.timerActive = true
 
 	local text
 	if minuteValue > 0 then
@@ -370,6 +388,20 @@ end
 
 function Necrosis_ClearShardCountTimer()
 	local display = ensureShardDisplay()
+	display.timerActive = false
+
+	local countType = NecrosisConfig and NecrosisConfig.CountType
+	if countType == 1 then
+		Necrosis_UpdateShardCountNumeric(1, SoulshardState.count or 0, nil)
+		return
+	elseif countType == 2 then
+		Necrosis_UpdateShardCountNumeric(2, ComponentState.infernal or 0, ComponentState.demonic or 0)
+		return
+	elseif countType ~= 3 then
+		Necrosis_ClearShardCountDisplay()
+		return
+	end
+
 	display.countType = 3
 	display.timerControlled = true
 	display.timerMinutes = nil
@@ -647,7 +679,7 @@ function Necrosis_BagExplore(forceFull)
 	end
 
 	ComponentState.infernal = 0
-	ComponentState.demoniac = 0
+	ComponentState.demonic = 0
 
 	for key, data in pairs(StoneInventory) do
 		data.onHand = false
@@ -671,8 +703,8 @@ function Necrosis_BagExplore(forceFull)
 			end
 			if entry.name == NECROSIS_ITEM.InfernalStone then
 				ComponentState.infernal = ComponentState.infernal + (entry.count or 1)
-			elseif entry.name == NECROSIS_ITEM.DemoniacStone then
-				ComponentState.demoniac = ComponentState.demoniac + (entry.count or 1)
+			elseif entry.name == NECROSIS_ITEM.DemonicStone then
+				ComponentState.demonic = ComponentState.demonic + (entry.count or 1)
 			end
 			local recorded = false
 			for _, stoneKey in ipairs(stoneKeys) do
@@ -700,7 +732,7 @@ function Necrosis_BagExplore(forceFull)
 		if countType == 1 then
 			Necrosis_UpdateShardCountNumeric(1, SoulshardState.count or 0, nil)
 		elseif countType == 2 then
-			Necrosis_UpdateShardCountNumeric(2, ComponentState.infernal or 0, ComponentState.demoniac or 0)
+			Necrosis_UpdateShardCountNumeric(2, ComponentState.infernal or 0, ComponentState.demonic or 0)
 		elseif countType == 3 then
 			Necrosis_ClearShardCountTimer()
 		else
@@ -1060,7 +1092,7 @@ function Necrosis_UpdateIcons()
 	if ComponentState.infernal == 0 then
 		ManaPet[5] = "1"
 	end
-	if ComponentState.demoniac == 0 then
+	if ComponentState.demonic == 0 then
 		ManaPet[6] = "1"
 	end
 

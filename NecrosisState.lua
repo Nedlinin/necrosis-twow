@@ -36,7 +36,7 @@ local stateDefaults = {
 	shadowTrance = { active = false, buffId = -1, remaining = nil },
 	antiFear = { inUse = false, blink1 = 0, blink2 = 0, currentTargetImmune = false },
 	trade = { requested = false, active = false, countdown = 0 },
-	components = { infernal = 0, demoniac = 0 },
+	components = { infernal = 0, demonic = 0 },
 	bags = { scanQueued = true, nextScanTime = 0, processing = false },
 	messages = { pet = 0, steed = 0, rez = 0, tp = 0 },
 	demon = {
