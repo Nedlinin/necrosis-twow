@@ -41,6 +41,100 @@ local PET_BUTTON_CONFIG = {
 	{ buttonName = "NecrosisPetMenu7", texture = "Doomguard" },
 }
 
+local MENU_BUTTON_DEFNS = {
+	buff = {
+		{
+			buttonName = "NecrosisBuffMenu1",
+			texture = "ArmureDemo",
+			spellIndex = SpellIndex.DEMON_ARMOR,
+			fallbackSpellIndex = SpellIndex.DEMON_SKIN,
+			requiresShard = false,
+			requiresPet = false,
+		},
+		{
+			buttonName = "NecrosisBuffMenu2",
+			texture = "Aqua",
+			spellIndex = SpellIndex.UNENDING_BREATH,
+		},
+		{
+			buttonName = "NecrosisBuffMenu3",
+			texture = "Invisible",
+			spellIndex = SpellIndex.DETECT_INVISIBILITY,
+		},
+		{
+			buttonName = "NecrosisBuffMenu4",
+			texture = "Kilrogg",
+			spellIndex = SpellIndex.EYE_OF_KILROGG,
+		},
+		{
+			buttonName = "NecrosisBuffMenu7",
+			texture = "Lien",
+			spellIndex = SpellIndex.SOUL_LINK,
+		},
+		{
+			buttonName = "NecrosisBuffMenu8",
+			texture = "ShadowWard",
+			spellIndex = SpellIndex.SHADOW_WARD,
+			trackedCooldown = true,
+		},
+		{
+			buttonName = "NecrosisBuffMenu9",
+			texture = "Banish",
+			spellIndex = SpellIndex.BANISH,
+		},
+	},
+	curse = {
+		{
+			buttonName = "NecrosisCurseMenu1",
+			texture = "Amplify",
+			spellIndex = SpellIndex.AMPLIFY_CURSE,
+			trackedCooldown = true,
+			checkMana = false,
+			skipWhenActiveBuff = true,
+		},
+		{
+			buttonName = "NecrosisCurseMenu2",
+			texture = "Weakness",
+			spellIndex = SpellIndex.CURSE_OF_WEAKNESS,
+		},
+		{
+			buttonName = "NecrosisCurseMenu3",
+			texture = "Agony",
+			spellIndex = SpellIndex.CURSE_OF_AGONY,
+		},
+		{
+			buttonName = "NecrosisCurseMenu4",
+			texture = "Reckless",
+			spellIndex = SpellIndex.CURSE_OF_RECKLESSNESS,
+		},
+		{
+			buttonName = "NecrosisCurseMenu5",
+			texture = "Tongues",
+			spellIndex = SpellIndex.CURSE_OF_TONGUES,
+		},
+		{
+			buttonName = "NecrosisCurseMenu6",
+			texture = "Exhaust",
+			spellIndex = SpellIndex.CURSE_OF_EXHAUSTION,
+		},
+		{
+			buttonName = "NecrosisCurseMenu7",
+			texture = "Elements",
+			spellIndex = SpellIndex.CURSE_OF_THE_ELEMENTS,
+		},
+		{
+			buttonName = "NecrosisCurseMenu8",
+			texture = "Shadow",
+			spellIndex = SpellIndex.CURSE_OF_SHADOW,
+		},
+		{
+			buttonName = "NecrosisCurseMenu9",
+			texture = "Doom",
+			spellIndex = SpellIndex.CURSE_OF_DOOM,
+		},
+	},
+}
+
 local function spellHasId(index)
 	return Spells:HasID(index)
 end
@@ -83,6 +177,65 @@ local function applyPetMenuTextures(activeIndex, manaVariants)
 				variant = 2
 			end
 			Necrosis_SetButtonTexture(button, config.texture, variant)
+		end
+	end
+end
+
+local function setMenuButtonState(buttonName, texture, enabled, activeVariant)
+	local button = _G[buttonName]
+	if not button then
+		return
+	end
+	local variant = enabled and (activeVariant or 3) or 1
+	Necrosis_SetButtonTexture(button, texture, variant)
+end
+
+local function resolveMenuSpellIndex(def)
+	local index = def.spellIndex
+	if index and not spellHasId(index) and def.fallbackSpellIndex then
+		index = def.fallbackSpellIndex
+	end
+	if index and not spellHasId(index) then
+		return nil
+	end
+	return index
+end
+
+local function isSpellOnCooldownByIndex(index)
+	local id = spellId(index)
+	if not id then
+		return false
+	end
+	local start, duration = GetSpellCooldown(id, "spell")
+	return start > 0 and duration > 0
+end
+
+local function updateMenuButtons(definitions, mana)
+	for idx = 1, table.getn(definitions) do
+		local def = definitions[idx]
+		local index = resolveMenuSpellIndex(def)
+		if index then
+			if def.skipWhenActiveBuff and AmplifyUp then
+				-- Keep the prior texture while Amplify Curse is active.
+			else
+				local enabled = true
+				if def.requiresShard and SoulshardState.count == 0 then
+					enabled = false
+				end
+				if def.requiresPet and not UnitExists("Pet") then
+					enabled = false
+				end
+				if def.trackedCooldown and isSpellOnCooldownByIndex(index) then
+					enabled = false
+				end
+				if (def.checkMana ~= false) and mana ~= nil then
+					local cost = spellMana(index)
+					if cost and cost > mana then
+						enabled = false
+					end
+				end
+				setMenuButtonState(def.buttonName, def.texture, enabled, def.enabledVariant)
+			end
 		end
 	end
 end
@@ -851,28 +1004,6 @@ function Necrosis_UpdateIcons()
 		end
 	end
 
-	-- Si cooldown de gardien de l'ombre on grise
-	local shadowWardId = spellId(43)
-	if shadowWardId then
-		local start2, duration2 = GetSpellCooldown(shadowWardId, "spell")
-		if start2 > 0 and duration2 > 0 then
-			Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 1)
-		else
-			Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 3)
-		end
-	end
-
-	-- Gray out the button while Amplify Curse is on cooldown
-	local amplifyId = spellId(42)
-	if amplifyId and not AmplifyUp then
-		local start3, duration3 = GetSpellCooldown(amplifyId, "spell")
-		if start3 > 0 and duration3 > 0 then
-			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 1)
-		else
-			Necrosis_SetButtonTexture(NecrosisCurseMenu1, "Amplify", 3)
-		end
-	end
-
 	if mana ~= nil then
 		-- Grey out the button when there is not enough mana
 		if spellHasId(SpellIndex.SUMMON_IMP) then
@@ -913,6 +1044,17 @@ function Necrosis_UpdateIcons()
 		ManaPet[6] = "1"
 	end
 
+	-- Handle cooldown-driven button states prior to mana checks.
+	if spellHasId(SpellIndex.SHADOW_WARD) then
+		local available = not isSpellOnCooldownByIndex(SpellIndex.SHADOW_WARD)
+		setMenuButtonState("NecrosisBuffMenu8", "ShadowWard", available)
+	end
+
+	if spellHasId(SpellIndex.AMPLIFY_CURSE) and not AmplifyUp then
+		local available = not isSpellOnCooldownByIndex(SpellIndex.AMPLIFY_CURSE)
+		setMenuButtonState("NecrosisCurseMenu1", "Amplify", available)
+	end
+
 	-- Apply textures to the pet buttons
 	local activePetIndex = getActivePetIndex(DemonState.type)
 	applyPetMenuTextures(activePetIndex, ManaPet)
@@ -944,66 +1086,12 @@ function Necrosis_UpdateIcons()
 				Necrosis_SetButtonTexture(NecrosisPetMenu8, "Enslave", 3)
 			end
 		end
-		if spellHasId(SpellIndex.DEMON_ARMOR) then
-			if spellMana(SpellIndex.DEMON_ARMOR) > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 3)
-			end
-		elseif spellHasId(SpellIndex.DEMON_SKIN) then
-			if spellMana(SpellIndex.DEMON_SKIN) > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisBuffMenu1, "ArmureDemo", 3)
-			end
-		end
-		if spellHasId(SpellIndex.UNENDING_BREATH) then
-			if spellMana(SpellIndex.UNENDING_BREATH) > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu2, "Aqua", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisBuffMenu2, "Aqua", 3)
-			end
-		end
-		if spellHasId(SpellIndex.DETECT_INVISIBILITY) then
-			if spellMana(SpellIndex.DETECT_INVISIBILITY) > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu3, "Invisible", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisBuffMenu3, "Invisible", 3)
-			end
-		end
-		if spellHasId(SpellIndex.EYE_OF_KILROGG) then
-			if spellMana(SpellIndex.EYE_OF_KILROGG) > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu4, "Kilrogg", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisBuffMenu4, "Kilrogg", 3)
-			end
-		end
+		updateMenuButtons(MENU_BUTTON_DEFNS.buff, mana)
 		if spellHasId(SpellIndex.RITUAL_OF_SUMMONING) then
 			if spellMana(SpellIndex.RITUAL_OF_SUMMONING) > mana or SoulshardState.count == 0 then
 				Necrosis_SetNormalTextureIfDifferent(NecrosisBuffMenu5, "Interface\\AddOns\\Necrosis\\UI\\TPButton-05")
 			else
 				Necrosis_SetNormalTextureIfDifferent(NecrosisBuffMenu5, "Interface\\AddOns\\Necrosis\\UI\\TPButton-01")
-			end
-		end
-		if spellHasId(SpellIndex.SOUL_LINK) then
-			if spellMana(SpellIndex.SOUL_LINK) > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu7, "Lien", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisBuffMenu7, "Lien", 3)
-			end
-		end
-		if spellHasId(SpellIndex.SHADOW_WARD) then
-			if spellMana(SpellIndex.SHADOW_WARD) > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisBuffMenu8, "ShadowWard", 3)
-			end
-		end
-		if spellHasId(SpellIndex.BANISH) then
-			if spellMana(SpellIndex.BANISH) > mana then
-				Necrosis_SetButtonTexture(NecrosisBuffMenu9, "Banish", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisBuffMenu9, "Banish", 3)
 			end
 		end
 		if spellHasId(SpellIndex.DEMONIC_SACRIFICE) then
@@ -1020,62 +1108,7 @@ function Necrosis_UpdateIcons()
 
 	if mana ~= nil then
 		-- Grey out the button when there is not enough mana
-		if spellHasId(SpellIndex.CURSE_OF_WEAKNESS) then
-			if spellMana(SpellIndex.CURSE_OF_WEAKNESS) > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu2, "Weakness", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisCurseMenu2, "Weakness", 3)
-			end
-		end
-		if spellHasId(SpellIndex.CURSE_OF_AGONY) then
-			if spellMana(SpellIndex.CURSE_OF_AGONY) > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu3, "Agony", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisCurseMenu3, "Agony", 3)
-			end
-		end
-		if spellHasId(SpellIndex.CURSE_OF_RECKLESSNESS) then
-			if spellMana(SpellIndex.CURSE_OF_RECKLESSNESS) > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu4, "Reckless", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisCurseMenu4, "Reckless", 3)
-			end
-		end
-		if spellHasId(SpellIndex.CURSE_OF_TONGUES) then
-			if spellMana(SpellIndex.CURSE_OF_TONGUES) > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu5, "Tongues", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisCurseMenu5, "Tongues", 3)
-			end
-		end
-		if spellHasId(SpellIndex.CURSE_OF_EXHAUSTION) then
-			if spellMana(SpellIndex.CURSE_OF_EXHAUSTION) > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu6, "Exhaust", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisCurseMenu6, "Exhaust", 3)
-			end
-		end
-		if spellHasId(SpellIndex.CURSE_OF_THE_ELEMENTS) then
-			if spellMana(SpellIndex.CURSE_OF_THE_ELEMENTS) > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu7, "Elements", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisCurseMenu7, "Elements", 3)
-			end
-		end
-		if spellHasId(SpellIndex.CURSE_OF_SHADOW) then
-			if spellMana(SpellIndex.CURSE_OF_SHADOW) > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu8, "Shadow", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisCurseMenu8, "Shadow", 3)
-			end
-		end
-		if spellHasId(SpellIndex.CURSE_OF_DOOM) then
-			if spellMana(SpellIndex.CURSE_OF_DOOM) > mana then
-				Necrosis_SetButtonTexture(NecrosisCurseMenu9, "Doom", 1)
-			else
-				Necrosis_SetButtonTexture(NecrosisCurseMenu9, "Doom", 3)
-			end
-		end
+		updateMenuButtons(MENU_BUTTON_DEFNS.curse, mana)
 	end
 
 	-- Timer button
