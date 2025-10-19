@@ -28,6 +28,7 @@ local Timers = Necrosis.Timers
 local Spells = Necrosis.Spells
 local Loc = Necrosis.Loc
 local SpellIndex = Spells.Index
+local ShardDial = NecrosisShardDial
 
 local SOUL_SHARD_ITEM_ID = 6265
 local CachedManaPetState = { "3", "3", "3", "3", "3", "3" }
@@ -134,6 +135,33 @@ local MENU_BUTTON_DEFNS = {
 		},
 	},
 }
+
+local function syncShardDial()
+	if type(ShardDial) ~= "table" then
+		return nil
+	end
+	local sync = ShardDial.SyncConfiguredTheme
+	if type(sync) ~= "function" then
+		return nil
+	end
+	return sync()
+end
+
+local function refreshShardDialDisplay()
+	local dial = syncShardDial()
+	if dial then
+		dial:SetShardCount(SoulshardState.count or 0)
+	end
+end
+
+Necrosis_UpdateShardDialDisplay = refreshShardDialDisplay
+
+function Necrosis_UpdateShardDialTheme()
+	local dial = syncShardDial()
+	if dial then
+		dial:SetShardCount(SoulshardState.count or 0)
+	end
+end
 
 local function spellHasId(index)
 	return Spells:HasID(index)
@@ -309,6 +337,12 @@ function Necrosis_UpdateShardCountNumeric(countType, primary, secondary)
 		text = tostring(primary or 0) .. " / " .. tostring(secondary or 0)
 	end
 	applyShardCountText(display, text)
+	if countType == 1 then
+		local dial = type(ShardDial) == "table" and ShardDial.Ensure and ShardDial.Ensure()
+		if dial then
+			dial:SetShardCount(primary or 0)
+		end
+	end
 end
 
 function Necrosis_UpdateShardCountTimer(minutes, seconds)
@@ -659,21 +693,7 @@ function Necrosis_BagExplore(forceFull)
 		Necrosis_RequestBagScan(0.2, true)
 	end
 
-	local shardIndex = SoulshardState.count
-	if shardIndex > 32 then
-		shardIndex = 32
-	end
-	if NecrosisConfig.Circle == 1 then
-		Necrosis_SetNormalTextureIfDifferent(
-			NecrosisButton,
-			"Interface\\AddOns\\Necrosis\\UI\\" .. NecrosisConfig.NecrosisColor .. "\\Shard" .. shardIndex
-		)
-	elseif StoneInventory.Soulstone.mode == 1 or StoneInventory.Soulstone.mode == 2 then
-		Necrosis_SetNormalTextureIfDifferent(
-			NecrosisButton,
-			"Interface\\AddOns\\Necrosis\\UI\\Bleu\\Shard" .. shardIndex
-		)
-	end
+	refreshShardDialDisplay()
 
 	if NecrosisConfig.ShowCount then
 		local countType = NecrosisConfig.CountType

@@ -251,12 +251,11 @@ function Necrosis_Localization_Dialog_En()
 	-- XML handling - configuration menu
 
 	NECROSIS_COLOR_TOOLTIP = {
-		["Purple"] = "Purple",
-		["Blue"] = "Blue",
 		["Pink"] = "Pink",
+		["Blue"] = "Blue",
 		["Orange"] = "Orange",
 		["Turquoise"] = "Turquoise",
-		["X"] = "X",
+		["Purple"] = "Purple",
 	}
 
 	NECROSIS_CONFIGURATION = {

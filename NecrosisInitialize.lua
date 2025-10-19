@@ -143,7 +143,7 @@ local function Necrosis_ResetDefaultAnchors()
 end
 
 local LANGUAGE_SLIDER_INDEX = { deDE = 3, enUS = 2 }
-local COLOR_SLIDER_INDEX = { Rose = 1, Bleu = 2, Orange = 3, Turquoise = 4, Violet = 5 }
+local COLOR_SLIDER_INDEX = { Rose = 1, Blue = 2, Orange = 3, Turquoise = 4, Violet = 5 }
 local LANGUAGE_SLIDER_LABEL = "Langue / Language / Sprache"
 
 local function sliderValueAngle(config)
@@ -172,7 +172,7 @@ local function sliderValueShadowScale(config)
 end
 
 local function sliderValueColor(config)
-	return COLOR_SLIDER_INDEX[config.NecrosisColor] or 6
+	return COLOR_SLIDER_INDEX[config.NecrosisColor] or 1
 end
 
 local function sliderValueButtonScale(config)
@@ -309,6 +309,17 @@ function Necrosis_Initialize()
 			Necrosis_RunConfigMigrations(NecrosisConfig, previousVersion, Default_NecrosisConfig.Version)
 		end
 		NecrosisConfig.Version = Default_NecrosisConfig.Version
+
+		local currentTheme = NecrosisConfig.NecrosisColor
+		if currentTheme == "X" then
+			NecrosisConfig.NecrosisColor = "Violet"
+		elseif currentTheme == "Bleu" then
+			NecrosisConfig.NecrosisColor = "Blue"
+		end
+		local themeName = NecrosisConfig.NecrosisColor
+		if not (NecrosisShardDial and NecrosisShardDial.themes and NecrosisShardDial.themes[themeName]) then
+			NecrosisConfig.NecrosisColor = "Rose"
+		end
 
 		if resetToDefault then
 			local message = Loc and Loc:GetMessage("Interface", "DefaultConfig")

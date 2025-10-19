@@ -14,6 +14,7 @@
 	<Script file="NecrosisLocalizationAccess.lua"/>
 	<Script file="NecrosisInventoryConfig.lua"/>
 	<Script file="NecrosisMenus.lua"/>
+	<Script file="NecrosisShardDial.lua"/>
 	<Script file="NecrosisInventory.lua"/>
 	<Script file="NecrosisEvents.lua"/>
 	<Script file="NecrosisSpellTimerEngine.lua"/>

@@ -8,6 +8,7 @@ local TimerService = NecrosisTimerService
 local Spells = Necrosis.Spells
 local Loc = Necrosis.Loc
 local SpellIndex = Spells.Index
+local ShardDial = NecrosisShardDial
 
 local floor = math.floor
 local table_getn = table.getn
@@ -52,6 +53,7 @@ local suffixParts = {}
 
 -- Reusable soulstone tracker to avoid allocation every BuildDisplayData call
 local soulstoneTracker = { displayed = false }
+local soulstoneDialState = { applied = false }
 
 local function InitializeTimerColorCodes()
 	if not NecrosisTimerColor then
@@ -454,7 +456,8 @@ local function buildTimerView(
 	currentTime,
 	buildText,
 	graphIndex,
-	soulstoneTracker
+	soulstoneTracker,
+	dialState
 )
 	if not timer then
 		return graphIndex
@@ -603,12 +606,24 @@ local function buildTimerView(
 	end
 	if NecrosisConfig and NecrosisConfig.Circle == 2 then
 		if soulstoneName and timer.Name == soulstoneName then
-			if minutes >= 16 then
-				NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Turquoise\\Shard" .. minutes - 15)
-			elseif minutes >= 1 or secondsComponent >= 33 then
-				NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Orange\\Shard" .. minutes + 1)
-			else
-				NecrosisButton:SetNormalTexture("Interface\\AddOns\\Necrosis\\UI\\Rose\\Shard" .. secondsComponent)
+			local dial = type(ShardDial) == "table" and ShardDial.Ensure and ShardDial.Ensure()
+			if dial then
+				local overrideTheme
+				local overrideCount
+				if minutes >= 16 then
+					overrideTheme = "Turquoise"
+					overrideCount = minutes - 15
+				elseif minutes >= 1 or secondsComponent >= 33 then
+					overrideTheme = "Orange"
+					overrideCount = minutes + 1
+				else
+					overrideTheme = "Rose"
+					overrideCount = secondsComponent
+				end
+				dial:SetOverride(overrideTheme, overrideCount)
+				if dialState then
+					dialState.applied = true
+				end
 			end
 		end
 	end
@@ -983,6 +998,7 @@ function TimerService:BuildDisplayData(currentTime, buildText)
 	else
 		soulstoneTracker = nil
 	end
+	soulstoneDialState.applied = false
 
 	for index = 1, table_getn(timers) do
 		local timer = timers[index]
@@ -995,8 +1011,21 @@ function TimerService:BuildDisplayData(currentTime, buildText)
 				curTimeFloor,
 				buildText,
 				graphCount,
-				soulstoneTracker
+				soulstoneTracker,
+				soulstoneDialState
 			)
+		end
+	end
+
+	if NecrosisConfig and NecrosisConfig.Circle == 2 then
+		if not soulstoneDialState.applied then
+			local dial = type(ShardDial) == "table" and ShardDial.Ensure and ShardDial.Ensure()
+			if dial then
+				dial:ClearOverride()
+			end
+			if type(Necrosis_UpdateShardDialDisplay) == "function" then
+				Necrosis_UpdateShardDialDisplay()
+			end
 		end
 	end
 

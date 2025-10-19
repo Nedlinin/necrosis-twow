@@ -4,6 +4,12 @@ This is fork of version 1.5.2a of the Necrosis LdC addon for Turtle WoW server.
 
 ## Changes
 
+### Oct 19, 2025
+
+- Replaced the main shard button ring with the new gradient dial (shared wedge assets) and removed legacy per-count textures.
+- Dial theme selection now drives the gradient directly; soulstone timer mode (Circle = 2) swaps dial colours without leaking into other themes.
+- Retired the legacy "X" shard skin; older profiles automatically migrate to the purple theme.
+
 ### Sep 24, 2025
 
 - Drastically reduced memory allocation in the Necrosis_OnUpdate function.
