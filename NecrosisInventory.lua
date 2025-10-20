@@ -152,7 +152,10 @@ local function refreshShardDialDisplay()
 	if dial then
 		local dialCount = SoulshardState.count or 0
 		if NecrosisConfig and NecrosisConfig.Circle == 2 then
-			dialCount = 0
+			local hasOverride = type(dial.IsOverrideActive) == "function" and dial:IsOverrideActive()
+			if not hasOverride then
+				dialCount = 0
+			end
 		end
 		dial:SetShardCount(dialCount)
 	end
@@ -165,7 +168,10 @@ function Necrosis_UpdateShardDialTheme()
 	if dial then
 		local dialCount = SoulshardState.count or 0
 		if NecrosisConfig and NecrosisConfig.Circle == 2 then
-			dialCount = 0
+			local hasOverride = type(dial.IsOverrideActive) == "function" and dial:IsOverrideActive()
+			if not hasOverride then
+				dialCount = 0
+			end
 		end
 		dial:SetShardCount(dialCount)
 	end
@@ -734,7 +740,10 @@ function Necrosis_BagExplore(forceFull)
 		elseif countType == 2 then
 			Necrosis_UpdateShardCountNumeric(2, ComponentState.infernal or 0, ComponentState.demonic or 0)
 		elseif countType == 3 then
-			Necrosis_ClearShardCountTimer()
+			local display = ensureShardDisplay()
+			if not display.timerActive then
+				Necrosis_ClearShardCountTimer()
+			end
 		else
 			Necrosis_ClearShardCountDisplay()
 		end
@@ -743,6 +752,10 @@ function Necrosis_BagExplore(forceFull)
 	end
 
 	Necrosis_UpdateIcons()
+
+	if type(Necrosis_EnsureSoulstoneBuffTimer) == "function" then
+		Necrosis_EnsureSoulstoneBuffTimer()
+	end
 
 	if
 		SoulshardState.count == GetContainerNumSlots(NecrosisConfig.SoulshardContainer)
@@ -786,7 +799,10 @@ end
 
 function Necrosis_HandleShardCount()
 	if NecrosisConfig.CountType == 3 then
-		Necrosis_ClearShardCountTimer()
+		local display = ensureShardDisplay()
+		if not display.timerActive then
+			Necrosis_ClearShardCountTimer()
+		end
 	end
 end
 

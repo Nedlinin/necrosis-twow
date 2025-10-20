@@ -889,6 +889,50 @@ function Necrosis_RegisterTrackedStoneBuff(stoneKey, buffName, baseDuration)
 	Necrosis_TrackStoneBuff(stoneKey, buffName, baseDuration)
 end
 
+function Necrosis_EnsureSoulstoneBuffTimer(currentTime)
+	if not Necrosis_ShouldUseSpellTimersInternal() then
+		return false
+	end
+	local service = getTimerService()
+	if not service then
+		return false
+	end
+	local spellIndex = SpellIndex and SpellIndex.SOULSTONE_RESURRECTION
+	if not spellIndex then
+		return false
+	end
+	local soulstoneSpellName = Spells and Spells:GetName(spellIndex)
+	if not soulstoneSpellName or soulstoneSpellName == "" then
+		return false
+	end
+
+	local soulstoneBuffName = NECROSIS_ITEM and NECROSIS_ITEM.Soulstone or "Soulstone"
+	local buffConfig = Necrosis_FindTrackedBuffConfigByName(soulstoneSpellName)
+		or Necrosis_FindTrackedBuffConfigByName(soulstoneBuffName)
+
+	local configCopy
+	if buffConfig then
+		configCopy = {}
+		for key, value in pairs(buffConfig) do
+			configCopy[key] = value
+		end
+	else
+		configCopy = {
+			spellIndex = spellIndex,
+			timerName = soulstoneSpellName,
+			timerType = TIMER_TYPE.SELF_BUFF,
+		}
+	end
+
+	configCopy.buffName = soulstoneBuffName
+	configCopy.tooltipPattern = soulstoneBuffName
+	configCopy.plain = true
+
+	local playerName = UnitName and (UnitName("player") or "")
+	local handled = Necrosis_RefreshSelfBuffTimer(configCopy, playerName or "", currentTime or GetTime())
+	return handled
+end
+
 function Necrosis_NoteBuffRefresh(buffName)
 	LastRefreshedBuffName = buffName
 	LastRefreshedBuffTime = GetTime()
