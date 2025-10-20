@@ -8,38 +8,39 @@ local Dial = NecrosisShardDial
 
 local DEFAULT_THEME = "Rose"
 local MAX_SHARD_STEPS = 32
-local math_mod = math.mod or math.fmod
 local INACTIVE_COLOR = { r = 25, g = 25, b = 25 }
 
 Dial.themes = {
 	Rose = {
-		wedgeMax = { r = 255, g = 20, b = 245 },
+		targetColor = { r = 255, g = 20, b = 245 },
 		dividerTint = { r = 0, g = 0, b = 0 },
 	},
 	Blue = {
-		wedgeMax = { r = 200, g = 240, b = 255 },
+		targetColor = { r = 64, g = 140, b = 255 },
 		dividerTint = { r = 0, g = 0, b = 0 },
 	},
 	Orange = {
-		wedgeMax = { r = 255, g = 230, b = 150 },
+		targetColor = { r = 255, g = 170, b = 64 },
 		dividerTint = { r = 0, g = 0, b = 0 },
 	},
 	Turquoise = {
-		wedgeMax = { r = 200, g = 255, b = 245 },
+		targetColor = { r = 64, g = 224, b = 208 },
 		dividerTint = { r = 0, g = 0, b = 0 },
 	},
 	Violet = {
-		wedgeMax = { r = 240, g = 210, b = 255 },
+		targetColor = { r = 186, g = 85, b = 211 },
 		dividerTint = { r = 0, g = 0, b = 0 },
 	},
 }
 
+local DEFAULT_THEME_DEFINITION = Dial.themes[DEFAULT_THEME]
+local DEFAULT_TARGET_COLOR = DEFAULT_THEME_DEFINITION and DEFAULT_THEME_DEFINITION.targetColor
+	or { r = 255, g = 255, b = 255 }
+local DEFAULT_DIVIDER_TINT = DEFAULT_THEME_DEFINITION and DEFAULT_THEME_DEFINITION.dividerTint
+	or { r = 0, g = 0, b = 0 }
+
 local function getTheme(name)
 	return Dial.themes[name] or Dial.themes[DEFAULT_THEME]
-end
-
-local function easeOutCubic(t)
-	return 1 - (1 - t) ^ 3
 end
 
 local function normaliseChannel(value)
@@ -63,6 +64,41 @@ end
 local currentThemeSteps = nil
 local currentThemeFingerprint = nil
 
+local STANDARD_FONT = _G and _G.STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
+
+local function normaliseFlags(flags)
+	if type(flags) ~= "string" then
+		return ""
+	end
+	return flags
+end
+
+local function removeFlag(flags, flag)
+	local parsed = {}
+	for part in string.gmatch(normaliseFlags(flags), "%S+") do
+		if part ~= flag then
+			table.insert(parsed, part)
+		end
+	end
+	return table.concat(parsed, " ")
+end
+
+local function addFlag(flags, flag)
+	local base = normaliseFlags(flags)
+	if base == "" then
+		return flag or ""
+	end
+	if not flag or flag == "" then
+		return base
+	end
+	for part in string.gmatch(base, "%S+") do
+		if part == flag then
+			return base
+		end
+	end
+	return base .. " " .. flag
+end
+
 local function applyCountTextStyle(self, countText, colour)
 	if not countText then
 		return
@@ -78,19 +114,28 @@ local function applyCountTextStyle(self, countText, colour)
 		b = self.coreCurrentB or self.baseCoreB or 1
 	end
 	local luminance = 0.299 * r + 0.587 * g + 0.114 * b
+	local fontPath = self.baseFontPath or STANDARD_FONT
+	local fontSize = self.baseFontSize or 12
 	if luminance > 0.5 then
 		countText:SetTextColor(0, 0, 0)
-		countText:SetShadowColor(1, 1, 1, self.baseShadowA or 1)
+		countText:SetShadowColor(0, 0, 0, 0)
+		countText:SetShadowOffset(0, 0)
+		local flags = self.baseFontFlagsNoOutline or removeFlag(self.baseFontFlags, "OUTLINE")
+		if flags ~= "" then
+			countText:SetFont(fontPath, fontSize, flags)
+		else
+			countText:SetFont(fontPath, fontSize)
+		end
 	else
 		countText:SetTextColor(1, 1, 1)
-		if self.baseShadowR then
-			countText:SetShadowColor(self.baseShadowR, self.baseShadowG, self.baseShadowB, self.baseShadowA or 1)
+		countText:SetShadowColor(0, 0, 0, 0)
+		countText:SetShadowOffset(0, 0)
+		local flags = self.baseFontFlagsWithOutline or addFlag(self.baseFontFlags, "OUTLINE")
+		if flags ~= "" then
+			countText:SetFont(fontPath, fontSize, flags)
 		else
-			countText:SetShadowColor(0, 0, 0, 1)
+			countText:SetFont(fontPath, fontSize)
 		end
-	end
-	if self.baseShadowOffsetX and self.baseShadowOffsetY then
-		countText:SetShadowOffset(self.baseShadowOffsetX, self.baseShadowOffsetY)
 	end
 end
 
@@ -98,15 +143,16 @@ local function themeFingerprint(theme)
 	if not theme then
 		return nil
 	end
-	local divider = theme.dividerTint or {}
+	local targetColor = theme.targetColor or DEFAULT_TARGET_COLOR
+	local divider = theme.dividerTint or DEFAULT_DIVIDER_TINT
 	return string.format(
 		"%d:%d:%d|%d:%d:%d",
-		theme.wedgeMax.r or 0,
-		theme.wedgeMax.g or 0,
-		theme.wedgeMax.b or 0,
-		divider.r or 0,
-		divider.g or 0,
-		divider.b or 0
+		(targetColor and targetColor.r) or (DEFAULT_TARGET_COLOR and DEFAULT_TARGET_COLOR.r) or 0,
+		(targetColor and targetColor.g) or (DEFAULT_TARGET_COLOR and DEFAULT_TARGET_COLOR.g) or 0,
+		(targetColor and targetColor.b) or (DEFAULT_TARGET_COLOR and DEFAULT_TARGET_COLOR.b) or 0,
+		(divider and divider.r) or (DEFAULT_DIVIDER_TINT and DEFAULT_DIVIDER_TINT.r) or 0,
+		(divider and divider.g) or (DEFAULT_DIVIDER_TINT and DEFAULT_DIVIDER_TINT.g) or 0,
+		(divider and divider.b) or (DEFAULT_DIVIDER_TINT and DEFAULT_DIVIDER_TINT.b) or 0
 	)
 end
 
@@ -119,14 +165,24 @@ local function ensureThemeSteps(theme)
 		return currentThemeSteps
 	end
 	local steps = {}
-	local effectiveMinR = INACTIVE_COLOR.r + 0.40 * (theme.wedgeMax.r - INACTIVE_COLOR.r)
-	local effectiveMinG = INACTIVE_COLOR.g + 0.40 * (theme.wedgeMax.g - INACTIVE_COLOR.g)
-	local effectiveMinB = INACTIVE_COLOR.b + 0.40 * (theme.wedgeMax.b - INACTIVE_COLOR.b)
+	local targetColor = theme.targetColor or DEFAULT_TARGET_COLOR or INACTIVE_COLOR
+	local targetR = (targetColor and targetColor.r)
+		or (DEFAULT_TARGET_COLOR and DEFAULT_TARGET_COLOR.r)
+		or INACTIVE_COLOR.r
+	local targetG = (targetColor and targetColor.g)
+		or (DEFAULT_TARGET_COLOR and DEFAULT_TARGET_COLOR.g)
+		or INACTIVE_COLOR.g
+	local targetB = (targetColor and targetColor.b)
+		or (DEFAULT_TARGET_COLOR and DEFAULT_TARGET_COLOR.b)
+		or INACTIVE_COLOR.b
+	local effectiveMinR = INACTIVE_COLOR.r + 0.40 * (targetR - INACTIVE_COLOR.r)
+	local effectiveMinG = INACTIVE_COLOR.g + 0.40 * (targetG - INACTIVE_COLOR.g)
+	local effectiveMinB = INACTIVE_COLOR.b + 0.40 * (targetB - INACTIVE_COLOR.b)
 	for index = 0, MAX_SHARD_STEPS - 1 do
 		local blend = index / (MAX_SHARD_STEPS - 1)
-		local r = normaliseChannel(blendChannel(effectiveMinR, theme.wedgeMax.r, blend))
-		local g = normaliseChannel(blendChannel(effectiveMinG, theme.wedgeMax.g, blend))
-		local b = normaliseChannel(blendChannel(effectiveMinB, theme.wedgeMax.b, blend))
+		local r = normaliseChannel(blendChannel(effectiveMinR, targetR, blend))
+		local g = normaliseChannel(blendChannel(effectiveMinG, targetG, blend))
+		local b = normaliseChannel(blendChannel(effectiveMinB, targetB, blend))
 		steps[index + 1] = { r = r, g = g, b = b }
 	end
 	currentThemeSteps = steps
@@ -142,7 +198,7 @@ local function applyTheme(self, themeName)
 	local theme = getTheme(resolvedTheme)
 	self.activeThemeName = resolvedTheme
 	self.activeTheme = theme
-	local steps = ensureThemeSteps(theme)
+	ensureThemeSteps(theme)
 	if resolvedTheme == self.baseThemeName then
 		self.baseCoreR = 1
 		self.baseCoreG = 1
@@ -152,10 +208,14 @@ local function applyTheme(self, themeName)
 	self.coreCurrentG = 1
 	self.coreCurrentB = 1
 	if self.dividerTex then
+		local dividerTint = theme.dividerTint or DEFAULT_DIVIDER_TINT
+		local dividerR = (dividerTint and dividerTint.r) or (DEFAULT_DIVIDER_TINT and DEFAULT_DIVIDER_TINT.r) or 0
+		local dividerG = (dividerTint and dividerTint.g) or (DEFAULT_DIVIDER_TINT and DEFAULT_DIVIDER_TINT.g) or 0
+		local dividerB = (dividerTint and dividerTint.b) or (DEFAULT_DIVIDER_TINT and DEFAULT_DIVIDER_TINT.b) or 0
 		self.dividerTex:SetVertexColor(
-			normaliseChannel(theme.dividerTint.r),
-			normaliseChannel(theme.dividerTint.g),
-			normaliseChannel(theme.dividerTint.b)
+			normaliseChannel(dividerR),
+			normaliseChannel(dividerG),
+			normaliseChannel(dividerB)
 		)
 	end
 end
@@ -169,7 +229,6 @@ local function applyCount(self, count)
 	local theme = self.activeTheme or getTheme(self.activeThemeName or self.baseThemeName or DEFAULT_THEME)
 	local steps = ensureThemeSteps(theme)
 	local visible = math.min(displayCount, self.wedgeCount)
-	local startStep = 1
 	local lastColour = nil
 	for index = 1, self.wedgeCount do
 		local wedge = self.wedges[index]
@@ -251,17 +310,25 @@ function Dial:Init()
 
 	local countText = _G.NecrosisShardCount
 	if countText then
-		local shadowR, shadowG, shadowB, shadowA = countText:GetShadowColor()
-		local shadowOffsetX, shadowOffsetY = countText:GetShadowOffset()
-		self.baseShadowR = shadowR or 0
-		self.baseShadowG = shadowG or 0
-		self.baseShadowB = shadowB or 0
-		self.baseShadowA = shadowA or 1
-		self.baseShadowOffsetX = shadowOffsetX or 0
-		self.baseShadowOffsetY = shadowOffsetY or 0
+		local fontPath, fontSize, fontFlags = countText:GetFont()
+		fontPath = fontPath or STANDARD_FONT
+		fontSize = fontSize or 12
+		local normalisedFlags = normaliseFlags(fontFlags)
+		local baseFlagsNoOutline = removeFlag(normalisedFlags, "OUTLINE")
+		local baseFlagsWithOutline = addFlag(baseFlagsNoOutline, "OUTLINE")
+		self.baseFontPath = fontPath
+		self.baseFontSize = fontSize
+		self.baseFontFlags = normalisedFlags
+		self.baseFontFlagsNoOutline = baseFlagsNoOutline
+		self.baseFontFlagsWithOutline = baseFlagsWithOutline
+		if baseFlagsNoOutline ~= "" then
+			countText:SetFont(fontPath, fontSize, baseFlagsNoOutline)
+		else
+			countText:SetFont(fontPath, fontSize)
+		end
 		countText:SetTextColor(1, 1, 1, 1)
-		countText:SetShadowColor(self.baseShadowR, self.baseShadowG, self.baseShadowB, self.baseShadowA)
-		countText:SetShadowOffset(self.baseShadowOffsetX, self.baseShadowOffsetY)
+		countText:SetShadowColor(0, 0, 0, 0)
+		countText:SetShadowOffset(0, 0)
 	end
 
 	self.wedgeCount = 16
@@ -281,12 +348,11 @@ function Dial:Init()
 	self.coreCurrentR = 1
 	self.coreCurrentG = 1
 	self.coreCurrentB = 1
-	self.baseShadowR = self.baseShadowR or 0
-	self.baseShadowG = self.baseShadowG or 0
-	self.baseShadowB = self.baseShadowB or 0
-	self.baseShadowA = self.baseShadowA or 1
-	self.baseShadowOffsetX = self.baseShadowOffsetX or 0
-	self.baseShadowOffsetY = self.baseShadowOffsetY or 0
+	self.baseFontPath = self.baseFontPath or STANDARD_FONT
+	self.baseFontSize = self.baseFontSize or 12
+	self.baseFontFlags = normaliseFlags(self.baseFontFlags)
+	self.baseFontFlagsNoOutline = self.baseFontFlagsNoOutline or removeFlag(self.baseFontFlags, "OUTLINE")
+	self.baseFontFlagsWithOutline = self.baseFontFlagsWithOutline or addFlag(self.baseFontFlagsNoOutline, "OUTLINE")
 
 	local texturePath = "Interface\\AddOns\\Necrosis\\UI\\Wedges\\"
 
@@ -409,9 +475,15 @@ function Dial:SetOverride(themeName, count)
 		self.overrideCount = self.baseCount
 	end
 	local resolvedTheme = self.overrideThemeName or self.baseThemeName
+	local themeChanged = false
 	if self.overrideThemeDirty or self.activeThemeName ~= resolvedTheme then
 		applyTheme(self, resolvedTheme)
 		self.overrideThemeDirty = false
+		themeChanged = true
+	end
+	local countToDisplay = self.overrideHasCount and self.overrideCount or self.baseCount
+	if themeChanged then
+		applyCount(self, countToDisplay)
 	end
 	if self.overrideHasCount then
 		if self.overrideCountDirty or self.displayCount ~= self.overrideCount then
