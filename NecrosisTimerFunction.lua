@@ -21,6 +21,8 @@ local unpack = unpack
 local wipe_table = NecrosisUtils and NecrosisUtils.WipeTable
 local safeGetSpellTexture = NecrosisUtils and NecrosisUtils.SafeGetSpellTexture
 
+local DIAL_MAX_STEPS = 32
+
 if not math_mod then
 	math_mod = math.fmod
 end
@@ -608,19 +610,35 @@ local function buildTimerView(
 		if soulstoneName and timer.Name == soulstoneName then
 			local dial = type(ShardDial) == "table" and ShardDial.Ensure and ShardDial.Ensure()
 			if dial then
-				local overrideTheme
-				local overrideCount
-				if minutes >= 16 then
-					overrideTheme = "Turquoise"
-					overrideCount = minutes - 15
-				elseif minutes >= 1 or secondsComponent >= 33 then
-					overrideTheme = "Orange"
-					overrideCount = minutes + 1
-				else
-					overrideTheme = "Rose"
-					overrideCount = secondsComponent
+				local remainingSeconds = remaining or 0
+				if remainingSeconds < 0 then
+					remainingSeconds = 0
 				end
-				dial:SetOverride(overrideTheme, overrideCount)
+				local overrideCount = 0
+				if totalDuration and totalDuration > 0 then
+					local fraction = remainingSeconds / totalDuration
+					if fraction < 0 then
+						fraction = 0
+					elseif fraction > 1 then
+						fraction = 1
+					end
+					overrideCount = math.ceil(fraction * DIAL_MAX_STEPS)
+					if overrideCount <= 0 and remainingSeconds > 0 then
+						overrideCount = 1
+					end
+				else
+					if minutes >= 1 or secondsComponent >= 33 then
+						overrideCount = minutes + 1
+					else
+						overrideCount = secondsComponent
+					end
+				end
+				if overrideCount < 0 then
+					overrideCount = 0
+				elseif overrideCount > DIAL_MAX_STEPS then
+					overrideCount = DIAL_MAX_STEPS
+				end
+				dial:SetOverride(nil, overrideCount)
 				if dialState then
 					dialState.applied = true
 				end
