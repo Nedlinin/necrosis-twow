@@ -740,6 +740,9 @@ end
 
 function Necrosis_ToggleDiagnostics()
 	NecrosisConfig.DiagnosticsEnabled = not NecrosisConfig.DiagnosticsEnabled
+	if type(Necrosis_UpdateConfigCache) == "function" then
+		Necrosis_UpdateConfigCache()
+	end
 	if NecrosisConfig.DiagnosticsEnabled then
 		Necrosis_PrintDiagnostic("Diagnostics enabled")
 		Necrosis_DumpDiagnostics()

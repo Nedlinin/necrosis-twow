@@ -534,7 +534,7 @@ local function buildTimerView(
 	end
 
 	local targetName = timer.Target or ""
-	local banishName = getCachedSpellName(SpellIndex.CURSE_OF_DOOM)
+	local banishName = getCachedSpellName(SpellIndex.BANISH)
 	local shouldShowTarget = (timer.Type == TIMER_TYPE.PRIMARY or (banishName and timer.Name == banishName))
 		and targetName ~= ""
 	local needsSuffixUpdate = timer.cachedDisplaySuffix == nil

@@ -191,6 +191,9 @@
 						else
 							NecrosisConfig.AntiFearAlert = false;
 						end
+						if (Necrosis_UpdateConfigCache) then
+							Necrosis_UpdateConfigCache();
+						end
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -211,6 +214,9 @@
 							NecrosisConfig.ShadowTranceAlert = true;
 						else
 							NecrosisConfig.ShadowTranceAlert = false;
+						end
+						if (Necrosis_UpdateConfigCache) then
+							Necrosis_UpdateConfigCache();
 						end
 					</OnClick>
 				</Scripts>
@@ -257,6 +263,9 @@
 							NecrosisConfig.Sound = true;
 						else
 							NecrosisConfig.Sound = false;
+						end
+						if (Necrosis_UpdateConfigCache) then
+							Necrosis_UpdateConfigCache();
 						end
 					</OnClick>
 				</Scripts>

@@ -142,7 +142,7 @@ local function Necrosis_ResetDefaultAnchors()
 	NecrosisSpellTimerButton:SetPoint("CENTER", "UIParent", "CENTER", 120, 340)
 end
 
-local LANGUAGE_SLIDER_INDEX = { deDE = 3, enUS = 2 }
+local LANGUAGE_SLIDER_INDEX = { deDE = 3, enUS = 2, enGB = 2 }
 local COLOR_SLIDER_INDEX = { Rose = 1, Blue = 2, Orange = 3, Turquoise = 4, Violet = 5 }
 local LANGUAGE_SLIDER_LABEL = "Langue / Language / Sprache"
 
@@ -181,6 +181,88 @@ end
 
 local function sliderValueBanishScale(config)
 	return config.BanishScale or 100
+end
+
+local SUPPORTED_LANGUAGES = {
+	enUS = true,
+	enGB = true,
+	frFR = true,
+	deDE = true,
+}
+
+local function determineLanguagePreference(config)
+	local configured = config and config.NecrosisLanguage
+	if type(configured) == "string" and SUPPORTED_LANGUAGES[configured] then
+		return configured
+	end
+	local locale = GetLocale and GetLocale()
+	if type(locale) == "string" and SUPPORTED_LANGUAGES[locale] then
+		return locale
+	end
+	return "enUS"
+end
+
+local function mapToLocalizationVariant(language)
+	if language == "enGB" then
+		return "enUS"
+	end
+	if language == "frFR" or language == "deDE" then
+		return language
+	end
+	return "enUS"
+end
+
+local function applyLocalizationVariant(language)
+	local variant = mapToLocalizationVariant(language)
+	local handlers = {
+		enUS = {
+			dialog = Necrosis_Localization_Dialog_En,
+			funcs = Necrosis_Localization_Functions_En,
+		},
+		frFR = {
+			dialog = Necrosis_Localization_Dialog_Fr,
+			funcs = Necrosis_Localization_Functions_Fr,
+		},
+		deDE = {
+			dialog = Necrosis_Localization_Dialog_De,
+			funcs = Necrosis_Localization_Functions_De,
+		},
+	}
+	local bundle = handlers[variant]
+	if not bundle then
+		if type(Necrosis_Msg) == "function" then
+			Necrosis_Msg(
+				string.format(
+					"Necrosis: missing localization bundle for '%s', falling back to English.",
+					tostring(language)
+				),
+				"USER"
+			)
+		end
+		bundle = handlers.enUS
+	end
+	if bundle then
+		if type(bundle.dialog) == "function" then
+			bundle.dialog()
+		else
+			if type(Necrosis_Msg) == "function" then
+				Necrosis_Msg(
+					string.format("Necrosis: missing dialog localization function for '%s'.", tostring(language)),
+					"USER"
+				)
+			end
+		end
+		if type(bundle.funcs) == "function" then
+			bundle.funcs()
+		else
+			if type(Necrosis_Msg) == "function" then
+				Necrosis_Msg(
+					string.format("Necrosis: missing function localization hook for '%s'.", tostring(language)),
+					"USER"
+				)
+			end
+		end
+	end
 end
 
 local OPTION_SLIDER_CONFIG = {
@@ -261,24 +343,6 @@ local OPTION_SLIDER_CONFIG = {
 }
 
 function Necrosis_Initialize()
-	Necrosis_Localization_Dialog_En()
-	-- Initialize localized text (original / French / German)
-	--if NecrosisConfig ~= {} then
-	--	if (NecrosisConfig.NecrosisLanguage == "enUS") or (NecrosisConfig.NecrosisLanguage == "enGB") then
-	--		Necrosis_Localization_Dialog_En();
-	--	elseif (NecrosisConfig.NecrosisLanguage == "deDE") then
-	--		Necrosis_Localization_Dialog_De();
-	--	else
-	--		Necrosis_Localization_Dialog_Fr();
-	--	end
-	--elseif GetLocale() == "enUS" or GetLocale() == "enGB" then
-	--	Necrosis_Localization_Dialog_En();
-	--elseif GetLocale() == "deDE" then
-	--	Necrosis_Localization_Dialog_De();
-	--else
-	--	Necrosis_Localization_Dialog_Fr();
-	--end
-
 	-- Initialize! If the player is not a Warlock, hide Necrosis (shhhh!)
 	-- Flag Necrosis as initialized
 	if UnitClass("player") ~= NECROSIS_UNIT_WARLOCK then
@@ -309,6 +373,15 @@ function Necrosis_Initialize()
 			Necrosis_RunConfigMigrations(NecrosisConfig, previousVersion, Default_NecrosisConfig.Version)
 		end
 		NecrosisConfig.Version = Default_NecrosisConfig.Version
+
+		local language = determineLanguagePreference(NecrosisConfig)
+		if NecrosisConfig.NecrosisLanguage ~= language then
+			NecrosisConfig.NecrosisLanguage = language
+		end
+		applyLocalizationVariant(language)
+		if type(Necrosis_UpdateConfigCache) == "function" then
+			Necrosis_UpdateConfigCache()
+		end
 
 		local currentTheme = NecrosisConfig.NecrosisColor
 		if currentTheme == "X" then
@@ -584,6 +657,12 @@ function Necrosis_LanguageInitialize()
 	NecrosisBanishScale_SliderText:SetText(NECROSIS_CONFIGURATION.BanishSize)
 	ShadowTranceScale_SliderText:SetText(NECROSIS_CONFIGURATION.TranseSize)
 	NecrosisColor_SliderText:SetText(NECROSIS_CONFIGURATION.Skin)
+
+	if type(Necrosis_ScheduleSpellSetup) == "function" then
+		Necrosis_ScheduleSpellSetup()
+	elseif type(Necrosis_SpellSetup) == "function" then
+		Necrosis_SpellSetup()
+	end
 end
 
 ------------------------------------------------------------------------------------------------------
