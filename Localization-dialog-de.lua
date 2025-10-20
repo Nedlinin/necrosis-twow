@@ -23,6 +23,7 @@ function Necrosis_Localization_Dialog_De()
 	NECROSIS_COOLDOWN = {
 		["Spellstone"] = "Zauberstein Cooldown",
 		["Healthstone"] = "Gesundheitsstein Cooldown",
+		["Label"] = "Abklingzeit",
 	}
 
 	NecrosisTooltipData = {
@@ -38,7 +39,7 @@ function Necrosis_Localization_Dialog_De()
 			},
 			["Soulshard"] = "Seelensplitter : ",
 			["InfernalStone"] = "H\195\182llensteine : ",
-			["DemoniacStone"] = "D\195\164monen-Statuetten : ",
+			["DemonicStone"] = "D\195\164monen-Statuetten : ",
 			["Soulstone"] = "\nSeelenstein : ",
 			["Healthstone"] = "Gesundheitsstein : ",
 			["Spellstone"] = "Zauberstein: ",
@@ -200,7 +201,7 @@ function Necrosis_Localization_Dialog_De()
 		["Error"] = {
 			["InfernalStoneNotPresent"] = "Du ben\195\182tigst einen H\195\182llenstein daf\195\188r !",
 			["SoulShardNotPresent"] = "Du ben\195\182tigst einen Seelensplitter daf\195\188r !",
-			["DemoniacStoneNotPresent"] = "Du ben\195\182tigst eine D\195\164monen-Statuette daf\195\188r !",
+			["DemonicStoneNotPresent"] = "Du ben\195\182tigst eine D\195\164monen-Statuette daf\195\188r !",
 			["NoRiding"] = "Du hast kein Mount zum reiten !",
 			["NoFirestoneSpell"] = "Du hast keinen Zauber um Feuersteine zu erstellen",
 			["NoFelstoneSpell"] = "Du hast keinen Zauber um Teufelssteine zu erstellen",
@@ -250,12 +251,11 @@ function Necrosis_Localization_Dialog_De()
 	-- XML handling - configuration menu
 
 	NECROSIS_COLOR_TOOLTIP = {
-		["Purple"] = "Lila",
-		["Blue"] = "Blau",
 		["Pink"] = "Pink",
+		["Blue"] = "Blau",
 		["Orange"] = "Orange",
 		["Turquoise"] = "T\195\188rkis",
-		["X"] = "X",
+		["Purple"] = "Lila",
 	}
 
 	NECROSIS_CONFIGURATION = {

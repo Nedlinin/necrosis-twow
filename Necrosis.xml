@@ -7,9 +7,14 @@
 	<Script file="Localization-functions-de.lua"/>
 	<Script file="Localization-dialog-de.lua"/>
 	<Script file="Speech.lua"/>
-	<Script file="NecrosisMenus.lua"/>
 	<Script file="NecrosisUtils.lua"/>
 	<Script file="NecrosisState.lua"/>
+	<Script file="NecrosisTimers.lua"/>
+	<Script file="NecrosisSpellAccess.lua"/>
+	<Script file="NecrosisLocalizationAccess.lua"/>
+	<Script file="NecrosisInventoryConfig.lua"/>
+	<Script file="NecrosisMenus.lua"/>
+	<Script file="NecrosisShardDial.lua"/>
 	<Script file="NecrosisInventory.lua"/>
 	<Script file="NecrosisEvents.lua"/>
 	<Script file="NecrosisSpellTimerEngine.lua"/>
@@ -95,7 +100,8 @@
 		</Anchors>
 		<Layers>
 			<Layer level="ARTWORK">
-				<FontString name="NecrosisShardCount" inherits="GameFontNormal" text="00">
+				<FontString name="NecrosisShardCount" inherits="GameFontHighlight" text="00">
+					<FontHeight val="12"/>
 					<Color r="1.0" g="1.0" b="1.0" a="1"/>
 					<Anchors>
 						<Anchor point="CENTER" relativeTo="NecrosisButton" relativeFrom="CENTER">
@@ -340,7 +346,7 @@
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\BuffMenuButton-02"/>
 	</Button>
 
-	<Button name="NecrosisBuffMenu1" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisDemonArmorButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -354,7 +360,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisBuffMenu1);
+				HideUIPanel(NecrosisDemonArmorButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Armor", "ANCHOR_RIGHT");
@@ -369,7 +375,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\ArmureDemo"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisBuffMenu2" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisUnendingBreathButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -383,7 +389,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisBuffMenu2);
+				HideUIPanel(NecrosisUnendingBreathButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Aqua", "ANCHOR_RIGHT");
@@ -398,7 +404,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Aqua"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisBuffMenu3" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisDetectInvisibilityButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -412,7 +418,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisBuffMenu3);
+				HideUIPanel(NecrosisDetectInvisibilityButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Invisible", "ANCHOR_RIGHT");
@@ -427,7 +433,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Invisible"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisBuffMenu4" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisEyeOfKilroggButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -441,7 +447,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisBuffMenu4);
+				HideUIPanel(NecrosisEyeOfKilroggButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Kilrogg", "ANCHOR_RIGHT");
@@ -456,7 +462,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Kilrogg"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisBuffMenu5" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisRitualOfSummoningButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -470,7 +476,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisBuffMenu5);
+				HideUIPanel(NecrosisRitualOfSummoningButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "TP", "ANCHOR_RIGHT");
@@ -485,7 +491,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\TPButton-01"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\TPButton-02"/>
 	</Button>
-	<Button name="NecrosisBuffMenu6" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisSenseDemonsButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -499,7 +505,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisBuffMenu6);
+				HideUIPanel(NecrosisSenseDemonsButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Radar", "ANCHOR_RIGHT");
@@ -514,7 +520,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Radar"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisBuffMenu7" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisSoulLinkButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -528,7 +534,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisBuffMenu7);
+				HideUIPanel(NecrosisSoulLinkButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "SoulLink", "ANCHOR_RIGHT");
@@ -543,7 +549,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Lien"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisBuffMenu8" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisShadowWardButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -557,7 +563,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisBuffMenu8);
+				HideUIPanel(NecrosisShadowWardButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "ShadowProtection", "ANCHOR_RIGHT");
@@ -572,7 +578,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\ShadowWard"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisBuffMenu9" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisBanishButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -586,7 +592,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisBuffMenu9);
+				HideUIPanel(NecrosisBanishButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Banish", "ANCHOR_RIGHT");
@@ -951,7 +957,7 @@
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\CurseMenuButton-02"/>
 	</Button>
 
-	<Button name="NecrosisCurseMenu1" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisAmplifyCurseButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -965,7 +971,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "MiddleButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisCurseMenu1);
+				HideUIPanel(NecrosisAmplifyCurseButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Amplify", "ANCHOR_RIGHT");
@@ -980,7 +986,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Amplify"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisCurseMenu2" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisCurseOfWeaknessButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -994,7 +1000,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "MiddleButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisCurseMenu2);
+				HideUIPanel(NecrosisCurseOfWeaknessButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Weakness", "ANCHOR_RIGHT");
@@ -1009,7 +1015,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Weakness"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisCurseMenu3" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisCurseOfAgonyButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -1023,7 +1029,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "MiddleButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisCurseMenu3);
+				HideUIPanel(NecrosisCurseOfAgonyButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Agony", "ANCHOR_RIGHT");
@@ -1038,7 +1044,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Agony"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisCurseMenu4" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisCurseOfRecklessnessButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -1052,7 +1058,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "MiddleButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisCurseMenu4);
+				HideUIPanel(NecrosisCurseOfRecklessnessButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Reckless", "ANCHOR_RIGHT");
@@ -1067,7 +1073,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Reckless"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisCurseMenu5" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisCurseOfTonguesButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -1081,7 +1087,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "MiddleButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisCurseMenu5);
+				HideUIPanel(NecrosisCurseOfTonguesButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Tongues", "ANCHOR_RIGHT");
@@ -1096,7 +1102,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Tongues"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisCurseMenu6" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisCurseOfExhaustionButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -1110,7 +1116,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "MiddleButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisCurseMenu6);
+				HideUIPanel(NecrosisCurseOfExhaustionButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Exhaust", "ANCHOR_RIGHT");
@@ -1125,7 +1131,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Exhaust"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisCurseMenu7" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisCurseOfTheElementsButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -1139,7 +1145,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "MiddleButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisCurseMenu7);
+				HideUIPanel(NecrosisCurseOfTheElementsButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Elements", "ANCHOR_RIGHT");
@@ -1154,7 +1160,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Elements"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisCurseMenu8" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisCurseOfShadowButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -1168,7 +1174,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "MiddleButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisCurseMenu8);
+				HideUIPanel(NecrosisCurseOfShadowButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Shadow", "ANCHOR_RIGHT");
@@ -1183,7 +1189,7 @@
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\Shadow"/>
 		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
 	</Button>
-	<Button name="NecrosisCurseMenu9" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
+	<Button name="NecrosisCurseOfDoomButton" hidden="false" enableMouse="true"  toplevel="true" parent="UIParent" movable="true">
 		<Size>
 			<AbsDimension x="40" y="40"/>
 		</Size>
@@ -1197,7 +1203,7 @@
 		<Scripts>
 			<OnLoad>
 				this:RegisterForClicks("LeftButtonUp", "MiddleButtonUp", "RightButtonUp");
-				HideUIPanel(NecrosisCurseMenu9);
+				HideUIPanel(NecrosisCurseOfDoomButton);
 			</OnLoad>
 			<OnEnter>
 				Necrosis_BuildTooltip(this, "Doom", "ANCHOR_RIGHT");
@@ -1262,8 +1268,8 @@
 			</OnLoad>
 		</Scripts>
 		<NormalTexture file="Interface\AddOns\Necrosis\UI\ShadowTrance-Icon"/>
-		<PushedTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
-		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing"/>
+		<PushedTexture file="Interface\AddOns\Necrosis\UI\ShadowTrance-Icon"/>
+		<HighlightTexture file="Interface\AddOns\Necrosis\UI\AccentRing" alphaMode="ADD"/>
 	</Button>
 	
 	<Button name="NecrosisAntiFearButton" frameStrata="MEDIUM" movable="true" parent="UIParent">

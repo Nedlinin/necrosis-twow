@@ -23,6 +23,7 @@ function Necrosis_Localization_Dialog_En()
 	NECROSIS_COOLDOWN = {
 		["Spellstone"] = "Spellstone Cooldown",
 		["Healthstone"] = "Healthstone Cooldown",
+		["Label"] = "Cooldown",
 	}
 
 	NecrosisTooltipData = {
@@ -38,7 +39,7 @@ function Necrosis_Localization_Dialog_En()
 			},
 			["Soulshard"] = "Soul Shard(s) : ",
 			["InfernalStone"] = "Infernal Stone(s) : ",
-			["DemoniacStone"] = "Demonic Figurine(s) ",
+			["DemonicStone"] = "Demonic Figurine(s) ",
 			["Soulstone"] = "\nSoulstone : ",
 			["Healthstone"] = "Healthstone : ",
 			["Spellstone"] = "Spellstone : ",
@@ -200,7 +201,7 @@ function Necrosis_Localization_Dialog_En()
 		["Error"] = {
 			["InfernalStoneNotPresent"] = "You need an Infernal Stone to do that!",
 			["SoulShardNotPresent"] = "You need a Soul shard to do that!",
-			["DemoniacStoneNotPresent"] = "You need a Demonic Figurine to do that!",
+			["DemonicStoneNotPresent"] = "You need a Demonic Figurine to do that!",
 			["NoRiding"] = "You do not have any Steed to ride!",
 			["NoFirestoneSpell"] = "You do not have any Firestone creation spell.",
 			["NoFelstoneSpell"] = "You do not have any Felstone creation spell.",
@@ -250,12 +251,11 @@ function Necrosis_Localization_Dialog_En()
 	-- XML handling - configuration menu
 
 	NECROSIS_COLOR_TOOLTIP = {
-		["Purple"] = "Purple",
-		["Blue"] = "Blue",
 		["Pink"] = "Pink",
+		["Blue"] = "Blue",
 		["Orange"] = "Orange",
 		["Turquoise"] = "Turquoise",
-		["X"] = "X",
+		["Purple"] = "Purple",
 	}
 
 	NECROSIS_CONFIGURATION = {

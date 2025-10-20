@@ -23,6 +23,7 @@ function Necrosis_Localization_Dialog_Fr()
 	NECROSIS_COOLDOWN = {
 		["Spellstone"] = "Temps de recharge Pierre de sort",
 		["Healthstone"] = "Temps de recharge Pierre de soins",
+		["Label"] = "Temps de recharge",
 	}
 
 	NecrosisTooltipData = {
@@ -38,7 +39,7 @@ function Necrosis_Localization_Dialog_Fr()
 			},
 			["Soulshard"] = "Fragment(s) d'\195\162me : ",
 			["InfernalStone"] = "Pierre(s) infernale(s) : ",
-			["DemoniacStone"] = "Pierre(s) d\195\169moniaque(s) : ",
+			["DemonicStone"] = "Pierre(s) d\195\169moniaque(s) : ",
 			["Soulstone"] = "\nPierre d'\195\162me : ",
 			["Healthstone"] = "Pierre de soins : ",
 			["Spellstone"] = "Pierre de sort : ",
@@ -200,7 +201,7 @@ function Necrosis_Localization_Dialog_Fr()
 		["Error"] = {
 			["InfernalStoneNotPresent"] = "Pas de Pierre infernale pour l'invocation",
 			["SoulShardNotPresent"] = "Pas de Fragment d'\195\162me pour l'invocation",
-			["DemoniacStoneNotPresent"] = "Pas de pierre d\195\169moniaque pour l'invocation",
+			["DemonicStoneNotPresent"] = "Pas de pierre d\195\169moniaque pour l'invocation",
 			["NoRiding"] = "Vous n'avez pas de monture \192\160 invoquer !",
 			["NoFirestoneSpell"] = "Vous n'avez pas de sort Cr\195\169ation de Pierre de feu",
 			["NoFelstoneSpell"] = "Vous n'avez pas de sort Cr\195\169ation de Pierre gangren\195\169e",
@@ -250,12 +251,11 @@ function Necrosis_Localization_Dialog_Fr()
 	-- XML handling - configuration menu
 
 	NECROSIS_COLOR_TOOLTIP = {
-		["Purple"] = "Violet",
-		["Blue"] = "Bleu",
 		["Pink"] = "Rose",
+		["Blue"] = "Bleu",
 		["Orange"] = "Orange",
 		["Turquoise"] = "Turquoise",
-		["X"] = "X",
+		["Purple"] = "Violet",
 	}
 
 	NECROSIS_CONFIGURATION = {

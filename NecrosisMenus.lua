@@ -2,24 +2,57 @@
 -- Necrosis Menu Management
 ------------------------------------------------------------------------------------------------------
 
-local function Necrosis_SetMenuAlpha(prefix, alpha)
-	for index = 1, 9, 1 do
-		local frame = getglobal(prefix .. index)
-		if frame then
-			frame:SetAlpha(alpha)
-		end
+local function ForEachMenuFrame(target, count, handler)
+	if not handler then
+		return
 	end
+	if type(target) == "table" then
+		local entryCount = table.getn(target)
+		for index = 1, entryCount, 1 do
+			local entry = target[index]
+			local frameName = nil
+			if type(entry) == "table" then
+				frameName = entry.frame
+			elseif type(entry) == "string" then
+				frameName = entry
+			end
+			if frameName then
+				local frame = getglobal(frameName)
+				if frame then
+					handler(frame)
+				end
+			end
+		end
+		return true
+	end
+	if type(target) == "string" then
+		local limit = count or 9
+		for index = 1, limit, 1 do
+			local frame = getglobal(target .. index)
+			if frame then
+				handler(frame)
+			end
+		end
+		return true
+	end
+	return false
 end
 
-MenuState = {
-	Pet = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
-	Buff = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
-	Curse = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
-	Stone = { open = false, fading = false, alpha = 1, fadeAt = 0, sticky = false, frames = {} },
-}
+local function Necrosis_SetMenuAlpha(target, alpha, count)
+	ForEachMenuFrame(target, count, function(frame)
+		frame:SetAlpha(alpha)
+	end)
+end
+
+local MenuState = Necrosis.GetMenuState()
+MenuState = MenuState or {}
+
+local LastCast = Necrosis.GetLastCast()
+local Spells = Necrosis.Spells
+local SpellIndex = Spells.Index
 
 local function Necrosis_HasSpell(spellIndex)
-	return spellIndex and NECROSIS_SPELL_TABLE[spellIndex] and NECROSIS_SPELL_TABLE[spellIndex].ID
+	return spellIndex and Spells:HasID(spellIndex)
 end
 
 local function Necrosis_ShouldAddMenuEntry(entry)
@@ -32,14 +65,16 @@ local function Necrosis_ShouldAddMenuEntry(entry)
 	if entry.spells then
 		local requireAll = entry.check == "all"
 		if requireAll then
-			for index = 1, table.getn(entry.spells), 1 do
+			local spellCount = table.getn(entry.spells)
+			for index = 1, spellCount, 1 do
 				if not Necrosis_HasSpell(entry.spells[index]) then
 					return false
 				end
 			end
 			return true
 		end
-		for index = 1, table.getn(entry.spells), 1 do
+		local spellCount = table.getn(entry.spells)
+		for index = 1, spellCount, 1 do
 			if Necrosis_HasSpell(entry.spells[index]) then
 				return true
 			end
@@ -98,12 +133,14 @@ function MenuManager:AddFrame(menuState, frameName, anchorButton, menuPos)
 	return frame
 end
 
-function MenuManager:HideFrames(prefix, count)
-	for index = 1, count, 1 do
-		local frame = getglobal(prefix .. index)
-		if frame then
+function MenuManager:HideFrames(entries, prefix, count)
+	ForEachMenuFrame(entries, nil, function(frame)
+		frame:Hide()
+	end)
+	if prefix then
+		ForEachMenuFrame(prefix, count, function(frame)
 			frame:Hide()
-		end
+		end)
 	end
 end
 
@@ -112,8 +149,18 @@ function MenuManager:ShowFrames(menuState)
 	if not frames then
 		return
 	end
+	local anchor = menuState and menuState.anchor
+	local shouldShow = not anchor or anchor:IsShown()
 	for index = 1, table.getn(frames), 1 do
-		ShowUIPanel(frames[index])
+		local frame = frames[index]
+		if frame then
+			-- ShowUIPanel re-anchors the frame to UIParent; keep existing anchors intact
+			if shouldShow then
+				frame:Show()
+			else
+				frame:Hide()
+			end
+		end
 	end
 end
 
@@ -126,13 +173,15 @@ function MenuManager:BuildMenu(definition)
 		return
 	end
 	menuState.frames = {}
-	self:HideFrames(definition.prefix, definition.count)
+	self:HideFrames(definition.entries, definition.prefix, definition.count)
 	local anchor = getglobal(definition.anchor)
 	if not anchor then
 		return
 	end
+	menuState.anchor = anchor
 	local menuPos = NecrosisConfig[definition.configKey] or 0
-	for index = 1, table.getn(definition.entries), 1 do
+	local entryCount = table.getn(definition.entries)
+	for index = 1, entryCount, 1 do
 		local entry = definition.entries[index]
 		if Necrosis_ShouldAddMenuEntry(entry) then
 			local frame = self:AddFrame(menuState, entry.frame, anchor, menuPos)
@@ -175,6 +224,7 @@ function MenuManager:Toggle(menuState, button, options)
 
 	menuState.fading = true
 	Necrosis_SetNormalTextureIfDifferent(button, options.openTexture)
+	self:ShowFrames(menuState)
 	if options.rightSticky and options.rightSticky() then
 		menuState.sticky = true
 	end
@@ -194,7 +244,7 @@ function MenuManager:UpdateState(menuState, framePrefix, toggleFunc, curTime)
 
 	if curTime >= menuState.fadeAt and menuState.alpha > 0 and not menuState.sticky then
 		menuState.fadeAt = curTime + 0.1
-		Necrosis_SetMenuAlpha(framePrefix, menuState.alpha)
+		self:SetStateAlpha(menuState, menuState.alpha)
 		menuState.alpha = menuState.alpha - 0.1
 	end
 
@@ -210,6 +260,26 @@ function MenuManager:UpdateAll(curTime)
 	self:UpdateState(MenuState.Stone, "NecrosisStoneMenu", Necrosis_StoneMenu, curTime)
 end
 
+function Necrosis_ShouldUpdateMenus()
+	local pet = MenuState.Pet
+	if pet and pet.fading then
+		return true
+	end
+	local buff = MenuState.Buff
+	if buff and buff.fading then
+		return true
+	end
+	local curse = MenuState.Curse
+	if curse and curse.fading then
+		return true
+	end
+	local stone = MenuState.Stone
+	if stone and stone.fading then
+		return true
+	end
+	return false
+end
+
 local MENU_LAYOUT = {
 	Pet = {
 		state = MenuState.Pet,
@@ -219,15 +289,15 @@ local MENU_LAYOUT = {
 		offset = 36,
 		configKey = "PetMenuPos",
 		entries = {
-			{ frame = "NecrosisPetMenu1", spells = { 15 } },
-			{ frame = "NecrosisPetMenu2", spells = { 3 } },
-			{ frame = "NecrosisPetMenu3", spells = { 4 } },
-			{ frame = "NecrosisPetMenu4", spells = { 5 } },
-			{ frame = "NecrosisPetMenu5", spells = { 6 } },
-			{ frame = "NecrosisPetMenu6", spells = { 8 } },
-			{ frame = "NecrosisPetMenu7", spells = { 30 } },
-			{ frame = "NecrosisPetMenu8", spells = { 35 } },
-			{ frame = "NecrosisPetMenu9", spells = { 44 } },
+			{ frame = "NecrosisPetMenu1", spells = { SpellIndex.FEL_DOMINATION } },
+			{ frame = "NecrosisPetMenu2", spells = { SpellIndex.SUMMON_IMP } },
+			{ frame = "NecrosisPetMenu3", spells = { SpellIndex.SUMMON_VOIDWALKER } },
+			{ frame = "NecrosisPetMenu4", spells = { SpellIndex.SUMMON_SUCCUBUS } },
+			{ frame = "NecrosisPetMenu5", spells = { SpellIndex.SUMMON_FELHUNTER } },
+			{ frame = "NecrosisPetMenu6", spells = { SpellIndex.INFERNO } },
+			{ frame = "NecrosisPetMenu7", spells = { SpellIndex.RITUAL_OF_DOOM } },
+			{ frame = "NecrosisPetMenu8", spells = { SpellIndex.ENSLAVE_DEMON_EFFECT } },
+			{ frame = "NecrosisPetMenu9", spells = { SpellIndex.DEMONIC_SACRIFICE } },
 		},
 	},
 	Buff = {
@@ -238,15 +308,15 @@ local MENU_LAYOUT = {
 		offset = 36,
 		configKey = "BuffMenuPos",
 		entries = {
-			{ frame = "NecrosisBuffMenu1", spells = { 31, 36 } },
-			{ frame = "NecrosisBuffMenu2", spells = { 32 } },
-			{ frame = "NecrosisBuffMenu3", spells = { 33 } },
-			{ frame = "NecrosisBuffMenu4", spells = { 34 } },
-			{ frame = "NecrosisBuffMenu5", spells = { 37 } },
-			{ frame = "NecrosisBuffMenu6", spells = { 39 } },
-			{ frame = "NecrosisBuffMenu7", spells = { 38 } },
-			{ frame = "NecrosisBuffMenu8", spells = { 43 } },
-			{ frame = "NecrosisBuffMenu9", spells = { 9 } },
+			{ frame = "NecrosisDemonArmorButton", spells = { SpellIndex.DEMON_ARMOR, SpellIndex.DEMON_SKIN } },
+			{ frame = "NecrosisUnendingBreathButton", spells = { SpellIndex.UNENDING_BREATH } },
+			{ frame = "NecrosisDetectInvisibilityButton", spells = { SpellIndex.DETECT_INVISIBILITY } },
+			{ frame = "NecrosisEyeOfKilroggButton", spells = { SpellIndex.EYE_OF_KILROGG } },
+			{ frame = "NecrosisRitualOfSummoningButton", spells = { SpellIndex.RITUAL_OF_SUMMONING } },
+			{ frame = "NecrosisSenseDemonsButton", spells = { SpellIndex.SENSE_DEMONS } },
+			{ frame = "NecrosisSoulLinkButton", spells = { SpellIndex.SOUL_LINK } },
+			{ frame = "NecrosisShadowWardButton", spells = { SpellIndex.SHADOW_WARD } },
+			{ frame = "NecrosisBanishButton", spells = { SpellIndex.BANISH } },
 		},
 	},
 	Curse = {
@@ -257,15 +327,15 @@ local MENU_LAYOUT = {
 		offset = 36,
 		configKey = "CurseMenuPos",
 		entries = {
-			{ frame = "NecrosisCurseMenu1", spells = { 42 } },
-			{ frame = "NecrosisCurseMenu2", spells = { 23 } },
-			{ frame = "NecrosisCurseMenu3", spells = { 22 } },
-			{ frame = "NecrosisCurseMenu4", spells = { 24 } },
-			{ frame = "NecrosisCurseMenu5", spells = { 25 } },
-			{ frame = "NecrosisCurseMenu6", spells = { 40 } },
-			{ frame = "NecrosisCurseMenu7", spells = { 26 } },
-			{ frame = "NecrosisCurseMenu8", spells = { 27 } },
-			{ frame = "NecrosisCurseMenu9", spells = { 16 } },
+			{ frame = "NecrosisAmplifyCurseButton", spells = { SpellIndex.AMPLIFY_CURSE } },
+			{ frame = "NecrosisCurseOfWeaknessButton", spells = { SpellIndex.CURSE_OF_WEAKNESS } },
+			{ frame = "NecrosisCurseOfAgonyButton", spells = { SpellIndex.CURSE_OF_AGONY } },
+			{ frame = "NecrosisCurseOfRecklessnessButton", spells = { SpellIndex.CURSE_OF_RECKLESSNESS } },
+			{ frame = "NecrosisCurseOfTonguesButton", spells = { SpellIndex.CURSE_OF_TONGUES } },
+			{ frame = "NecrosisCurseOfExhaustionButton", spells = { SpellIndex.CURSE_OF_EXHAUSTION } },
+			{ frame = "NecrosisCurseOfTheElementsButton", spells = { SpellIndex.CURSE_OF_THE_ELEMENTS } },
+			{ frame = "NecrosisCurseOfShadowButton", spells = { SpellIndex.CURSE_OF_SHADOW } },
+			{ frame = "NecrosisCurseOfDoomButton", spells = { SpellIndex.CURSE_OF_DOOM } },
 		},
 	},
 	Stone = {
@@ -276,9 +346,21 @@ local MENU_LAYOUT = {
 		offset = 36,
 		configKey = "StoneMenuPos",
 		entries = {
-			{ frame = "NecrosisStoneMenu1", spells = { 45 }, texture = { base = "Felstone", variant = 2 } },
-			{ frame = "NecrosisStoneMenu2", spells = { 46 }, texture = { base = "Wrathstone", variant = 2 } },
-			{ frame = "NecrosisStoneMenu3", spells = { 47 }, texture = { base = "Voidstone", variant = 2 } },
+			{
+				frame = "NecrosisStoneMenu1",
+				spells = { SpellIndex.CREATE_FELSTONE },
+				texture = { base = "Felstone", variant = 2 },
+			},
+			{
+				frame = "NecrosisStoneMenu2",
+				spells = { SpellIndex.CREATE_WRATHSTONE },
+				texture = { base = "Wrathstone", variant = 2 },
+			},
+			{
+				frame = "NecrosisStoneMenu3",
+				spells = { SpellIndex.CREATE_VOIDSTONE },
+				texture = { base = "Voidstone", variant = 2 },
+			},
 			{
 				frame = "NecrosisStoneMenu4",
 				condition = function()

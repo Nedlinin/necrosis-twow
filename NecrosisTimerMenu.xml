@@ -97,15 +97,19 @@
 					</Anchor>
 				</Anchors>
 				<Scripts>
-					<OnClick>
-						if (this:GetChecked()) then
-							NecrosisConfig.ShowSpellTimers = true;
-						else
-							NecrosisConfig.ShowSpellTimers = false;
-						end
-					</OnClick>
-				</Scripts>
-			</CheckButton>
+				<OnClick>
+					if (this:GetChecked()) then
+						NecrosisConfig.ShowSpellTimers = true;
+					else
+						NecrosisConfig.ShowSpellTimers = false;
+					end
+					Necrosis_HandleSpellTimerPreference();
+					if (Necrosis_UpdateConfigCache) then
+						Necrosis_UpdateConfigCache();
+					end
+				</OnClick>
+			</Scripts>
+		</CheckButton>
 			<CheckButton name="NecrosisSTimer_Button" enableMouse="true" inherits="UICheckButtonTemplate" checked="false">
 				<Size>
 					<AbsDimension x="24" y="24"/>
@@ -146,11 +150,15 @@
 					</Anchor>
 				</Anchors>
 				<Scripts>
-					<OnClick>
-						NecrosisConfig.Graphical = this:GetChecked();
-						Necrosis_HideGraphTimer();
-					</OnClick>
-				</Scripts>
+				<OnClick>
+					NecrosisConfig.Graphical = this:GetChecked();
+					Necrosis_HideGraphTimer();
+					Necrosis_FlagTimerEventRegistrationUpdate();
+					if (Necrosis_UpdateConfigCache) then
+						Necrosis_UpdateConfigCache();
+					end
+				</OnClick>
+			</Scripts>
 			</CheckButton>
 			<CheckButton name="NecrosisTimerColor_Button" enableMouse="true" inherits="UICheckButtonTemplate" checked="false">
 				<Size>

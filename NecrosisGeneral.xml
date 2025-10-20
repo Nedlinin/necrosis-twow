@@ -40,6 +40,17 @@ C:\Projects\WoW\Bin\Interface\FrameXML\UI.xsd">
 		<Scripts>
 			<OnLoad>
 				this:RegisterForDrag("LeftButton");
+				local frameName = this:GetName();
+				local alreadyRegistered = false;
+				for index, value in ipairs(UISpecialFrames) do
+					if value == frameName then
+						alreadyRegistered = true;
+						break;
+					end
+				end
+				if not alreadyRegistered then
+					tinsert(UISpecialFrames, frameName);
+				end
 			</OnLoad>
 			<OnDragStart>
 				Necrosis_OnDragStart(NecrosisGeneralFrame);

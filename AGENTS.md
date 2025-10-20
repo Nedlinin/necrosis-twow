@@ -5,7 +5,7 @@ Core addon behavior resides in `Necrosis.lua`, `NecrosisInitialize.lua`, and sup
 ## Build, Test, and Development Commands
 No build step is required; the addon loads directly from the repository folder. 
 You should always make a plan before modifying code: ask the user to review the plan before proceeding with modifications. If the changes are not trivial, write out your plan to the "PLAN.md" file (using Markdown syntax).
-If the PLAN.md file already exists, append to the top of the file new data; this will allow it to act as a log of modifications we agreed to perform.
+If the PLAN.md file already exists, append to the top of the file new data (create the file if necessary but you should never delete this file); this will allow it to act as a log of modifications we agreed to perform so make sure to mark it with date and timestamps.  Make sure to write this file out everytime you update the plan.
 You should never make a code modification on a new topic without making a plan and confirming it with the user first.
 Don't attempt your own file formatting, instead run stylua to format the file.
 It is worth testing lua changes with luac (use Lua 5.0 to match the WoW 1.12 client) when finalizing everything.
@@ -13,6 +13,9 @@ If you ever run into a place where you could make divergent choices and aren't h
 Pay special attention to globals possibly being nil when accessed for the first time; ensure they are lazily evaluated or simply set to non-nil.
 Pay special attention to file load order (be that in the .xml file Script blocks or the .toc file).
 Pay special attention to the definition ordering of variables and functions, ensuring they are declared before use.
+
+As you iterate through the steps of the plan you might update the plan and ask to user to reverify it,
+especially if one of the steps was a discovery step and you can now provide more context/details.
 
 ## Coding Style & Naming Conventions
 UTF-8 encoding to preserve accented characters. Table keys and globals use UpperCamelCase (`NecrosisButton`, `StoneMenuPos`), while event handlers keep the legacy `Necrosis_OnEvent` form. Favor double quotes for strings to match existing files, and extend configuration tables rather than introducing globals.

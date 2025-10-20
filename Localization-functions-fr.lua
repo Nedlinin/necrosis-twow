@@ -15,7 +15,7 @@
 -- FRENCH VERSION FUNCTIONS --
 ------------------------------------------------
 
-if GetLocale() == "frFR" then
+function Necrosis_Localization_Functions_Fr()
 	NECROSIS_UNIT_WARLOCK = "D\195\169moniste"
 
 	NECROSIS_ANTI_FEAR_SPELL = {
@@ -152,4 +152,9 @@ if GetLocale() == "frFR" then
 		["SacrificeGain"] = "Vous gagnez Sacrifice.",
 		["SummoningRitual"] = "Rituel d'invocation",
 	}
+end
+
+-- Auto-initialize on load if client locale matches
+if GetLocale() == "frFR" then
+	Necrosis_Localization_Functions_Fr()
 end

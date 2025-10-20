@@ -11,6 +11,8 @@
 -- Version 28.06.2006-1
 ------------------------------------------------------------------------------------------------------
 
+local Loc = Necrosis.Loc
+
 ------------------------------------------------------------------------------------------------------
 -- INITIALIZATION FUNCTION
 ------------------------------------------------------------------------------------------------------
@@ -41,28 +43,92 @@ local function Necrosis_ConfigClone(source)
 	return copy
 end
 
-local function Necrosis_ConfigSchemasMatch(defaultValue, savedValue)
-	if type(defaultValue) ~= type(savedValue) then
-		return false
+local function Necrosis_ConfigHydrate(defaults, saved)
+	if type(saved) ~= "table" then
+		saved = {}
 	end
-	if type(defaultValue) ~= "table" then
-		return true
-	end
-	for key, defVal in pairs(defaultValue) do
-		local savedVal = savedValue[key]
-		if savedVal == nil then
-			return false
+	for key, defaultValue in pairs(defaults) do
+		local savedValue = saved[key]
+		local defaultType = type(defaultValue)
+		local savedType = type(savedValue)
+		if defaultType == "table" then
+			if savedType == "table" then
+				saved[key] = Necrosis_ConfigHydrate(defaultValue, savedValue)
+			else
+				saved[key] = Necrosis_ConfigClone(defaultValue)
+			end
+		else
+			if savedValue == nil or savedType ~= defaultType then
+				saved[key] = defaultValue
+			end
 		end
-		if not Necrosis_ConfigSchemasMatch(defVal, savedVal) then
-			return false
+	end
+	return saved
+end
+
+local function Necrosis_ParseVersion(version)
+	local values = {}
+	if type(version) ~= "string" then
+		version = tostring(version or "")
+	end
+	for token in string.gmatch(version, "%d+") do
+		table.insert(values, tonumber(token) or 0)
+	end
+	return values
+end
+
+local function Necrosis_CompareVersions(left, right)
+	local leftParts = Necrosis_ParseVersion(left)
+	local rightParts = Necrosis_ParseVersion(right)
+	local maxLen = math.max(table.getn(leftParts), table.getn(rightParts))
+	for index = 1, maxLen do
+		local l = leftParts[index] or 0
+		local r = rightParts[index] or 0
+		if l ~= r then
+			if l < r then
+				return -1
+			else
+				return 1
+			end
 		end
 	end
-	for key in pairs(savedValue) do
-		if defaultValue[key] == nil then
-			return false
+	return 0
+end
+
+NecrosisConfigMigrations = NecrosisConfigMigrations or {}
+local ConfigMigrations = NecrosisConfigMigrations
+
+--[[ Example migration illustrating how to insert a new entry while preserving existing data.
+ConfigMigrations["1.6.1"] = function(config)
+	if type(config.StonePosition) == "table" then
+		-- Inserts a placeholder at index 4, shifting later entries down.
+		table.insert(config.StonePosition, 4, config.StonePosition[4] or true)
+	end
+end
+]]
+
+local function Necrosis_RunConfigMigrations(config, fromVersion, toVersion)
+	fromVersion = fromVersion or "0"
+	toVersion = toVersion or fromVersion
+	if Necrosis_CompareVersions(fromVersion, toVersion) >= 0 then
+		return
+	end
+	local orderedVersions = {}
+	for version in pairs(ConfigMigrations) do
+		table.insert(orderedVersions, version)
+	end
+	table.sort(orderedVersions, function(left, right)
+		return Necrosis_CompareVersions(left, right) < 0
+	end)
+	for index = 1, table.getn(orderedVersions) do
+		local version = orderedVersions[index]
+		if Necrosis_CompareVersions(version, fromVersion) > 0 and Necrosis_CompareVersions(version, toVersion) <= 0 then
+			local migrator = ConfigMigrations[version]
+			if type(migrator) == "function" then
+				migrator(config, fromVersion, toVersion)
+			end
 		end
 	end
-	return true
 end
 
 local function Necrosis_ResetDefaultAnchors()
@@ -76,8 +142,8 @@ local function Necrosis_ResetDefaultAnchors()
 	NecrosisSpellTimerButton:SetPoint("CENTER", "UIParent", "CENTER", 120, 340)
 end
 
-local LANGUAGE_SLIDER_INDEX = { deDE = 3, enUS = 2 }
-local COLOR_SLIDER_INDEX = { Rose = 1, Bleu = 2, Orange = 3, Turquoise = 4, Violet = 5 }
+local LANGUAGE_SLIDER_INDEX = { deDE = 3, enUS = 2, enGB = 2 }
+local COLOR_SLIDER_INDEX = { Rose = 1, Blue = 2, Orange = 3, Turquoise = 4, Violet = 5 }
 local LANGUAGE_SLIDER_LABEL = "Langue / Language / Sprache"
 
 local function sliderValueAngle(config)
@@ -106,7 +172,7 @@ local function sliderValueShadowScale(config)
 end
 
 local function sliderValueColor(config)
-	return COLOR_SLIDER_INDEX[config.NecrosisColor] or 6
+	return COLOR_SLIDER_INDEX[config.NecrosisColor] or 1
 end
 
 local function sliderValueButtonScale(config)
@@ -115,6 +181,88 @@ end
 
 local function sliderValueBanishScale(config)
 	return config.BanishScale or 100
+end
+
+local SUPPORTED_LANGUAGES = {
+	enUS = true,
+	enGB = true,
+	frFR = true,
+	deDE = true,
+}
+
+local function determineLanguagePreference(config)
+	local configured = config and config.NecrosisLanguage
+	if type(configured) == "string" and SUPPORTED_LANGUAGES[configured] then
+		return configured
+	end
+	local locale = GetLocale and GetLocale()
+	if type(locale) == "string" and SUPPORTED_LANGUAGES[locale] then
+		return locale
+	end
+	return "enUS"
+end
+
+local function mapToLocalizationVariant(language)
+	if language == "enGB" then
+		return "enUS"
+	end
+	if language == "frFR" or language == "deDE" then
+		return language
+	end
+	return "enUS"
+end
+
+local function applyLocalizationVariant(language)
+	local variant = mapToLocalizationVariant(language)
+	local handlers = {
+		enUS = {
+			dialog = Necrosis_Localization_Dialog_En,
+			funcs = Necrosis_Localization_Functions_En,
+		},
+		frFR = {
+			dialog = Necrosis_Localization_Dialog_Fr,
+			funcs = Necrosis_Localization_Functions_Fr,
+		},
+		deDE = {
+			dialog = Necrosis_Localization_Dialog_De,
+			funcs = Necrosis_Localization_Functions_De,
+		},
+	}
+	local bundle = handlers[variant]
+	if not bundle then
+		if type(Necrosis_Msg) == "function" then
+			Necrosis_Msg(
+				string.format(
+					"Necrosis: missing localization bundle for '%s', falling back to English.",
+					tostring(language)
+				),
+				"USER"
+			)
+		end
+		bundle = handlers.enUS
+	end
+	if bundle then
+		if type(bundle.dialog) == "function" then
+			bundle.dialog()
+		else
+			if type(Necrosis_Msg) == "function" then
+				Necrosis_Msg(
+					string.format("Necrosis: missing dialog localization function for '%s'.", tostring(language)),
+					"USER"
+				)
+			end
+		end
+		if type(bundle.funcs) == "function" then
+			bundle.funcs()
+		else
+			if type(Necrosis_Msg) == "function" then
+				Necrosis_Msg(
+					string.format("Necrosis: missing function localization hook for '%s'.", tostring(language)),
+					"USER"
+				)
+			end
+		end
+	end
 end
 
 local OPTION_SLIDER_CONFIG = {
@@ -195,24 +343,6 @@ local OPTION_SLIDER_CONFIG = {
 }
 
 function Necrosis_Initialize()
-	Necrosis_Localization_Dialog_En()
-	-- Initialize localized text (original / French / German)
-	--if NecrosisConfig ~= {} then
-	--	if (NecrosisConfig.NecrosisLanguage == "enUS") or (NecrosisConfig.NecrosisLanguage == "enGB") then
-	--		Necrosis_Localization_Dialog_En();
-	--	elseif (NecrosisConfig.NecrosisLanguage == "deDE") then
-	--		Necrosis_Localization_Dialog_De();
-	--	else
-	--		Necrosis_Localization_Dialog_Fr();
-	--	end
-	--elseif GetLocale() == "enUS" or GetLocale() == "enGB" then
-	--	Necrosis_Localization_Dialog_En();
-	--elseif GetLocale() == "deDE" then
-	--	Necrosis_Localization_Dialog_De();
-	--else
-	--	Necrosis_Localization_Dialog_Fr();
-	--end
-
 	-- Initialize! If the player is not a Warlock, hide Necrosis (shhhh!)
 	-- Flag Necrosis as initialized
 	if UnitClass("player") ~= NECROSIS_UNIT_WARLOCK then
@@ -232,24 +362,49 @@ function Necrosis_Initialize()
 	else
 		-- Load (or create) the player's configuration and print it to the console
 		local resetToDefault = false
-		if NecrosisConfig == nil then
+		local previousVersion = nil
+		if type(NecrosisConfig) ~= "table" then
 			NecrosisConfig = Necrosis_ConfigClone(Default_NecrosisConfig)
+			previousVersion = Default_NecrosisConfig.Version
 			resetToDefault = true
-		elseif NecrosisConfig.Version ~= Default_NecrosisConfig.Version then
-			if Necrosis_ConfigSchemasMatch(Default_NecrosisConfig, NecrosisConfig) then
-				Necrosis_DeepMerge(NecrosisConfig, Default_NecrosisConfig)
-			else
-				NecrosisConfig = Necrosis_ConfigClone(Default_NecrosisConfig)
-				resetToDefault = true
-			end
-			NecrosisConfig.Version = Default_NecrosisConfig.Version
+		else
+			previousVersion = NecrosisConfig.Version or "0"
+			NecrosisConfig = Necrosis_ConfigHydrate(Default_NecrosisConfig, NecrosisConfig)
+			Necrosis_RunConfigMigrations(NecrosisConfig, previousVersion, Default_NecrosisConfig.Version)
+		end
+		NecrosisConfig.Version = Default_NecrosisConfig.Version
+
+		local language = determineLanguagePreference(NecrosisConfig)
+		if NecrosisConfig.NecrosisLanguage ~= language then
+			NecrosisConfig.NecrosisLanguage = language
+		end
+		applyLocalizationVariant(language)
+		if type(Necrosis_UpdateConfigCache) == "function" then
+			Necrosis_UpdateConfigCache()
+		end
+
+		local currentTheme = NecrosisConfig.NecrosisColor
+		if currentTheme == "X" then
+			NecrosisConfig.NecrosisColor = "Violet"
+		elseif currentTheme == "Bleu" then
+			NecrosisConfig.NecrosisColor = "Blue"
+		end
+		local themeName = NecrosisConfig.NecrosisColor
+		if not (NecrosisShardDial and NecrosisShardDial.themes and NecrosisShardDial.themes[themeName]) then
+			NecrosisConfig.NecrosisColor = "Rose"
 		end
 
 		if resetToDefault then
-			Necrosis_Msg(NECROSIS_MESSAGE.Interface.DefaultConfig, "USER")
+			local message = Loc and Loc:GetMessage("Interface", "DefaultConfig")
+			if message then
+				Necrosis_Msg(message, "USER")
+			end
 			Necrosis_ResetDefaultAnchors()
 		else
-			Necrosis_Msg(NECROSIS_MESSAGE.Interface.UserConfig, "USER")
+			local message = Loc and Loc:GetMessage("Interface", "UserConfig")
+			if message then
+				Necrosis_Msg(message, "USER")
+			end
 		end
 
 		-----------------------------------------------------------
@@ -257,13 +412,19 @@ function Necrosis_Initialize()
 		-----------------------------------------------------------
 
 		-- Display a message in the console
-		Necrosis_Msg(NECROSIS_MESSAGE.Interface.Welcome, "USER")
-		-- Build the list of available spells
-		Necrosis_SpellSetup()
+		local welcomeMessage = Loc and Loc:GetMessage("Interface", "Welcome")
+		if welcomeMessage then
+			Necrosis_Msg(welcomeMessage, "USER")
+		end
+		-- NOTE: Necrosis_SpellSetup() is called later in Necrosis_LoadVariables
+		-- after Loaded=true and InitState.inWorld=true to ensure spellbook is ready
 		-- Build the list of shard bag slots
 		Necrosis_SoulshardSetup()
 		-- Inventory the stones and shards owned by the Warlock
-		Necrosis_BagExplore()
+		Necrosis_FlagBagDirty(-1)
+		Necrosis_BagExplore(true)
+		-- Apply spell timer visibility preference
+		Necrosis_HandleSpellTimerPreference()
 		-- Build the buff and summon menus
 		Necrosis_CreateMenu()
 
@@ -373,7 +534,7 @@ function Necrosis_Initialize()
 		NecrosisButton:SetScale(NecrosisConfig.NecrosisButtonScale / 100)
 		NecrosisShadowTranceButton:SetScale(NecrosisConfig.ShadowTranceScale / 100)
 		NecrosisAntiFearButton:SetScale(NecrosisConfig.ShadowTranceScale / 100)
-		NecrosisBuffMenu9:SetScale(NecrosisConfig.BanishScale / 100)
+		NecrosisBanishButton:SetScale(NecrosisConfig.BanishScale / 100)
 
 		-- Decide whether timers appear to the left or right of the button
 		NecrosisListSpells:ClearAllPoints()
@@ -436,6 +597,11 @@ function Necrosis_LanguageInitialize()
 	-- Localize speech.lua
 	NecrosisLocalization()
 
+	-- Clear all timers when language changes
+	-- This is simpler and more reliable than trying to update them in-place
+	-- Timers will rebuild naturally as spells are cast and buffs refresh
+	Necrosis_ClearAllTimers()
+
 	-- Localize XML
 	NecrosisVersion:SetText(NecrosisData.Label)
 	NecrosisShardsInventory_Section:SetText(NECROSIS_CONFIGURATION.ShardMenu)
@@ -491,6 +657,12 @@ function Necrosis_LanguageInitialize()
 	NecrosisBanishScale_SliderText:SetText(NECROSIS_CONFIGURATION.BanishSize)
 	ShadowTranceScale_SliderText:SetText(NECROSIS_CONFIGURATION.TranseSize)
 	NecrosisColor_SliderText:SetText(NECROSIS_CONFIGURATION.Skin)
+
+	if type(Necrosis_ScheduleSpellSetup) == "function" then
+		Necrosis_ScheduleSpellSetup()
+	elseif type(Necrosis_SpellSetup) == "function" then
+		Necrosis_SpellSetup()
+	end
 end
 
 ------------------------------------------------------------------------------------------------------
@@ -515,6 +687,7 @@ function Necrosis_SlashHandler(arg1)
 		if NECROSIS_SOULSTONE_ALERT_MESSAGE == NECROSIS_SHORT_MESSAGES[1] then
 			NecrosisConfig.SM = false
 			NecrosisLocalization()
+			Necrosis_RefreshTimerNames()
 			Necrosis_Msg("Short Messages : <red>Off", "USER")
 		else
 			NecrosisConfig.SM = true
@@ -527,12 +700,20 @@ function Necrosis_SlashHandler(arg1)
 	elseif string.find(string.lower(arg1), "cast") then
 		NecrosisSpellCast(string.lower(arg1))
 	else
-		if NECROSIS_MESSAGE.Help ~= nil then
-			for i = 1, table.getn(NECROSIS_MESSAGE.Help), 1 do
-				Necrosis_Msg(NECROSIS_MESSAGE.Help[i], "USER")
+		local helpMessages = Loc and Loc:GetMessageNested({ "Help" })
+		if type(helpMessages) == "table" then
+			for i = 1, table.getn(helpMessages), 1 do
+				local line = helpMessages[i]
+				if line then
+					Necrosis_Msg(line, "USER")
+				end
 			end
 		end
 		Necrosis_Toggle()
+		-- Update config cache after initialization completes
+		if type(Necrosis_UpdateConfigCache) == "function" then
+			Necrosis_UpdateConfigCache()
+		end
 	end
 end
 
