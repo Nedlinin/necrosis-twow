@@ -31,6 +31,7 @@ local SpellIndex = Spells.Index
 local ShardDial = NecrosisShardDial
 
 local SOUL_SHARD_ITEM_ID = 6265
+local MAX_SHARD_COUNT = 32
 local CachedManaPetState = { "3", "3", "3", "3", "3", "3" }
 
 local PET_BUTTON_CONFIG = {
@@ -147,17 +148,36 @@ local function syncShardDial()
 	return sync()
 end
 
+local function applyShardDialCount(dial)
+	if not dial then
+		return
+	end
+
+	local dialCount = SoulshardState and SoulshardState.count
+	if type(dialCount) ~= "number" then
+		dialCount = dial.baseCount or 0
+	end
+
+	if dialCount < 0 then
+		dialCount = 0
+	elseif dialCount > MAX_SHARD_COUNT then
+		dialCount = MAX_SHARD_COUNT
+	end
+
+	if NecrosisConfig and NecrosisConfig.Circle == 2 then
+		local hasOverride = type(dial.IsOverrideActive) == "function" and dial:IsOverrideActive()
+		if not hasOverride then
+			dialCount = 0
+		end
+	end
+
+	dial:SetShardCount(dialCount)
+end
+
 local function refreshShardDialDisplay()
 	local dial = syncShardDial()
 	if dial then
-		local dialCount = SoulshardState.count or 0
-		if NecrosisConfig and NecrosisConfig.Circle == 2 then
-			local hasOverride = type(dial.IsOverrideActive) == "function" and dial:IsOverrideActive()
-			if not hasOverride then
-				dialCount = 0
-			end
-		end
-		dial:SetShardCount(dialCount)
+		applyShardDialCount(dial)
 	end
 end
 
@@ -166,14 +186,7 @@ Necrosis_UpdateShardDialDisplay = refreshShardDialDisplay
 function Necrosis_UpdateShardDialTheme()
 	local dial = syncShardDial()
 	if dial then
-		local dialCount = SoulshardState.count or 0
-		if NecrosisConfig and NecrosisConfig.Circle == 2 then
-			local hasOverride = type(dial.IsOverrideActive) == "function" and dial:IsOverrideActive()
-			if not hasOverride then
-				dialCount = 0
-			end
-		end
-		dial:SetShardCount(dialCount)
+		applyShardDialCount(dial)
 	end
 end
 
