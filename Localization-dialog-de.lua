@@ -236,6 +236,7 @@ function Necrosis_Localization_Dialog_De()
 		},
 		["Help"] = {
 			"/necro recall -- Zentriere Necrosis und alle Buttons in der Mitte des Bildschirms",
+			"/necro cleanshard -- Löscht überschüssige Seelensplitter über die Kapazität deiner Splittertasche hinaus",
 			"/necro sm -- Ersetze Seelenstein- und Beschw\195\182rungs-Zufallsnachrichten durch eine kurze, raidgeeignete Version",
 			"/necro diag -- Diagnostik umschalten",
 		},

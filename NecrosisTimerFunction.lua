@@ -169,6 +169,9 @@ TimerService.textDisplay = TimerService.textDisplay or ""
 TimerService.coloredDisplay = TimerService.coloredDisplay or ""
 TimerService.textDirty = TimerService.textDirty ~= false
 TimerService.lastTextBuildTime = TimerService.lastTextBuildTime or 0
+TimerService.hasText = TimerService.hasText or false
+TimerService.lastUpdateTime = TimerService.lastUpdateTime or 0
+TimerService.pendingUrgent = TimerService.pendingUrgent or false
 TimerService.reusableEnsureOptions = TimerService.reusableEnsureOptions or {}
 TimerService.reusableTextureCache = TimerService.reusableTextureCache or {}
 TimerService.debugDetailsBuffer = TimerService.debugDetailsBuffer or {}
@@ -314,6 +317,9 @@ end
 
 local function markTextDirty(service)
 	service.textDirty = true
+	if service then
+		service.pendingUrgent = true
+	end
 end
 
 local function resetTimerDisplayCache(service, timer)
@@ -444,6 +450,7 @@ local function updateTimerEntry(service, name, target, timeRemaining, expiryTime
 			)
 			resetTimerDisplayCache(service, timer)
 			sortTimers(service)
+			service.pendingUrgent = true
 			return true
 		end
 	end
@@ -760,6 +767,7 @@ function TimerService:EnsureTimer(options)
 	ensureTimerSlotTable(self)
 	self.timers, self.timerSlots = Necrosis_AddTimerFrame(self.timers, self.timerSlots)
 	sortTimers(self)
+	self.pendingUrgent = true
 	debugTimerEvent(
 		"insert",
 		name,
@@ -1061,12 +1069,25 @@ function TimerService:BuildDisplayData(currentTime, buildText)
 		end
 	end
 	graphData.activeCount = graphCount
+	if self.timerSlots then
+		for index = table_getn(self.timerSlots), graphCount + 1, -1 do
+			if self.timerSlots[index] then
+				break
+			end
+			self.timerSlots[index] = nil
+		end
+	end
 
 	if buildText then
-		self.textDisplay = table.concat(textBuffer)
-		self.coloredDisplay = self.textDisplay
+		local bufferCount = table_getn(textBuffer)
+		local newText = bufferCount > 0 and table.concat(textBuffer) or ""
+		if newText ~= self.textDisplay then
+			self.textDisplay = newText
+			self.coloredDisplay = newText
+		end
 		self.lastTextBuildTime = curTimeFloor
 		self.textDirty = false
+		self.hasText = newText ~= ""
 	end
 
 	if soulstoneTracker and not soulstoneTracker.displayed then
@@ -1108,96 +1129,9 @@ end
 -- COMPATIBILITY WRAPPERS
 ------------------------------------------------------------------------------------------------------
 
-function Necrosis_MarkTextTimersDirty()
-	TimerService:MarkTextDirty()
-end
-
-function Necrosis_UpdateTimerEntry(spellTimer, name, target, timeRemaining, expiryTime, timerType, initialDuration)
-	local updated = TimerService:UpdateTimerEntry(name, target, timeRemaining, expiryTime, timerType, initialDuration)
-	return updated, TimerService.timers
-end
-
-function Necrosis_InsertCustomTimer(
-	spellName,
-	duration,
-	timerType,
-	targetName,
-	spellTimer,
-	timerTable,
-	initialDuration,
-	expiryTime
-)
-	return TimerService:InsertCustomTimer(spellName, duration, timerType, targetName, initialDuration, expiryTime)
-end
-
-function Necrosis_EnsureTimer(options, spellTimer, timerTable)
-	return TimerService:EnsureTimer(options)
-end
-
-function Necrosis_EnsureSpellIndexTimer(
-	spellIndex,
-	target,
-	duration,
-	timerType,
-	initial,
-	expiry,
-	spellTimer,
-	timerTable
-)
-	return TimerService:EnsureSpellIndexTimer(spellIndex, target, duration, timerType, initial, expiry)
-end
-
-function Necrosis_EnsureNamedTimer(name, duration, timerType, target, initial, expiry, spellTimer, timerTable)
-	return TimerService:EnsureNamedTimer(name, duration, timerType, target, initial, expiry)
-end
-
-function Necrosis_RemoveTimerByIndex(index, spellTimer, timerTable)
-	return TimerService:RemoveTimerByIndex(index)
-end
-
-function Necrosis_RemoveTimerByName(name, spellTimer, timerTable)
-	return TimerService:RemoveTimerByName(name)
-end
-
-function Necrosis_RemoveCombatTimers(spellTimer, timerTable)
-	return TimerService:RemoveCombatTimers()
-end
-
 function Necrosis_TimerExists(name)
 	return TimerService:TimerExists(name)
 end
-
-function Necrosis_SortTimers(spellTimer)
-	sortTimers(TimerService)
-end
-
-function Necrosis_DisplayTimer(
-	textBuffer,
-	index,
-	spellTimer,
-	graphicalTimer,
-	timerTable,
-	graphCount,
-	currentTime,
-	buildText
-)
-	local timer = TimerService:GetTimerAt(index)
-	if not timer then
-		return timerTable, graphCount
-	end
-	local graphData = TimerService:GetGraphicalData()
-	if graphicalTimer ~= graphData then
-		graphicalTimer.names = graphData.names
-		graphicalTimer.expiryTimes = graphData.expiryTimes
-		graphicalTimer.initialDurations = graphData.initialDurations
-		graphicalTimer.displayLines = graphData.displayLines
-		graphicalTimer.slotIds = graphData.slotIds
-	end
-	return timerTable, graphCount
-end
-
-SpellTimer = TimerService.timers
-TimerTable = TimerService.timerSlots
 
 -- Initialize timer color codes cache when module loads
 InitializeTimerColorCodes()

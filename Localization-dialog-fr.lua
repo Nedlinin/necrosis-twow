@@ -236,6 +236,7 @@ function Necrosis_Localization_Dialog_Fr()
 		},
 		["Help"] = {
 			"/necro recall -- Centre Necrosis and tous les boutons au centre de l'écran",
+			"/necro cleanshard -- Supprime les fragments d'\\195\\162me en exc\\195\\168s au-del\\195\\160 de la capacit\\195\\169 de votre sac \\195\\160 fragments",
 			"/necro sm -- Remplace les messages de pierre d'\195\162me et d'invocation par des versions courtes spéciales raid",
 			"/necro diag -- Active le diagnostic",
 		},

@@ -372,6 +372,8 @@ function Necrosis_Initialize()
 			NecrosisConfig = Necrosis_ConfigHydrate(Default_NecrosisConfig, NecrosisConfig)
 			Necrosis_RunConfigMigrations(NecrosisConfig, previousVersion, Default_NecrosisConfig.Version)
 		end
+		-- Always start with diagnostics disabled regardless of saved value
+		NecrosisConfig.DiagnosticsEnabled = false
 		NecrosisConfig.Version = Default_NecrosisConfig.Version
 
 		local language = determineLanguagePreference(NecrosisConfig)
@@ -674,7 +676,25 @@ function Necrosis_SlashHandler(arg1)
 	if UnitClass("player") ~= NECROSIS_UNIT_WARLOCK then
 		return
 	end
-	if string.find(string.lower(arg1), "recall") then
+	local loweredArg = string.lower(arg1 or "")
+	local function printHelp()
+		local helpMessages = Loc and Loc:GetMessageNested({ "Help" })
+		if type(helpMessages) == "table" then
+			for i = 1, table.getn(helpMessages), 1 do
+				local line = helpMessages[i]
+				if line then
+					-- Always route help to chat (bypass ChatType/UIErrors)
+					if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+						DEFAULT_CHAT_FRAME:AddMessage(line, 1.0, 0.7, 1.0)
+					else
+						Necrosis_Msg(line, "USER")
+					end
+				end
+			end
+		end
+	end
+
+	if string.find(loweredArg, "recall") then
 		NecrosisButton:ClearAllPoints()
 		NecrosisButton:SetPoint("CENTER", "UIParent", "CENTER", 0, 0)
 		NecrosisSpellTimerButton:ClearAllPoints()
@@ -683,7 +703,22 @@ function Necrosis_SlashHandler(arg1)
 		NecrosisAntiFearButton:SetPoint("CENTER", "UIParent", "CENTER", 20, 0)
 		NecrosisShadowTranceButton:ClearAllPoints()
 		NecrosisShadowTranceButton:SetPoint("CENTER", "UIParent", "CENTER", -20, 0)
-	elseif string.find(string.lower(arg1), "sm") then
+	elseif string.find(loweredArg, "cleanshard") then
+		local deleted = 0
+		local skipped = false
+		if type(Necrosis_RunShardCleanup) == "function" then
+			deleted, skipped = Necrosis_RunShardCleanup()
+			deleted = deleted or 0
+			skipped = not not skipped
+		end
+		if deleted > 0 then
+			Necrosis_Msg(string.format("Deleted %d excess shard(s).", deleted), "USER")
+		elseif skipped then
+			Necrosis_Msg("Shard cleanup queued; will retry shortly.", "USER")
+		else
+			Necrosis_Msg("No excess shards to delete.", "USER")
+		end
+	elseif string.find(loweredArg, "sm") then
 		if NECROSIS_SOULSTONE_ALERT_MESSAGE == NECROSIS_SHORT_MESSAGES[1] then
 			NecrosisConfig.SM = false
 			NecrosisLocalization()
@@ -695,20 +730,13 @@ function Necrosis_SlashHandler(arg1)
 			NECROSIS_INVOCATION_MESSAGES = NECROSIS_SHORT_MESSAGES[2]
 			Necrosis_Msg("Short Messages : <brightGreen>On", "USER")
 		end
-	elseif string.find(string.lower(arg1), "diag") then
+	elseif string.find(loweredArg, "diag") then
 		Necrosis_ToggleDiagnostics()
-	elseif string.find(string.lower(arg1), "cast") then
-		NecrosisSpellCast(string.lower(arg1))
+	elseif string.find(loweredArg, "cast") then
+		NecrosisSpellCast(loweredArg)
+	elseif string.find(loweredArg, "help") then
+		printHelp()
 	else
-		local helpMessages = Loc and Loc:GetMessageNested({ "Help" })
-		if type(helpMessages) == "table" then
-			for i = 1, table.getn(helpMessages), 1 do
-				local line = helpMessages[i]
-				if line then
-					Necrosis_Msg(line, "USER")
-				end
-			end
-		end
 		Necrosis_Toggle()
 		-- Update config cache after initialization completes
 		if type(Necrosis_UpdateConfigCache) == "function" then

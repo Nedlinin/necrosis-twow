@@ -236,6 +236,7 @@ function Necrosis_Localization_Dialog_En()
 		},
 		["Help"] = {
 			"/necro recall -- Center Necrosis and all buttons in the middle of the screen",
+			"/necro cleanshard -- Delete excess shards beyond your shard bag capacity",
 			"/necro sm -- Replace Soulstoning and summoning messages with a short raid-ready version",
 			"/necro diag -- Toggle diagnostics dump",
 		},

@@ -120,16 +120,4 @@ function Necrosis.GetMenuState()
 	return menus
 end
 
-function Necrosis_GetStateSlice(key)
-	return Necrosis.GetStateSlice(key)
-end
-
-function Necrosis_GetLastCast()
-	return Necrosis.GetLastCast()
-end
-
 MenuState = menus
-
-function Necrosis_GetMenuState()
-	return Necrosis.GetMenuState()
-end

@@ -95,11 +95,7 @@ function Necrosis_DebugPrint(...)
 		end
 	end
 	local message = table.concat(parts, " ")
-	if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
-		DEFAULT_CHAT_FRAME:AddMessage(message)
-	else
-		print(message)
-	end
+	Necrosis_PrintDiagnostic(message, true)
 end
 
 local wipe_table = NecrosisUtils and NecrosisUtils.WipeTable
@@ -321,9 +317,7 @@ local UpdateDiagnostics = {
 }
 
 local function Necrosis_LogDiagnostics(message)
-	if DEFAULT_CHAT_FRAME then
-		DEFAULT_CHAT_FRAME:AddMessage(message)
-	end
+	Necrosis_PrintDiagnostic(message)
 end
 
 function Necrosis_RecordHelperDiag(name, beforeTime)
@@ -527,7 +521,7 @@ function Necrosis_OnBagUpdate(_, bagId)
 		SoulshardState.pendingSortCheck = true
 	end
 	Necrosis_FlagBagDirty(bagId)
-	Necrosis_RequestBagScan(0)
+	Necrosis_RequestBagScan(0.1)
 end
 
 local function Necrosis_HandleSelfBuffCast(spellIndex, activeSpellName, playerName, currentTime)
@@ -616,7 +610,15 @@ local function Necrosis_CountTableEntries(tbl)
 	return count
 end
 
-local function Necrosis_PrintDiagnostic(line)
+function Necrosis_PrintDiagnostic(line, force)
+	if not line then
+		return
+	end
+	if not force then
+		if not (NecrosisConfig and NecrosisConfig.DiagnosticsEnabled) then
+			return
+		end
+	end
 	if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
 		DEFAULT_CHAT_FRAME:AddMessage("|cff66ccffNecrosis:|r " .. line)
 	else
@@ -744,10 +746,10 @@ function Necrosis_ToggleDiagnostics()
 		Necrosis_UpdateConfigCache()
 	end
 	if NecrosisConfig.DiagnosticsEnabled then
-		Necrosis_PrintDiagnostic("Diagnostics enabled")
+		Necrosis_PrintDiagnostic("Diagnostics enabled", true)
 		Necrosis_DumpDiagnostics()
 	else
-		Necrosis_PrintDiagnostic("Diagnostics disabled")
+		Necrosis_PrintDiagnostic("Diagnostics disabled", true)
 	end
 end
 
@@ -934,7 +936,7 @@ function Necrosis_OnLoad()
 		NecrosisButton:RegisterEvent("PLAYER_LEAVING_WORLD")
 		local events = Necrosis.Events
 		if events and events.Iterate then
-			for eventName in events:Iterate() do
+			for eventName in Necrosis.Events:Iterate() do
 				NecrosisButton:RegisterEvent(eventName)
 			end
 		end
@@ -2379,22 +2381,6 @@ function Necrosis_UnitHasBuff(unit, effect)
 	return false
 end
 
--- Detects when the player gains Nightfall / Shadow Trance
-function Necrosis_UnitHasTrance()
-	local ID = -1
-	for buffID = 0, 24, 1 do
-		local buffTexture = GetPlayerBuffTexture(buffID)
-		if buffTexture == nil then
-			break
-		end
-		if strfind(buffTexture, "Spell_Shadow_Twilight") then
-			ID = buffID
-			break
-		end
-	end
-	ShadowState.buffId = ID
-end
-
 function Necrosis_UseItem(tooltipType, button)
 	Necrosis_MoneyToggle()
 	NecrosisTooltip:SetBagItem("player", 17)
@@ -2539,10 +2525,6 @@ function Necrosis_SwitchOffHand(itemType)
 			PickupInventoryItem(17)
 		end
 	end
-end
-
-function Necrosis_GameTooltip_ClearMoney()
-	-- Intentionally empty; don't clear money while we use hidden tooltips
 end
 
 -- Function that positions the buttons around Necrosis (and scales the interface)

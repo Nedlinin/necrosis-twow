@@ -15,7 +15,11 @@ local Dispatcher = Necrosis.Events
 Dispatcher.handlers = Dispatcher.handlers or {}
 
 function Dispatcher:Register(eventName, handler)
-	if not eventName or type(handler) ~= "function" then
+	if not eventName then
+		return
+	end
+	local hType = type(handler)
+	if hType ~= "function" and hType ~= "string" then
 		return
 	end
 	self.handlers[eventName] = handler
@@ -25,7 +29,16 @@ function Dispatcher:Get(eventName)
 	if not eventName then
 		return nil
 	end
-	return self.handlers[eventName]
+	local handler = self.handlers[eventName]
+	if type(handler) == "string" then
+		local resolved = getglobal(handler)
+		if type(resolved) == "function" then
+			self.handlers[eventName] = resolved
+			return resolved
+		end
+		return nil
+	end
+	return handler
 end
 
 function Dispatcher:Fire(eventName, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
@@ -268,10 +281,6 @@ local function Necrosis_UpdateShadowTranceState()
 	end
 end
 
-function Necrosis_RefreshShadowTranceState()
-	Necrosis_UpdateShadowTranceState()
-end
-
 local function Necrosis_GetCachedTargetFearStatus()
 	if not NecrosisConfig.AntiFearAlert then
 		return 0
@@ -382,35 +391,38 @@ local function Necrosis_OnPlayerAuraEvent(_, unitId)
 end
 
 local defaultHandlers = {
-	BAG_UPDATE = Necrosis_OnBagUpdate,
-	SPELLCAST_START = Necrosis_OnSpellcastStartEvent,
-	SPELLCAST_STOP = Necrosis_OnSpellcastStopEvent,
-	SPELLCAST_FAILED = Necrosis_ClearSpellcastContext,
-	SPELLCAST_INTERRUPTED = Necrosis_ClearSpellcastContext,
-	TRADE_REQUEST = Necrosis_OnTradeRequestEvent,
-	TRADE_SHOW = Necrosis_OnTradeRequestEvent,
-	TRADE_REQUEST_CANCEL = Necrosis_OnTradeCancelledEvent,
-	TRADE_CLOSED = Necrosis_OnTradeCancelledEvent,
-	PLAYER_TARGET_CHANGED = Necrosis_OnTargetChanged,
-	CHAT_MSG_SPELL_SELF_DAMAGE = Necrosis_OnSelfDamageEvent,
-	CHAT_MSG_SPELL_SELF_BUFF = Necrosis_OnBuffEvent,
-	LEARNED_SPELL_IN_TAB = Necrosis_OnSpellLearned,
-	PLAYER_REGEN_ENABLED = Necrosis_OnCombatEnd,
+	BAG_UPDATE = "Necrosis_OnBagUpdate",
+	SPELLCAST_START = "Necrosis_OnSpellcastStartEvent",
+	SPELLCAST_STOP = "Necrosis_OnSpellcastStopEvent",
+	SPELLCAST_FAILED = "Necrosis_ClearSpellcastContext",
+	SPELLCAST_INTERRUPTED = "Necrosis_ClearSpellcastContext",
+	TRADE_REQUEST = "Necrosis_OnTradeRequestEvent",
+	TRADE_SHOW = "Necrosis_OnTradeRequestEvent",
+	TRADE_REQUEST_CANCEL = "Necrosis_OnTradeCancelledEvent",
+	TRADE_CLOSED = "Necrosis_OnTradeCancelledEvent",
+	PLAYER_TARGET_CHANGED = "Necrosis_OnTargetChanged",
+	CHAT_MSG_SPELL_SELF_DAMAGE = "Necrosis_OnSelfDamageEvent",
+	CHAT_MSG_SPELL_SELF_BUFF = "Necrosis_OnBuffEvent",
+	LEARNED_SPELL_IN_TAB = "Necrosis_OnSpellLearned",
+	PLAYER_REGEN_ENABLED = "Necrosis_OnCombatEnd",
 	PLAYER_REGEN_DISABLED = function()
 		CombatState.inCombat = true
 	end,
-	UNIT_PET = Necrosis_OnUnitPetEvent,
-	CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS = Necrosis_OnBuffEvent,
-	CHAT_MSG_SPELL_AURA_GONE_SELF = Necrosis_OnDebuffEvent,
-	CHAT_MSG_SPELL_BREAK_AURA = Necrosis_OnDebuffEvent,
-	UNIT_AURA = Necrosis_OnPlayerAuraEvent,
+	UNIT_PET = "Necrosis_OnUnitPetEvent",
+	CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS = "Necrosis_OnBuffEvent",
+	CHAT_MSG_SPELL_AURA_GONE_SELF = "Necrosis_OnDebuffEvent",
+	CHAT_MSG_SPELL_BREAK_AURA = "Necrosis_OnDebuffEvent",
+	UNIT_AURA = "Necrosis_OnPlayerAuraEvent",
 }
 
-for eventName, handler in pairs(defaultHandlers) do
-	Dispatcher:Register(eventName, handler)
+local function Necrosis_RegisterDefaultHandlers()
+	for eventName, handler in pairs(defaultHandlers) do
+		Dispatcher:Register(eventName, handler)
+	end
+	NECROSIS_EVENT_HANDLERS = Dispatcher.handlers
 end
 
-NECROSIS_EVENT_HANDLERS = Dispatcher.handlers
+Necrosis_RegisterDefaultHandlers()
 
 local function Necrosis_HandleTradingAndIcons(shouldUpdate)
 	if not shouldUpdate then

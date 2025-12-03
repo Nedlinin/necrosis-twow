@@ -450,25 +450,6 @@ local function Necrosis_GetBagState()
 	return BagQueueState
 end
 
-local function GetSlotItemID(container, slot)
-	local itemLink = GetContainerItemLink(container, slot)
-	if not itemLink then
-		return nil
-	end
-	local _, _, itemId = string.find(itemLink, "item:(%d+)")
-	if itemId then
-		return tonumber(itemId, 10)
-	end
-	return nil
-end
-
-local function IsSoulShardSlot(container, slot)
-	if not slot then
-		return false
-	end
-	return GetSlotItemID(container, slot) == SOUL_SHARD_ITEM_ID
-end
-
 function Necrosis_FlagBagDirty(bag)
 	local state = Necrosis_GetBagState()
 	local dirty = state.dirtyBags
@@ -502,6 +483,76 @@ local function IsSoulShardSlot(container, slot)
 		return false
 	end
 	return GetSlotItemID(container, slot) == SOUL_SHARD_ITEM_ID
+end
+
+function Necrosis_DeleteExcessSoulshards(snapshot)
+	if CursorHasItem and CursorHasItem() then
+		Necrosis_PrintDiagnostic("ShardCleanup: cursor has item, skipping")
+		return 0, true
+	end
+	if not NecrosisConfig or not NecrosisConfig.SoulshardDestroy then
+		return 0, false
+	end
+
+	local shardContainer = NecrosisConfig.SoulshardContainer or 4
+	local containerSlots = GetContainerNumSlots(shardContainer)
+	if not containerSlots or containerSlots <= 0 then
+		Necrosis_PrintDiagnostic("ShardCleanup: shard container has zero slots, skipping")
+		return 0, true
+	end
+
+	local shardCount = SoulshardState.count or 0
+	local excess = shardCount - containerSlots
+	if excess <= 0 then
+		Necrosis_PrintDiagnostic("ShardCleanup: no excess shards to delete")
+		return 0, false
+	end
+
+	local deleted = 0
+	local skippedLocked = false
+	for bag, bagSnapshot in pairs(snapshot) do
+		if bagSnapshot and bag ~= shardContainer then
+			for slot, entry in pairs(bagSnapshot) do
+				if entry and entry.id == SOUL_SHARD_ITEM_ID then
+					local _, _, locked = GetContainerItemInfo(bag, slot)
+					if not locked then
+						PickupContainerItem(bag, slot)
+						if CursorHasItem() then
+							DeleteCursorItem()
+							bagSnapshot[slot] = nil
+							deleted = deleted + 1
+							if deleted >= excess then
+								break
+							end
+						end
+					else
+						skippedLocked = true
+					end
+				end
+			end
+		end
+		if deleted >= excess then
+			break
+		end
+	end
+
+	if deleted > 0 then
+		Necrosis_PrintDiagnostic(string.format("ShardCleanup: deleted %d shard(s), excess was %d", deleted, excess))
+	end
+
+	return deleted, skippedLocked
+end
+
+function Necrosis_RunShardCleanup()
+	local state = Necrosis_GetBagState()
+	Necrosis_FlagBagDirty(-1)
+	Necrosis_BagExplore(true)
+	local snapshot = state.snapshot or {}
+	local deleted, skipped = Necrosis_DeleteExcessSoulshards(snapshot)
+	if deleted > 0 then
+		Necrosis_RequestBagScan(0.2, true)
+	end
+	return deleted, skipped or state.scanQueued
 end
 
 local function Necrosis_ProcessBagScanQueue(curTime)
@@ -658,6 +709,15 @@ function Necrosis_BagExplore(forceFull)
 	local dirty = state.dirtyBags
 	local snapshot = state.snapshot
 	local sawIncompleteInfo = false
+	if NecrosisConfig and NecrosisConfig.DiagnosticsEnabled then
+		local dirtyCount = 0
+		for _ in pairs(dirty) do
+			dirtyCount = dirtyCount + 1
+		end
+		Necrosis_PrintDiagnostic(
+			string.format("BagScan: starting%s, dirtyBags=%d", forceFull and " (forceFull)" or "", dirtyCount)
+		)
+	end
 
 	for bag in pairs(dirty) do
 		local slotCount = GetContainerNumSlots(bag)
@@ -674,7 +734,11 @@ function Necrosis_BagExplore(forceFull)
 				entry.count = itemCount or 1
 				entry.equipLoc = equipLoc
 			else
-				sawIncompleteInfo = true
+				-- Empty slots are expected; only flag incomplete if the slot has an item texture but we failed to resolve details
+				local slotTexture = GetContainerItemInfo(bag, slot)
+				if slotTexture then
+					sawIncompleteInfo = true
+				end
 				bagSnapshot[slot] = nil
 			end
 		end
@@ -738,6 +802,15 @@ function Necrosis_BagExplore(forceFull)
 				Necrosis_RecordStoneInventory("Itemswitch", bag, slot)
 			end
 		end
+	end
+
+	local deletedShards = Necrosis_DeleteExcessSoulshards(snapshot)
+	if deletedShards > 0 then
+		SoulshardState.count = SoulshardState.count - deletedShards
+		if SoulshardState.count < 0 then
+			SoulshardState.count = 0
+		end
+		Necrosis_RequestBagScan(0.2, true)
 	end
 
 	if sawIncompleteInfo then
@@ -883,32 +956,6 @@ function Necrosis_SoulshardSwitch(action)
 	if action == "CHECK" then
 		Necrosis_FlagBagDirty(-1)
 		Necrosis_RequestBagScan(0, true)
-	end
-end
-function Necrosis_FindSlot(shardIndex, shardSlot)
-	local full = true
-	for slot = 1, GetContainerNumSlots(NecrosisConfig.SoulshardContainer), 1 do
-		if not IsSoulShardSlot(NecrosisConfig.SoulshardContainer, slot) then
-			PickupContainerItem(shardIndex, shardSlot)
-			PickupContainerItem(NecrosisConfig.SoulshardContainer, slot)
-			SoulshardState.slots[SoulshardState.nextSlotIndex] = slot
-			SoulshardState.nextSlotIndex = SoulshardState.nextSlotIndex + 1
-			if CursorHasItem() then
-				if shardIndex == 0 then
-					PutItemInBackpack()
-				else
-					PutItemInBag(19 + shardIndex)
-				end
-			end
-			full = false
-			break
-		end
-	end
-	if full and NecrosisConfig.SoulshardDestroy then
-		PickupContainerItem(shardIndex, shardSlot)
-		if CursorHasItem() then
-			DeleteCursorItem()
-		end
 	end
 end
 

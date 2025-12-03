@@ -20,10 +20,6 @@ local function getTimerService()
 	return timerServiceCache
 end
 
-function Necrosis_InvalidateTimerServiceCache()
-	timerServiceCache = nil
-end
-
 DEBUG_TIMER_EVENTS = DEBUG_TIMER_EVENTS or false
 
 local TimerEngine = {
@@ -199,27 +195,7 @@ function Necrosis_RebuildDefaultTrackedBuffs()
 	end
 end
 
-local function Necrosis_TrackStoneBuff(stoneKey, buffName, baseDuration)
-	DEFAULT_TRACKED_SELF_BUFFS = DEFAULT_TRACKED_SELF_BUFFS or Necrosis_BuildDefaultTrackedBuffs()
-	TRACKED_SELF_BUFFS = TRACKED_SELF_BUFFS or DEFAULT_TRACKED_SELF_BUFFS
-	local config = Necrosis_CreateStoneBuffConfig(stoneKey)
-	config.buffName = buffName
-	config.timerName = buffName
-	config.baseDuration = baseDuration
-	assignBuffTextures(config)
-	local count = table.getn(TRACKED_SELF_BUFFS)
-	for index = 1, count do
-		local existing = TRACKED_SELF_BUFFS[index]
-		if existing and existing.buffName == buffName then
-			TRACKED_SELF_BUFFS[index] = config
-			Necrosis_SetTrackedBuffs(TRACKED_SELF_BUFFS)
-			return
-		end
-	end
-	table.insert(TRACKED_SELF_BUFFS, config)
-	Necrosis_SetTrackedBuffs(TRACKED_SELF_BUFFS)
-end
-
+-- Stored buff duration helpers
 local function Necrosis_SetStoredBuffDuration(timerName, duration)
 	if not timerName or not duration or duration <= 0 then
 		return
@@ -622,29 +598,6 @@ function Necrosis_RefreshSelfBuffTimer(buffConfig, playerName, currentTime)
 	return false, timerName
 end
 
-local function Necrosis_GetBuffSpellIndexByNameInternal(buffName)
-	if not buffName then
-		return nil
-	end
-	if NECROSIS_SPELL_TABLE[31] and buffName == NECROSIS_SPELL_TABLE[31].Name then
-		return 31
-	end
-	if NECROSIS_SPELL_TABLE[36] and buffName == NECROSIS_SPELL_TABLE[36].Name then
-		return 36
-	end
-	return nil
-end
-
-local function Necrosis_WasBuffRecentlyRefreshedInternal(buffName)
-	if not buffName or not LastRefreshedBuffName then
-		return false
-	end
-	if LastRefreshedBuffName ~= buffName then
-		return false
-	end
-	return (GetTime() - LastRefreshedBuffTime) <= 1
-end
-
 local function Necrosis_ShouldUseSpellTimersInternal()
 	if NecrosisSpellTimersEnabled == false then
 		return false
@@ -659,12 +612,7 @@ function Necrosis_ShouldUseSpellTimers()
 	return Necrosis_ShouldUseSpellTimersInternal()
 end
 
-function Necrosis_MarkTextTimersDirty()
-	local service = getTimerService()
-	if service then
-		service:MarkTextDirty()
-	end
-end
+local TIMER_UPDATE_THROTTLE = 0.5
 
 local function Necrosis_ClearExpiredTimers(curTime, targetName)
 	local service = getTimerService()
@@ -678,18 +626,6 @@ local function Necrosis_ResetTimerAssignments()
 	if service then
 		service:ResetTimerAssignments()
 	end
-end
-
-local function Necrosis_RebuildTimerBuffers(_, curTime, buildText)
-	local service = getTimerService()
-	if not service then
-		return 0
-	end
-	return service:BuildDisplayData(curTime, buildText)
-end
-
-local function Necrosis_RefreshGraphicalSlots()
-	-- managed by timer service
 end
 
 function Necrosis_UpdateSpellTimers(curTime, shouldUpdate)
@@ -706,19 +642,44 @@ function Necrosis_UpdateSpellTimers(curTime, shouldUpdate)
 	end
 
 	curTime = curTime or GetTime()
+	local nowFloor = floor(curTime)
 
 	local targetName = UnitName("target")
 	local textVisible = NecrosisConfig.ShowSpellTimers
 		and not NecrosisConfig.Graphical
 		and NecrosisSpellTimerButton:IsVisible()
-	local curTimeFloor = floor(curTime)
-	local buildText = textVisible and (service:IsTextDirty() or curTimeFloor ~= service:GetLastTextBuildTime())
+	local hasTimers = (type(service.GetTimerCount) == "function" and service:GetTimerCount() or 0) > 0
+
+	local buildText = false
+	if textVisible then
+		if service:IsTextDirty() then
+			buildText = true
+		elseif hasTimers then
+			buildText = nowFloor ~= service:GetLastTextBuildTime()
+		elseif service.hasText then
+			buildText = true
+		end
+	end
+
+	local shouldRenderGraphical = NecrosisConfig.Graphical
+	local forceUpdate = service.pendingUrgent or service:IsTextDirty()
+	local nothingToDo = not hasTimers and not buildText and not shouldRenderGraphical
+	if nothingToDo then
+		return
+	end
+
+	local lastUpdate = service.lastUpdateTime or 0
+	if not forceUpdate and (curTime - lastUpdate) < TIMER_UPDATE_THROTTLE then
+		return
+	end
 
 	Necrosis_ClearExpiredTimers(curTime, targetName)
 	Necrosis_ResetTimerAssignments()
 	service:BuildDisplayData(curTime, buildText)
+	service.lastUpdateTime = curTime
+	service.pendingUrgent = false
 
-	if NecrosisConfig.Graphical then
+	if shouldRenderGraphical then
 		local graphData = service:GetGraphicalData()
 		Necrosis_DisplayTimerFrames(graphData, service.timerSlots)
 	end
@@ -885,10 +846,6 @@ function Necrosis_OnPlayerAuraEvent(_, unitId)
 	end
 end
 
-function Necrosis_RegisterTrackedStoneBuff(stoneKey, buffName, baseDuration)
-	Necrosis_TrackStoneBuff(stoneKey, buffName, baseDuration)
-end
-
 function Necrosis_EnsureSoulstoneBuffTimer(currentTime)
 	if not Necrosis_ShouldUseSpellTimersInternal() then
 		return false
@@ -933,26 +890,8 @@ function Necrosis_EnsureSoulstoneBuffTimer(currentTime)
 	return handled
 end
 
-function Necrosis_NoteBuffRefresh(buffName)
-	LastRefreshedBuffName = buffName
-	LastRefreshedBuffTime = GetTime()
-	markTrackedBuffsDirty(LastRefreshedBuffTime)
-end
-
-function Necrosis_GetBuffSpellIndexByName(buffName)
-	return Necrosis_GetBuffSpellIndexByNameInternal(buffName)
-end
-
-function Necrosis_WasBuffRecentlyRefreshed(buffName)
-	return Necrosis_WasBuffRecentlyRefreshedInternal(buffName)
-end
-
 local function Necrosis_NotifyTimerDebug(status)
-	if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
-		DEFAULT_CHAT_FRAME:AddMessage("|cff66ccffNecrosis:|r Timer debug " .. status)
-	else
-		print("Necrosis timer debug " .. status)
-	end
+	Necrosis_PrintDiagnostic("Timer debug " .. status, true)
 end
 
 function Necrosis_SetTimerDebug(enabled)
