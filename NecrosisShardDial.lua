@@ -75,7 +75,7 @@ end
 
 local function removeFlag(flags, flag)
 	local parsed = {}
-	for part in string.gmatch(normaliseFlags(flags), "%S+") do
+	for part in string.gfind(normaliseFlags(flags), "%S+") do
 		if part ~= flag then
 			table.insert(parsed, part)
 		end
@@ -91,7 +91,7 @@ local function addFlag(flags, flag)
 	if not flag or flag == "" then
 		return base
 	end
-	for part in string.gmatch(base, "%S+") do
+	for part in string.gfind(base, "%S+") do
 		if part == flag then
 			return base
 		end
