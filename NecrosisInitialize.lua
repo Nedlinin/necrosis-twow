@@ -71,7 +71,7 @@ local function Necrosis_ParseVersion(version)
 	if type(version) ~= "string" then
 		version = tostring(version or "")
 	end
-	for token in string.gmatch(version, "%d+") do
+	for token in string.gfind(version, "%d+") do
 		table.insert(values, tonumber(token) or 0)
 	end
 	return values
